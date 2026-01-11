@@ -1,39 +1,19 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// ==========================================
-// 1. DATABASE KALIMAT WAJIB (27 LAFADZ)
-// ==========================================
+// 1. BANK SOAL (27 LAFADZ)
 const BANK_SOAL = [
-    "الْقَمَرُ جَمِيْلٌ",
-    "ذَهَبَ زَيْدٌ إِلَى الْمَسْجِدِ",
-    "يَشْرَحُ الْأُسْتَاذُ الدَّرْسَ",
-    "الْبَيْتُ وَاسِعٌ وَنَظِيْفٌ",
-    "قَرَأَ الطَّالِبُ الْقُرْآنَ",
-    "الْكِتَابُ عَلَى الْمَكْتَبِ",
-    "صَلَّى الْمُسْلِمُوْنَ فِي الْمَسْجِدِ",
-    "بَابُ الْمَدْرَسَةِ مَفْتُوْحٌ",
-    "إِنَّ اللهَ غَفُوْرٌ رَحِيْمٌ",
-    "كَانَ الْجَوُّ بَارِدًا",
-    "لَمْ يَحْضُرْ خَالِدٌ الْيَوْمَ",
-    "أُحِبُّ اللُّغَةَ الْعَرَبِيَّةَ",
-    "هَذَا قَلَمٌ جَدِيْدٌ",
-    "الطَّالِبَانِ مُجْتَهِدَانِ",
-    "يَزْرَعُ الْفَلَّاحُ الرُّزَّ",
-    "لَنْ يَنْجَحَ الْكَسْلَانُ",
-    "اِفْتَحْ بَابَ الْفَصْلِ",
-    "الْمُعَلِّمُوْنَ مُخْلِصُوْنَ",
-    "أَبِيْ يَقْرَأُ الْجَرِيْدَةَ",
-    "تَطْبُخُ الْأُمُّ الطَّعَامَ",
-    "جَلَسَ الرَّجُلُ أَمَامَ الْبَيْتِ",
-    "لَا تَلْعَبْ فِي الشَّارِعِ",
-    "رَجَعَ الْمُسَافِرُ إِلَى بَلَدِهِ",
-    "السَّيَّارَةُ لَوْنُهَا أَحْمَرُ",
-    "أَكَلْتُ الْخُبْزَ وَالْلَحْمَ",
-    "سَافَرَ زَيْدٌ صَبَاحًا",
-    "الْعِلْمُ نُوْرٌ"
+    "الْقَمَرُ جَمِيْلٌ", "ذَهَبَ زَيْدٌ إِلَى الْمَسْجِدِ", "يَشْرَحُ الْأُسْتَاذُ الدَّرْسَ",
+    "الْبَيْتُ وَاسِعٌ وَنَظِيْفٌ", "قَرَأَ الطَّالِبُ الْقُرْآنَ", "الْكِتَابُ عَلَى الْمَكْتَبِ",
+    "صَلَّى الْمُسْلِمُوْنَ فِي الْمَسْجِدِ", "بَابُ الْمَدْرَسَةِ مَفْتُوْحٌ", "إِنَّ اللهَ غَفُوْرٌ رَحِيْمٌ",
+    "كَانَ الْجَوُّ بَارِدًا", "لَمْ يَحْضُرْ خَالِدٌ الْيَوْمَ", "أُحِبُّ اللُّغَةَ الْعَرَبِيَّةَ",
+    "هَذَا قَلَمٌ جَدِيْدٌ", "الطَّالِبَانِ مُجْتَهِدَانِ", "يَزْرَعُ الْفَلَّاحُ الرُّزَّ",
+    "لَنْ يَنْجَحَ الْكَسْلَانُ", "اِفْتَحْ بَابَ الْفَصْلِ", "الْمُعَلِّمُوْنَ مُخْلِصُوْنَ",
+    "أَبِيْ يَقْرَأُ الْجَرِيْدَةَ", "تَطْبُخُ الْأُمُّ الطَّعَامَ", "جَلَسَ الرَّجُلُ أَمَامَ الْبَيْتِ",
+    "لَا تَلْعَبْ فِي الشَّارِعِ", "رَجَعَ الْمُسَافِرُ إِلَى بَلَدِهِ", "السَّيَّارَةُ لَوْنُهَا أَحْمَرُ",
+    "أَكَلْتُ الْخُبْزَ وَالْلَحْمَ", "سَافَرَ زَيْدٌ صَبَاحًا", "الْعِلْمُ نُوْرٌ"
 ];
 
-// Data Dawuh (Quote)
+// 2. DATA DAWUH
 const DAWUH_SAYA = [
     "Pelajarilah bahasa Arab, karena ia adalah bagian dari agamamu. (Umar bin Khattab)",
     "Barangsiapa mencari ilmu Nahwu, maka ia akan mendapat petunjuk ke segala ilmu.",
@@ -50,7 +30,7 @@ const DAWUH_SAYA = [
 ];
 
 export default async function handler(req, res) {
-  // Setup CORS
+  // SETUP CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -59,57 +39,45 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   try {
-    // 1. Ambil Data 'seen' (Daftar ID soal yang sudah dikerjakan user)
-    // Data dikirim dari frontend via POST body
-    let seenIndices = [];
-    if (req.body && req.body.seen) {
-        seenIndices = req.body.seen;
-    }
-
-    // 2. Filter Kalimat yang Belum Dilihat
-    // Kita buat array index [0, 1, 2, ... 26]
-    const allIndices = BANK_SOAL.map((_, index) => index);
-    const availableIndices = allIndices.filter(index => !seenIndices.includes(index));
-
-    // 3. Tentukan Mode: Pakai Bank Soal atau Generate Baru?
-    let targetSentence = "";
-    let questionId = null; // ID soal (angka) atau 'ai_generated'
-
-    if (availableIndices.length > 0) {
-        // MODE A: STOK MASIH ADA -> PILIH ACAK DARI SISA
-        const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-        targetSentence = BANK_SOAL[randomIndex];
-        questionId = randomIndex;
-        console.log(`Mode Bank Soal: Index ${randomIndex} - ${targetSentence}`);
-    } else {
-        // MODE B: STOK HABIS -> AI GENERATE BARU
-        // Topik acak untuk AI
-        const topik = ["Tentang kesabaran", "Tentang masjid", "Tentang buku", "Tentang guru", "Tentang sedekah", "Tentang sholat", "Tentang pasar", "Tentang ilmu"];
-        const randomTopik = topik[Math.floor(Math.random() * topik.length)];
-        targetSentence = `Buatlah SATU kalimat Arab pendek (jumlah mufidah) dengan topik: "${randomTopik}".`;
-        questionId = "ai_generated";
-        console.log("Mode AI: Generate Baru");
-    }
-
-    // 4. Panggil AI untuk MENGANALISA Kalimat Terpilih
-    const potentialKeys = [process.env.GEMINI_API_KEY_1, process.env.GEMINI_API_KEY_2, process.env.GEMINI_API_KEY_3, process.env.GEMINI_API_KEY];
+    // 3. LOGIC ROTASI API KEY (ANTI LIMIT)
+    const potentialKeys = [
+        process.env.GEMINI_API_KEY_1, process.env.GEMINI_API_KEY_2, 
+        process.env.GEMINI_API_KEY_3, process.env.GEMINI_API_KEY
+    ];
     const activeKeys = potentialKeys.filter(key => key && key.trim().length > 10);
-    if (activeKeys.length === 0) throw new Error("API Key Missing.");
+    
+    if (activeKeys.length === 0) throw new Error("API Key Missing in Vercel.");
     
     const selectedKey = activeKeys[Math.floor(Math.random() * activeKeys.length)];
     const genAI = new GoogleGenerativeAI(selectedKey);
-    const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash",
-        generationConfig: { responseMimeType: "application/json" } 
-    });
+    
+    // --- PERBAIKAN: HAPUS CONFIG YANG BIKIN ERROR ---
+    // Kita hapus generationConfig yang berisi responseMimeType
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    // Prompt disesuaikan: Jika Mode A, kita SUPLAI kalimatnya. Jika Mode B, kita MINTA kalimatnya.
-    let instruction = "";
-    if (questionId !== "ai_generated") {
-        instruction = `Analisa kalimat berikut ini: "${targetSentence}".`;
+    // 4. LOGIC PILIH KALIMAT
+    let seenIndices = [];
+    if (req.body && req.body.seen) seenIndices = req.body.seen;
+
+    const allIndices = BANK_SOAL.map((_, index) => index);
+    const availableIndices = allIndices.filter(index => !seenIndices.includes(index));
+
+    let targetSentence = "";
+    let questionId = null;
+
+    if (availableIndices.length > 0) {
+        const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+        targetSentence = BANK_SOAL[randomIndex];
+        questionId = randomIndex;
     } else {
-        instruction = targetSentence; // Isinya perintah "Buatlah kalimat..."
+        const topik = ["Tentang masjid", "Tentang buku", "Tentang guru", "Tentang sedekah", "Tentang sholat", "Tentang pasar", "Tentang ilmu"];
+        const randomTopik = topik[Math.floor(Math.random() * topik.length)];
+        targetSentence = `Buatlah SATU kalimat Arab pendek (jumlah mufidah) dengan topik: "${randomTopik}".`;
+        questionId = "ai_generated";
     }
+
+    // 5. PROMPT DENGAN INSTRUKSI RAW JSON (Strict)
+    let instruction = (questionId !== "ai_generated") ? `Analisa kalimat berikut ini: "${targetSentence}".` : targetSentence;
 
     const SYSTEM_PROMPT = `
     Role: Ammo (Ustadz Ahli Nahwu).
@@ -118,15 +86,16 @@ export default async function handler(req, res) {
     Lakukan Analisa I'rob Lengkap per kata.
     Buat 8 pertanyaan presisi sesuai kaidah Jurumiyah/Imrithi.
 
-    ATURAN:
-    - Step 1-2: Jenis Kalimat (Isim/Fi'il/Huruf) & Tanda (Jangan jawab 'Isim Mufrad' disini).
-    - Step 3-4: Mu'rob/Mabni & Alasannya.
-    - Step 5-8: I'rob/Mahal & Tandanya.
-    - Field 'correct' HARUS SAMA PERSIS dengan opsi.
+    ATURAN PENTING:
+    1. Output HANYA boleh JSON. Jangan ada kata pembuka seperti "Assalamu'alaikum" atau "Baiklah".
+    2. Step 1-2: Jenis Kalimat (Isim/Fi'il/Huruf) & Tanda.
+    3. Step 3-4: Mu'rob/Mabni & Alasannya.
+    4. Step 5-8: I'rob/Mahal & Tandanya.
+    5. Field 'correct' HARUS SAMA PERSIS dengan opsi.
 
-    OUTPUT JSON:
+    OUTPUT FORMAT JSON:
     {
-        "sentence": "${questionId !== 'ai_generated' ? targetSentence : 'Kalimat Arab Baru'}", 
+        "sentence": "${questionId !== 'ai_generated' ? targetSentence : 'Kalimat Baru'}", 
         "id": "${questionId}",
         "analysis": [
             {
@@ -151,14 +120,27 @@ export default async function handler(req, res) {
     const response = await result.response;
     let text = response.text();
     
-    // Clean JSON text
+    // --- MANUAL CLEANING (PEMBERSIH SUPER KUAT) ---
+    // Ini solusi pengganti JSON Mode agar tidak error di server Vercel lama
+    // Kita cari kurung kurawal pertama '{' dan terakhir '}'
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1) text = text.substring(firstBrace, lastBrace + 1);
+    
+    if (firstBrace !== -1 && lastBrace !== -1) {
+        text = text.substring(firstBrace, lastBrace + 1);
+    } else {
+        throw new Error("AI tidak menghasilkan JSON yang valid.");
+    }
 
-    let jsonData = JSON.parse(text);
+    let jsonData;
+    try {
+        jsonData = JSON.parse(text);
+    } catch (e) {
+        console.error("JSON Parse Error:", text);
+        throw new Error("Gagal membaca respon AI.");
+    }
 
-    // Pastikan ID tersimpan di JSON agar Frontend bisa mencatatnya
+    // Pastikan ID tersimpan
     jsonData.id = questionId;
 
     // Inject Dawuh
