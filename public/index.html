@@ -5,13 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>Nahwu OS from Amogenz</title>
-    <meta name="robots" content="noindex"> 
+    <meta name="title" content="Nahwu OS - AI Belajar I'rob & Nahwu Jurumiyah Otomatis">
+    <meta name="description" content="Aplikasi belajar Nahwu Shorof bertenaga AI pertama di Indonesia. Analisa I'rob otomatis, latihan interaktif kitab Jurumiyah & Imrithi. Gratis untuk Santri. Powered by Amogenz.">
+    <meta name="keywords" content="Nahwu OS, Belajar I'rob, Aplikasi Nahwu, Jurumiyah, Imrithi, Shorof, Belajar Bahasa Arab, AI Nahwu, Irob Otomatis, Santri Coding, Amogenz, Pondok Pesantren, Nahwu Wadhih, Kitab Kuning Digital">
+    <meta name="author" content="Amogenz.Inc">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Indonesian">
+    <meta name="revisit-after" content="7 days">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nahwu-os.vercel.app/">
+    <meta property="og:title" content="Nahwu OS - Guru Nahwu Pribadi di Saku Anda">
+    <meta property="og:description" content="Belajar I'rob jadi mudah! Analisa kalimat Arab secara instan dengan kecerdasan buatan (AI). Coba sekarang gratis.">
+    <meta property="og:image" content="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Nahwu OS by Amogenz">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://nahwu-os.vercel.app/">
+    <meta property="twitter:title" content="Nahwu OS - Revolusi Belajar Nahwu">
+    <meta property="twitter:description" content="Tanya jawab I'rob otomatis dengan rujukan kitab Jurumiyah. Cocok untuk pemula dan santri.">
+    <meta property="twitter:image" content="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nahwu OS">
+
     <link rel="icon" type="image/webp" href="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
+    <link rel="apple-touch-icon" href="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
 
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
+        /* CSS VARIABLES */
         :root { --ios-blue: #007AFF; --ios-green: #34C759; --ios-red: #FF3B30; --text-primary: #000000; --text-light: #ffffff; --text-muted: rgba(255, 255, 255, 0.6); --glass-bg-card: rgba(30, 30, 30, 0.6); --glass-header: rgba(30, 30, 30, 0.7); --glass-border: rgba(255, 255, 255, 0.15); --sidebar-bg: rgba(10, 10, 10, 0.9); --msg-received: rgba(255, 255, 255, 0.1); }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop') no-repeat center center fixed; background-size: cover; height: 100vh; width: 100vw; overflow: hidden; display: flex; justify-content: center; align-items: center; color: var(--text-light); }
@@ -51,8 +79,28 @@
         .modal-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
         .modal-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; }
         .modal-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
-        .dawuh-image-wrapper { margin: 15px 0; border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); width: 100%; max-height: 250px; }
-        .dawuh-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+        
+        /* FIX GAMBAR DAWUH BIAR CENTER & ADA LOADER */
+        .dawuh-image-wrapper { 
+            margin: 15px 0; border-radius: 15px; overflow: hidden; 
+            border: 1px solid rgba(255,255,255,0.2); width: 100%; max-height: 250px;
+            background-color: #000; /* Background hitam biar kontras */
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
+            min-height: 150px; /* Tinggi minimal biar gak gepeng pas loading */
+        }
+        .dawuh-image { 
+            width: 100%; height: 100%; object-fit: contain; 
+            display: none; /* Sembunyi dulu sebelum load selesai */
+            z-index: 2;
+        }
+        
+        /* SPINNER LOADER UNTUK GAMBAR */
+        .img-spinner {
+            width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: var(--ios-blue); border-radius: 50%;
+            animation: spin 1s infinite; position: absolute; z-index: 1;
+        }
 
         .input-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .glass-field { background: rgba(255,255,255,0.1); border: none; padding: 12px; border-radius: 12px; color: white; width: 100%; font-family: inherit; }
@@ -94,7 +142,7 @@
         }
         .file-upload-area:hover { border-color: var(--ios-blue); color: white; }
         .preview-img-box {
-            width: 100%; height: 200px; object-fit: cover; border-radius: 12px;
+            width: 100%; height: 200px; object-fit: contain; border-radius: 12px;
             display: none; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.2);
         }
         input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
@@ -154,7 +202,7 @@
                 <span id="fb-icon" class="modal-icon">✨</span>
                 <h3 id="fb-title" class="modal-title">Benar!</h3>
                 <div id="fb-image-area" style="display: none;" class="dawuh-image-wrapper">
-                    <img id="dawuh-img-src" src="" class="dawuh-image" alt="Dawuh">
+                    <div class="img-spinner" id="img-spinner"></div> <img id="dawuh-img-src" src="" class="dawuh-image" alt="Dawuh">
                 </div>
                 <p id="fb-msg" class="modal-desc">Penjelasan...</p>
                 <button id="fb-btn" class="btn-primary" style="width: 100%;">Lanjut</button>
@@ -210,14 +258,17 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, remove, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // CONFIG
         const firebaseConfig = { apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8", authDomain: "amogenz.firebaseapp.com", databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "amogenz", storageBucket: "amogenz.firebasestorage.app", messagingSenderId: "864003468268", appId: "1:864003468268:web:7c861806529a0dacd66ec9" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // SOUNDS
         const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
         const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3');
         sndCorrect.load(); sndWrong.load();
 
+        // STATE
         let quizData = null;
         let wordIndex = 0;
         let stepIndex = 1;
@@ -233,7 +284,9 @@
             els = {
                 viewStart: document.getElementById('view-start'), viewLoading: document.getElementById('view-loading'), viewQuiz: document.getElementById('view-quiz'),
                 ctxSent: document.getElementById('ctx-sentence'), ctxWord: document.getElementById('ctx-word'), badge: document.getElementById('badge-step'), qText: document.getElementById('question-text'), options: document.getElementById('options-container'),
-                modal: document.getElementById('modal-feedback'), mCard: document.getElementById('modal-card'), mTitle: document.getElementById('fb-title'), mIcon: document.getElementById('fb-icon'), mMsg: document.getElementById('fb-msg'), mImgArea: document.getElementById('fb-image-area'), mImgSrc: document.getElementById('dawuh-img-src'), fbBtn: document.getElementById('fb-btn'),
+                modal: document.getElementById('modal-feedback'), mCard: document.getElementById('modal-card'), mTitle: document.getElementById('fb-title'), mIcon: document.getElementById('fb-icon'), mMsg: document.getElementById('fb-msg'), 
+                mImgArea: document.getElementById('fb-image-area'), mImgSrc: document.getElementById('dawuh-img-src'), mSpinner: document.getElementById('img-spinner'),
+                fbBtn: document.getElementById('fb-btn'),
                 sidebar: document.getElementById('sidebar'), soundToggle: document.getElementById('sound-toggle'),
                 adminPanel: document.getElementById('admin-panel'), adminLogin: document.getElementById('admin-login'), adminDash: document.getElementById('admin-dash'), adminPass: document.getElementById('admin-pass')
             };
@@ -245,6 +298,17 @@
             document.getElementById('btn-close-sidebar').addEventListener('click', () => toggleSidebar(false));
             document.getElementById('btn-start').addEventListener('click', startLearningCycle);
             document.getElementById('btn-send-saran').addEventListener('click', sendSuggestion);
+
+            // LOGIC PENTING: Handle Image Loading
+            els.mImgSrc.onload = () => {
+                els.mSpinner.style.display = 'none'; // Sembunyikan spinner
+                els.mImgSrc.style.display = 'block'; // Tampilkan gambar
+            };
+            els.mImgSrc.onerror = () => {
+                els.mSpinner.style.display = 'none';
+                els.mImgArea.style.display = 'none'; // Kalau error sembunyikan area gambar
+                els.mMsg.innerText = "Gagal memuat gambar.";
+            };
 
             loadPublicDawuh();
             loadSuggestions();
@@ -368,7 +432,17 @@
         function loadPublicDawuh() {
             onValue(ref(db, 'dawuh_images'), (snapshot) => {
                 const data = snapshot.val();
-                if(data) dawuhImagesCache = Object.values(data); else dawuhImagesCache = [];
+                if(data) {
+                    dawuhImagesCache = Object.values(data);
+                    // --- PRELOADING TRICK ---
+                    // Browser dipaksa download gambar sekarang juga
+                    dawuhImagesCache.forEach(img => {
+                        const i = new Image();
+                        i.src = img.url;
+                    });
+                } else {
+                    dawuhImagesCache = [];
+                }
             });
         }
 
@@ -382,7 +456,7 @@
 
         async function startLearningCycle() {
             if(window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
-                alert("⚠️ PERHATIAN: AI tidak akan jalan di preview Acode/Local karena endpoint '/api/generate' butuh server Vercel. \n\nSilahkan deploy ke Vercel untuk mencoba fitur AI.");
+                alert("⚠️ AI tidak akan jalan di lokal. Silahkan deploy ke Vercel.");
                 return;
             }
 
@@ -422,6 +496,7 @@
             const isCorrect = ans === data.correct;
             playSound(isCorrect);
             els.mImgArea.style.display = 'none'; els.mMsg.style.display = 'block';
+            els.mIcon.style.display = 'block';
 
             if (isCorrect) {
                 if (stepIndex < 6) {
@@ -434,13 +509,21 @@
                         stepIndex++; renderQuestion();
                     };
                 } else {
-                    els.mTitle.innerText = "Lafadz Selesai"; els.mTitle.style.color = "#FFD700"; els.mIcon.innerText = "🖼️";
+                    els.mTitle.innerText = "Lafadz Selesai"; els.mTitle.style.color = "#FFD700"; 
+                    els.mIcon.style.display = 'none';
+                    
                     if(dawuhImagesCache.length > 0) {
                         const randImg = dawuhImagesCache[Math.floor(Math.random() * dawuhImagesCache.length)];
-                        els.mImgSrc.src = randImg.url;
-                        els.mImgArea.style.display = 'block';
+                        
+                        // SETUP LOADING STATE
+                        els.mImgArea.style.display = 'flex'; // Munculkan area
+                        els.mSpinner.style.display = 'block'; // Munculkan spinner
+                        els.mImgSrc.style.display = 'none'; // Sembunyikan gambar dulu
+                        
+                        els.mImgSrc.src = randImg.url; // Trigger load
                         els.mMsg.innerText = randImg.caption || "Tetap Semangat Ngaji!";
                     } else { els.mMsg.innerText = "Alhamdulillah. Lanjut?"; }
+                    
                     els.modal.style.display = 'flex';
                     setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
                     els.fbBtn.onclick = () => {
@@ -460,6 +543,7 @@
 
         function showTransition(title, msg, isNewSentence) {
             els.mImgArea.style.display = 'none'; els.mMsg.style.display = 'block';
+            els.mIcon.style.display = 'block'; 
             els.mIcon.innerText = "🚀"; els.mTitle.innerText = title; els.mTitle.style.color = "#007AFF"; els.mMsg.innerText = msg;
             els.modal.style.display = 'flex';
             els.fbBtn.onclick = () => {
