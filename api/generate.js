@@ -2,7 +2,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// DATABASE DAWUH (Tetap seperti sebelumnya)
 const DAWUH_SAYA = [
     "Pelajarilah bahasa Arab, karena ia adalah bagian dari agamamu. (Umar bin Khattab)",
     "Barangsiapa mencari ilmu Nahwu, maka ia akan mendapat petunjuk ke segala ilmu.",
@@ -17,18 +16,14 @@ const DAWUH_SAYA = [
     "Sebaik-baik teman duduk adalah kitab. Sebaik-baik bekal adalah Taqwa.",
     "Man jadda wajada. Barangsiapa bersungguh-sungguh (belajar Nahwu), pasti dapat.",
     "Keutamaan Nahwu bagi lisan, seperti garam bagi masakan.",
-    "Orang yang paham Nahwu, akan merasakan keindahan Al-Qur'an yang sesungguhnya.",
-    "Belajar Nahwu itu sulit di awal, tapi nikmat di akhir.",
     "Jadikan kitab Jurumiyah & Imrithi sebagai sahabat setiamu dalam memahami agama."
 ];
 
-// TOPIL KALIMAT AGAR TIDAK MENGULANG
 const TOPIK_KALIMAT = [
     "Tentang kesabaran", "Tentang pergi ke masjid", "Tentang membaca buku", 
     "Tentang keindahan alam", "Tentang menghormati guru", "Tentang sedekah",
     "Tentang sholat berjamaah", "Tentang pasar", "Tentang kebersihan",
-    "Tentang persahabatan", "Tentang menuntut ilmu", "Tentang jujur",
-    "Tentang rumahku", "Tentang kebun", "Tentang laut"
+    "Tentang persahabatan", "Tentang menuntut ilmu"
 ];
 
 export default async function handler(req, res) {
@@ -41,38 +36,40 @@ export default async function handler(req, res) {
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    // PILIH TOPIK ACAK
     const randomTopik = TOPIK_KALIMAT[Math.floor(Math.random() * TOPIK_KALIMAT.length)];
 
     const SYSTEM_PROMPT = `
     Role: Ammo (AI Guru Nahwu dari Amogenz.Inc).
-    Rujukan Utama: Kitab Al-Ajurrumiyyah & Nazhom Imrithi.
+    Rujukan Wajib: Kitab Matan Al-Ajurrumiyyah & Nazhom Imrithi.
     
     TUGAS: 
     1. Buatlah SATU kalimat Arab pendek (3-6 kata) dengan topik: "${randomTopik}".
-    2. PENTING: JANGAN gunakan kalimat pasaran seperti "Dakhola Zaidun" atau "Dakhola Tholibu". Buat kalimat yang segar dan variatif.
-    3. Analisa kalimat tersebut per kata (Lafadz).
-    4. Buat 6 level pertanyaan berurutan untuk setiap kata.
+    2. Analisa kalimat tersebut per kata (Lafadz).
+    3. Buat 6 level pertanyaan berurutan untuk setiap kata.
     
-    ATURAN PERTANYAAN (WAJIB DIPATUHI):
-    - Gunakan Bahasa Indonesia yang luwes, santai, tapi tetap sopan & edukatif.
-    - PENTING: JANGAN gunakan kata "tersebut" untuk menunjuk kata sebelumnya. Gunakan nama kategorinya langsung.
+    ATURAN LOGIKA (PENTING):
+    - Penjelasan MENGAPA (alasan) harus berdasarkan kaidah Jurumiyah/Imrithi.
+      Contoh: "Kenapa Rafa? Karena menjadi Fa'il, dan Fa'il itu hukumnya Rafa menurut Jurumiyah."
+    - JANGAN gunakan kata "tersebut" untuk menunjuk kata sebelumnya. Gunakan nama katanya langsung.
     
-    OUTPUT JSON MURNI (TANPA MARKDOWN):
+    ATURAN JSON (WAJIB):
+    - Field 'correct' HARUS SAMA PERSIS (Copy-Paste) dengan salah satu string di dalam array 'options'. Jangan beda satu huruf pun.
+    - Jangan ada spasi tambahan di awal/akhir string.
+    
+    OUTPUT JSON MURNI:
     {
-        "sentence": "Kalimat Arab berharakat lengkap",
+        "sentence": "Kalimat Arab",
         "analysis": [
             {
-                "word": "Kata Arab",
+                "word": "Kata 1",
                 "quote": "Biarkan kosong", 
                 "steps": {
-                    "1": { "question": "...", "options": ["A","B","C"], "correct": "A", "explanation": "..." },
-                    "2": { "question": "...", "options": ["A","B"], "correct": "A", "explanation": "..." },
-                    "3": { "question": "...", "options": ["A","B"], "correct": "A", "explanation": "..." },
-                    "4": { "question": "...", "options": ["A","B"], "correct": "A", "explanation": "..." },
-                    "5": { "question": "...", "options": ["A","B"], "correct": "A", "explanation": "..." },
-                    "6": { "question": "...", "options": ["A","B"], "correct": "A", "explanation": "..." }
+                    "1": { "question": "...", "options": ["Isim","Fi'il","Huruf"], "correct": "Isim", "explanation": "..." },
+                    "2": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
+                    "3": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
+                    "4": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
+                    "5": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
+                    "6": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." }
                 }
             }
         ]
@@ -87,7 +84,7 @@ export default async function handler(req, res) {
     
     let jsonData = JSON.parse(text);
 
-    // Overwrite Quote
+    // Overwrite Quote dengan Database Lokal
     if (jsonData.analysis && Array.isArray(jsonData.analysis)) {
         jsonData.analysis.forEach((item) => {
             const randomDawuh = DAWUH_SAYA[Math.floor(Math.random() * DAWUH_SAYA.length)];
