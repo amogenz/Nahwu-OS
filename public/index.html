@@ -200,335 +200,443 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIG
-        const firebaseConfig = { apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8", authDomain: "amogenz.firebaseapp.com", databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "amogenz", storageBucket: "amogenz.firebasestorage.app", messagingSenderId: "864003468268", appId: "1:864003468268:web:7c861806529a0dacd66ec9" };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    // --- 1. CONFIGURATION ---
+    const firebaseConfig = { apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8", authDomain: "amogenz.firebaseapp.com", databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "amogenz", storageBucket: "amogenz.firebasestorage.app", messagingSenderId: "864003468268", appId: "1:864003468268:web:7c861806529a0dacd66ec9" };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-        // SOUNDS
-        const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
-        const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3');
-        sndCorrect.load(); sndWrong.load();
+    const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+    const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3');
+    sndCorrect.load(); sndWrong.load();
 
-        // STATE
-        let quizData = null;
-        let wordIndex = 0;
-        let stepIndex = 1;
-        let dawuhImagesCache = [];
-        let uploadBase64 = null;
-        let tapCount = 0;
-        let tapTimer;
-        const SECRET_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa";
+    // --- 2. STATE VARIABLES ---
+    let quizData = null;
+    let wordIndex = 0;
+    let stepIndex = 1;
+    let dawuhImagesCache = [];
+    let uploadBase64 = null;
+    let tapCount = 0;
+    let tapTimer;
+    const SECRET_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa";
+    let els = {}; // Element Cache
 
-        let els = {};
-
-        function initApp() {
-            els = {
-                viewStart: document.getElementById('view-start'), viewLoading: document.getElementById('view-loading'), viewQuiz: document.getElementById('view-quiz'),
-                ctxSent: document.getElementById('ctx-sentence'), ctxWord: document.getElementById('ctx-word'), badge: document.getElementById('badge-step'), qText: document.getElementById('question-text'), options: document.getElementById('options-container'),
-                modal: document.getElementById('modal-feedback'), mCard: document.getElementById('modal-card'), mTitle: document.getElementById('fb-title'), mIcon: document.getElementById('fb-icon'), mMsg: document.getElementById('fb-msg'), 
-                mImgArea: document.getElementById('fb-image-area'), mImgSrc: document.getElementById('dawuh-img-src'), mSpinner: document.getElementById('img-spinner'),
-                fbBtn: document.getElementById('fb-btn'),
-                sidebar: document.getElementById('sidebar'), soundToggle: document.getElementById('sound-toggle'),
-                adminPanel: document.getElementById('admin-panel'), adminLogin: document.getElementById('admin-login'), adminDash: document.getElementById('admin-dash'), adminPass: document.getElementById('admin-pass')
-            };
-
-            document.getElementById('secret-logo').addEventListener('click', handleSecretTap);
-            document.getElementById('btn-admin-login').addEventListener('click', handleAdminLogin);
-            document.getElementById('btn-close-admin').addEventListener('click', closeAdmin);
-            document.getElementById('btn-menu').addEventListener('click', () => toggleSidebar(true));
-            document.getElementById('btn-close-sidebar').addEventListener('click', () => toggleSidebar(false));
-            document.getElementById('btn-start').addEventListener('click', startLearningCycle);
-            document.getElementById('btn-send-saran').addEventListener('click', sendSuggestion);
-
-            // LOGIC PENTING: Handle Image Loading
-            els.mImgSrc.onload = () => {
-                els.mSpinner.style.display = 'none'; // Sembunyikan spinner
-                els.mImgSrc.style.display = 'block'; // Tampilkan gambar
-            };
-            els.mImgSrc.onerror = () => {
-                els.mSpinner.style.display = 'none';
-                els.mImgArea.style.display = 'none'; 
-                els.mMsg.innerText = "Gagal memuat gambar.";
-            };
-
-            loadPublicDawuh();
-            loadSuggestions();
-        }
-
-        function handleSecretTap() {
-            tapCount++; clearTimeout(tapTimer); tapTimer = setTimeout(() => tapCount = 0, 500); 
-            if(tapCount === 3) { els.adminPanel.style.display = 'flex'; tapCount = 0; }
-        }
-
-        async function handleAdminLogin() {
-            const hash = await sha256(els.adminPass.value);
-            if(hash === SECRET_HASH) unlockAdminPanel(); else alert("Sandi Salah!");
-        }
-
-        function closeAdmin() {
-            els.adminPanel.style.display = 'none'; els.adminPass.value = '';
-            els.adminLogin.style.display = 'block'; els.adminDash.style.display = 'none';
-        }
-
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        function compressImage(file, callback) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; 
-                    const scaleSize = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * scaleSize;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    callback(canvas.toDataURL('image/jpeg', 0.8));
-                }
-            }
-        }
-
-        function unlockAdminPanel() {
-            els.adminLogin.style.display = 'none';
-            els.adminDash.style.display = 'block';
-            
-            els.adminDash.innerHTML = `
-                <div class="admin-tabs"><button class="tab-btn active" id="tab-url">Link URL</button><button class="tab-btn" id="tab-upl">Upload Galeri</button></div>
-                <div id="form-url"><input type="text" id="dawuh-url" class="glass-field" placeholder="https://instagram.com/foto.jpg..."></div>
-                <div id="form-upl" style="display:none;"><img id="img-preview" class="preview-img-box"><div class="file-upload-area"><i class="ph ph-upload-simple" style="font-size:24px;"></i><br>Klik untuk Pilih Foto<input type="file" id="file-inp" accept="image/*"></div></div>
-                <input type="text" id="dawuh-caption" class="glass-field" placeholder="Keterangan (Opsional)" style="margin-top:10px;">
-                <button id="btn-save-img" class="btn-primary" style="margin-top: 10px; background: var(--ios-green);">Simpan Gambar</button>
-                <h3 style="margin-top: 20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">Galeri Dawuh</h3>
-                <div id="admin-list" class="suggestion-list" style="margin-top: 10px;"></div>
-            `;
-
-            const btnUrl = document.getElementById('tab-url'); const btnUpl = document.getElementById('tab-upl');
-            const boxUrl = document.getElementById('form-url'); const boxUpl = document.getElementById('form-upl');
-            const inpUrl = document.getElementById('dawuh-url');
-            let mode = 'url'; 
-
-            btnUrl.onclick = () => { mode='url'; btnUrl.classList.add('active'); btnUpl.classList.remove('active'); boxUrl.style.display='block'; boxUpl.style.display='none'; }
-            btnUpl.onclick = () => { mode='upl'; btnUpl.classList.add('active'); btnUrl.classList.remove('active'); boxUpl.style.display='block'; boxUrl.style.display='none'; }
-
-            document.getElementById('file-inp').addEventListener('change', (e) => {
-                if(e.target.files[0]) {
-                    compressImage(e.target.files[0], (base64) => {
-                        uploadBase64 = base64;
-                        const preview = document.getElementById('img-preview');
-                        preview.src = base64; preview.style.display = 'block';
-                    });
-                }
-            });
-
-            document.getElementById('btn-save-img').addEventListener('click', () => {
-                const cap = document.getElementById('dawuh-caption').value.trim();
-                let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64;
-                if(!finalUrl) return alert("Gambar belum dipilih/diisi!");
-                
-                push(ref(db, 'dawuh_images'), { url: finalUrl, caption: cap }).then(() => {
-                    alert("Gambar Berhasil Disimpan!");
-                    inpUrl.value = ''; document.getElementById('dawuh-caption').value = '';
-                    uploadBase64 = null; document.getElementById('img-preview').style.display = 'none';
-                });
-            });
-
-            loadAdminList();
-        }
-
-        function loadAdminList() {
-            onValue(ref(db, 'dawuh_images'), (snapshot) => {
-                const list = document.getElementById('admin-list');
-                if(!list) return;
-                list.innerHTML = '';
-                const data = snapshot.val();
-                if(data) {
-                    Object.entries(data).forEach(([key, val]) => {
-                        const div = document.createElement('div');
-                        div.className = 'suggest-item';
-                        div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.alignItems = 'center';
-                        
-                        const leftDiv = document.createElement('div');
-                        leftDiv.style.cssText = "display:flex; align-items:center; gap:10px;";
-                        leftDiv.innerHTML = `<img src="${val.url}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;"> <span style="font-size:10px; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${val.caption || 'No Caption'}</span>`;
-                        
-                        const delBtn = document.createElement('button');
-                        delBtn.innerText = "Hapus";
-                        delBtn.style.cssText = "background:var(--ios-red); border:none; color:white; padding:5px 10px; border-radius:5px; font-size:10px; cursor:pointer;";
-                        delBtn.onclick = () => { if(confirm("Hapus?")) remove(ref(db, `dawuh_images/${key}`)); };
-
-                        div.appendChild(leftDiv); div.appendChild(delBtn);
-                        list.appendChild(div);
-                    });
-                }
-            });
-        }
-
-        // --- AGGRESSIVE PRELOADING ---
-        function loadPublicDawuh() {
-            onValue(ref(db, 'dawuh_images'), (snapshot) => {
-                const data = snapshot.val();
-                if(data) {
-                    dawuhImagesCache = Object.values(data);
-                    // Preload all images immediately
-                    dawuhImagesCache.forEach(img => {
-                        const i = new Image();
-                        i.src = img.url;
-                    });
-                } else {
-                    dawuhImagesCache = [];
-                }
-            });
-        }
-
-        function toggleSidebar(show) { if(show) els.sidebar.classList.add('active'); else els.sidebar.classList.remove('active'); }
-        
-        function playSound(isCorrect) {
-            if(!els.soundToggle.checked) return;
-            if(isCorrect) { sndCorrect.currentTime = 0; sndCorrect.play().catch(e => {}); }
-            else { sndWrong.currentTime = 0; sndWrong.play().catch(e => {}); }
-        }
-
-        async function startLearningCycle() {
-            if(window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
-                alert("⚠️ AI tidak akan jalan di lokal. Silahkan deploy ke Vercel.");
-                return;
-            }
-
-            els.viewStart.style.display = 'none'; els.viewQuiz.style.display = 'none'; els.viewLoading.style.display = 'flex';
-            try {
-                const response = await fetch('/api/generate'); 
-                if (!response.ok) throw new Error("Gagal menghubungi server");
-                const data = await response.json();
-                let text = data.result.replace(/```json|```/g, '').trim();
-                quizData = JSON.parse(text);
-                wordIndex = 0; stepIndex = 1;
-                els.viewLoading.style.display = 'none'; els.viewQuiz.style.display = 'block';
-                renderQuestion();
-            } catch (error) { alert("Ammo Error: " + error.message); els.viewLoading.style.display = 'none'; els.viewStart.style.display = 'flex'; }
-        }
-
-        function renderQuestion() {
-            const curWord = quizData.analysis[wordIndex];
-            const curStep = curWord.steps[stepIndex.toString()];
-            els.ctxSent.innerText = quizData.sentence;
-            els.ctxWord.innerText = curWord.word;
-            els.badge.innerText = `LANGKAH ${stepIndex}/8`;
-            let q = curStep.question;
-            if(stepIndex === 1) q = `Lafadz "<b>${curWord.word}</b>" ini termasuk jenis kalimat apa?`;
-            els.qText.innerHTML = q;
-            els.options.innerHTML = '';
-            const shuffled = [...curStep.options].sort(() => Math.random() - 0.5);
-            shuffled.forEach(opt => {
-                const btn = document.createElement('div'); btn.className = 'btn-option';
-                btn.innerHTML = `<span>${opt}</span> <i class="ph ph-caret-right"></i>`;
-                btn.onclick = () => handleAnswer(opt, curStep);
-                els.options.appendChild(btn);
-            });
-        }
-
-        function handleAnswer(ans, data) {
-            const isCorrect = ans.trim().toLowerCase() === data.correct.trim().toLowerCase();
-            playSound(isCorrect);
-            
-            // Reset Modal UI
-            els.mImgArea.style.display = 'none'; 
-            els.mMsg.style.display = 'block';
-            els.mIcon.style.display = 'block';
-
-            if (isCorrect) {
-                if (stepIndex < 8) {
-                    els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; els.mIcon.innerText = "✨";
-                    els.mMsg.innerText = data.explanation || "Jawaban Tepat.";
-                    els.modal.style.display = 'flex';
-                    setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
-                    els.fbBtn.onclick = () => {
-                        els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200);
-                        stepIndex++; renderQuestion();
-                    };
-                } else {
-                    // STEP 8 SELESAI (Akhir Kata)
-                    els.mTitle.innerText = "Lafadz Selesai"; els.mTitle.style.color = "#FFD700"; 
-                    els.mIcon.style.display = 'none'; // Sembunyikan icon
-                    
-                    if(dawuhImagesCache.length > 0) {
-                        const randImg = dawuhImagesCache[Math.floor(Math.random() * dawuhImagesCache.length)];
-                        
-                        els.mImgArea.style.display = 'flex';
-                        els.mSpinner.style.display = 'block'; // Show spinner
-                        els.mImgSrc.style.display = 'none';   // Hide img initially
-                        
-                        els.mImgSrc.src = randImg.url;
-                        els.mMsg.innerText = randImg.caption || "Tetap Semangat Ngaji!";
-                    } else { els.mMsg.innerText = "Alhamdulillah. Lanjut?"; }
-                    
-                    els.modal.style.display = 'flex';
-                    setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
-                    
-                    // TOMBOL LANJUT
-                    els.fbBtn.onclick = () => {
-                        els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200);
-                        
-                        // Cek masih ada kata di kalimat ini?
-                        if (wordIndex < quizData.analysis.length - 1) {
-                            wordIndex++; stepIndex = 1; renderQuestion();
-                        } else {
-                            // Kalimat habis -> Minta Kalimat Baru (Start Cycle)
-                            showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true);
-                        }
-                    };
-                }
+    // --- 3. HELPER FUNCTIONS (DEFINISI DI ATAS AGAR TIDAK ERROR) ---
+    
+    // Load Gambar Dawuh (Preloading)
+    function loadPublicDawuh() {
+        onValue(ref(db, 'dawuh_images'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                dawuhImagesCache = Object.values(data);
+                // Preload image ke browser cache
+                dawuhImagesCache.forEach(img => { const i = new Image(); i.src = img.url; });
             } else {
-                els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; els.mIcon.innerText = "❌";
-                els.mMsg.innerText = `Jawaban yang benar adalah: ${data.correct}`;
+                dawuhImagesCache = [];
+            }
+        });
+    }
+
+    // Load Suggestion
+    function loadSuggestions() {
+        onValue(query(ref(db, 'suggestions'), limitToLast(10)), (snapshot) => {
+            const list = document.getElementById('suggestion-list');
+            if(!list) return;
+            list.innerHTML = '';
+            const data = snapshot.val();
+            if (data) {
+                Object.values(data).reverse().forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggest-item';
+                    div.innerHTML = `<span class="suggest-name">${item.name}</span><span class="suggest-msg">${item.message}</span>`;
+                    list.appendChild(div);
+                });
+            } else {
+                list.innerHTML = '<p style="text-align:center; font-size:12px; opacity:0.5;">Belum ada saran.</p>';
+            }
+        });
+    }
+
+    function playSound(isCorrect) {
+        if (!els.soundToggle || !els.soundToggle.checked) return;
+        if (isCorrect) { sndCorrect.currentTime = 0; sndCorrect.play().catch(e => {}); }
+        else { sndWrong.currentTime = 0; sndWrong.play().catch(e => {}); }
+    }
+
+    function getSeenSentences() {
+        const seen = localStorage.getItem('nahwu_seen_indices');
+        return seen ? JSON.parse(seen) : [];
+    }
+
+    function markSentenceSeen(id) {
+        if (id !== "ai_generated") {
+            const seen = getSeenSentences();
+            if (!seen.includes(id)) {
+                seen.push(id);
+                localStorage.setItem('nahwu_seen_indices', JSON.stringify(seen));
+            }
+        }
+    }
+
+    function toggleSidebar(show) {
+        if (show) els.sidebar.classList.add('active');
+        else els.sidebar.classList.remove('active');
+    }
+
+    function sendSuggestion() {
+        const name = document.getElementById('saran-name').value.trim();
+        const msg = document.getElementById('saran-msg').value.trim();
+        if (!name || !msg) return alert("Isi nama dan pesan dulu.");
+        push(ref(db, 'suggestions'), { name: name, message: msg, timestamp: Date.now() }).then(() => {
+            alert("Terima kasih sarannya!");
+            document.getElementById('saran-msg').value = '';
+        });
+    }
+
+    // --- 4. ADMIN FUNCTIONS ---
+    function handleSecretTap() {
+        tapCount++;
+        clearTimeout(tapTimer);
+        tapTimer = setTimeout(() => tapCount = 0, 500);
+        if (tapCount === 3) { els.adminPanel.style.display = 'flex'; tapCount = 0; }
+    }
+
+    async function handleAdminLogin() {
+        const hash = await sha256(els.adminPass.value);
+        if (hash === SECRET_HASH) unlockAdminPanel();
+        else alert("Sandi Salah!");
+    }
+
+    function closeAdmin() {
+        els.adminPanel.style.display = 'none';
+        els.adminPass.value = '';
+        els.adminLogin.style.display = 'block';
+        els.adminDash.style.display = 'none';
+    }
+
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function compressImage(file, callback) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                callback(canvas.toDataURL('image/jpeg', 0.8));
+            }
+        }
+    }
+
+    function unlockAdminPanel() {
+        els.adminLogin.style.display = 'none';
+        els.adminDash.style.display = 'block';
+        els.adminDash.innerHTML = `
+            <div class="admin-tabs"><button class="tab-btn active" id="tab-url">Link URL</button><button class="tab-btn" id="tab-upl">Upload Galeri</button></div>
+            <div id="form-url"><input type="text" id="dawuh-url" class="glass-field" placeholder="https://..."></div>
+            <div id="form-upl" style="display:none;"><img id="img-preview" class="preview-img-box"><div class="file-upload-area"><i class="ph ph-upload-simple" style="font-size:24px;"></i><br>Klik untuk Pilih Foto<input type="file" id="file-inp" accept="image/*"></div></div>
+            <input type="text" id="dawuh-caption" class="glass-field" placeholder="Keterangan (Opsional)" style="margin-top:10px;">
+            <button id="btn-save-img" class="btn-primary" style="margin-top: 10px; background: var(--ios-green);">Simpan Gambar</button>
+            <h3 style="margin-top: 20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">Galeri Dawuh</h3>
+            <div id="admin-list" class="suggestion-list" style="margin-top: 10px;"></div>
+        `;
+
+        const btnUrl = document.getElementById('tab-url');
+        const btnUpl = document.getElementById('tab-upl');
+        const boxUrl = document.getElementById('form-url');
+        const boxUpl = document.getElementById('form-upl');
+        const inpUrl = document.getElementById('dawuh-url');
+        let mode = 'url';
+
+        btnUrl.onclick = () => { mode = 'url'; btnUrl.classList.add('active'); btnUpl.classList.remove('active'); boxUrl.style.display = 'block'; boxUpl.style.display = 'none'; };
+        btnUpl.onclick = () => { mode = 'upl'; btnUpl.classList.add('active'); btnUrl.classList.remove('active'); boxUpl.style.display = 'block'; boxUrl.style.display = 'none'; };
+
+        document.getElementById('file-inp').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                compressImage(e.target.files[0], (base64) => {
+                    uploadBase64 = base64;
+                    const preview = document.getElementById('img-preview');
+                    preview.src = base64;
+                    preview.style.display = 'block';
+                });
+            }
+        });
+
+        document.getElementById('btn-save-img').addEventListener('click', () => {
+            const cap = document.getElementById('dawuh-caption').value.trim();
+            let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64;
+            if (!finalUrl) return alert("Gambar belum dipilih/diisi!");
+            push(ref(db, 'dawuh_images'), { url: finalUrl, caption: cap }).then(() => {
+                alert("Gambar Berhasil Disimpan!");
+                inpUrl.value = '';
+                document.getElementById('dawuh-caption').value = '';
+                uploadBase64 = null;
+                document.getElementById('img-preview').style.display = 'none';
+            });
+        });
+        loadAdminList();
+    }
+
+    function loadAdminList() {
+        onValue(ref(db, 'dawuh_images'), (snapshot) => {
+            const list = document.getElementById('admin-list');
+            if (!list) return;
+            list.innerHTML = '';
+            const data = snapshot.val();
+            if (data) {
+                Object.entries(data).forEach(([key, val]) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggest-item';
+                    div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.alignItems = 'center';
+                    const leftDiv = document.createElement('div');
+                    leftDiv.style.cssText = "display:flex; align-items:center; gap:10px;";
+                    leftDiv.innerHTML = `<img src="${val.url}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;"> <span style="font-size:10px; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${val.caption || 'No Caption'}</span>`;
+                    const delBtn = document.createElement('button');
+                    delBtn.innerText = "Hapus";
+                    delBtn.style.cssText = "background:var(--ios-red); border:none; color:white; padding:5px 10px; border-radius:5px; font-size:10px; cursor:pointer;";
+                    delBtn.onclick = () => { if (confirm("Hapus?")) remove(ref(db, `dawuh_images/${key}`)); };
+                    div.appendChild(leftDiv);
+                    div.appendChild(delBtn);
+                    list.appendChild(div);
+                });
+            }
+        });
+    }
+
+    // --- 5. MAIN LOGIC (QUIZ) ---
+    async function startLearningCycle() {
+        if (window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
+            alert("⚠️ Fitur ini butuh server Vercel.");
+            return;
+        }
+
+        els.viewStart.style.display = 'none';
+        els.viewQuiz.style.display = 'none';
+        els.viewLoading.style.display = 'flex';
+
+        try {
+            // KIRIM SEEN VIA POST
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ seen: getSeenSentences() })
+            });
+
+            if (!response.ok) throw new Error("Gagal menghubungi server");
+
+            const data = await response.json();
+            let text = data.result;
+            // Bersihkan markdown jika masih ada sisa
+            text = text.replace(/```json|```/g, '').trim();
+            
+            quizData = JSON.parse(text);
+
+            if (quizData.id !== undefined) markSentenceSeen(quizData.id);
+
+            wordIndex = 0;
+            stepIndex = 1;
+            els.viewLoading.style.display = 'none';
+            els.viewQuiz.style.display = 'block';
+            renderQuestion();
+
+        } catch (error) {
+            alert("Ammo Error: " + error.message);
+            els.viewLoading.style.display = 'none';
+            els.viewStart.style.display = 'flex';
+        }
+    }
+
+    function renderQuestion() {
+        const curWord = quizData.analysis[wordIndex];
+        const curStep = curWord.steps[stepIndex.toString()];
+        els.ctxSent.innerText = quizData.sentence;
+        els.ctxWord.innerText = curWord.word;
+        els.badge.innerText = `LANGKAH ${stepIndex}/8`;
+
+        // Render Text Soal
+        els.qText.innerHTML = curStep.question;
+
+        // Render Options
+        els.options.innerHTML = '';
+        const shuffled = [...curStep.options].sort(() => Math.random() - 0.5);
+        shuffled.forEach(opt => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-option';
+            btn.innerHTML = `<span>${opt}</span> <i class="ph ph-caret-right"></i>`;
+            btn.onclick = () => handleAnswer(opt, curStep);
+            els.options.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(ans, data) {
+        // String Matching (Safe)
+        const cleanUser = ans.trim().toLowerCase();
+        const cleanCorrect = data.correct.trim().toLowerCase();
+        const isCorrect = cleanUser === cleanCorrect;
+
+        playSound(isCorrect);
+
+        // Reset UI Modal
+        els.mImgArea.style.display = 'none';
+        els.mMsg.style.display = 'block';
+        els.mIcon.style.display = 'block';
+
+        if (isCorrect) {
+            if (stepIndex < 8) {
+                // MASIH ADA LANGKAH SELANJUTNYA
+                els.mTitle.innerText = "Benar!";
+                els.mTitle.style.color = "#34C759";
+                els.mIcon.innerText = "✨";
+                els.mMsg.innerText = data.explanation;
+
                 els.modal.style.display = 'flex';
                 setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
-                els.fbBtn.onclick = () => { els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200); };
-            }
-        }
 
-        function showTransition(title, msg, isNewSentence) {
-            els.mImgArea.style.display = 'none'; els.mMsg.style.display = 'block';
-            els.mIcon.style.display = 'block';
-            els.mIcon.innerText = "🚀"; els.mTitle.innerText = title; els.mTitle.style.color = "#007AFF"; els.mMsg.innerText = msg;
+                els.fbBtn.onclick = () => {
+                    els.mCard.style.transform = 'scale(0.9)';
+                    setTimeout(() => els.modal.style.display = 'none', 200);
+                    stepIndex++;
+                    renderQuestion();
+                };
+            } else {
+                // LANGKAH 8 SELESAI -> GANTI KATA / GAMBAR DAWUH
+                els.mTitle.innerText = "Lafadz Selesai";
+                els.mTitle.style.color = "#FFD700";
+                els.mIcon.style.display = 'none'; // Sembunyikan icon, ganti gambar
+
+                if (dawuhImagesCache.length > 0) {
+                    const randImg = dawuhImagesCache[Math.floor(Math.random() * dawuhImagesCache.length)];
+                    els.mImgArea.style.display = 'flex';
+                    els.mSpinner.style.display = 'block';
+                    els.mImgSrc.style.display = 'none'; // Hide until loaded
+                    els.mImgSrc.src = randImg.url;
+                    els.mMsg.innerText = randImg.caption || "Tetap Semangat Ngaji!";
+                } else {
+                    els.mMsg.innerText = "Alhamdulillah. Lanjut?";
+                }
+
+                els.modal.style.display = 'flex';
+                setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+
+                els.fbBtn.onclick = () => {
+                    els.mCard.style.transform = 'scale(0.9)';
+                    setTimeout(() => els.modal.style.display = 'none', 200);
+
+                    // Cek apakah masih ada kata di kalimat ini
+                    if (wordIndex < quizData.analysis.length - 1) {
+                        wordIndex++;
+                        stepIndex = 1;
+                        renderQuestion();
+                    } else {
+                        // Kalimat Habis -> Minta Baru
+                        wordIndex = 0; stepIndex = 1; quizData = null;
+                        showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true);
+                    }
+                };
+            }
+        } else {
+            // JAWABAN SALAH
+            els.mTitle.innerText = "Kurang Tepat";
+            els.mTitle.style.color = "#FF3B30";
+            els.mIcon.innerText = "❌";
+            els.mMsg.innerHTML = `Jawaban Benar: <b>${data.correct}</b><br><br>${data.explanation}`;
+
             els.modal.style.display = 'flex';
+            setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+
             els.fbBtn.onclick = () => {
-                els.modal.style.display = 'none';
-                if(isNewSentence) startLearningCycle(); else renderQuestion();
+                els.mCard.style.transform = 'scale(0.9)';
+                setTimeout(() => els.modal.style.display = 'none', 200);
             };
         }
+    }
 
-        function sendSuggestion() {
-            const name = document.getElementById('saran-name').value.trim(); const msg = document.getElementById('saran-msg').value.trim();
-            if(!name || !msg) return alert("Isi nama dan pesan dulu.");
-            push(ref(db, 'suggestions'), { name: name, message: msg, timestamp: Date.now() }).then(() => { alert("Terima kasih sarannya!"); document.getElementById('saran-msg').value = ''; });
-        }
+    function showTransition(title, msg, isNewSentence) {
+        els.mImgArea.style.display = 'none';
+        els.mMsg.style.display = 'block';
+        els.mIcon.style.display = 'block';
         
-        function loadSuggestions() {
-            onValue(query(ref(db, 'suggestions'), limitToLast(10)), (snapshot) => {
-                const list = document.getElementById('suggestion-list');
-                list.innerHTML = ''; const data = snapshot.val();
-                if(data) { Object.values(data).reverse().forEach(item => { const div = document.createElement('div'); div.className = 'suggest-item'; div.innerHTML = `<span class="suggest-name">${item.name}</span><span class="suggest-msg">${item.message}</span>`; list.appendChild(div); }); }
-                else { list.innerHTML = '<p style="text-align:center; font-size:12px; opacity:0.5;">Belum ada saran.</p>'; }
-            });
-        }
+        els.mIcon.innerText = "🚀";
+        els.mTitle.innerText = title;
+        els.mTitle.style.color = "#007AFF";
+        els.mMsg.innerText = msg;
+        
+        els.modal.style.display = 'flex';
+        
+        els.fbBtn.onclick = () => {
+            els.modal.style.display = 'none';
+            if (isNewSentence) startLearningCycle();
+            else renderQuestion();
+        };
+    }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initApp);
-        } else {
-            initApp();
-        }
+    // --- 6. INITIALIZATION ---
+    function initApp() {
+        // Mapping DOM
+        els = {
+            viewStart: document.getElementById('view-start'),
+            viewLoading: document.getElementById('view-loading'),
+            viewQuiz: document.getElementById('view-quiz'),
+            ctxSent: document.getElementById('ctx-sentence'),
+            ctxWord: document.getElementById('ctx-word'),
+            badge: document.getElementById('badge-step'),
+            qText: document.getElementById('question-text'),
+            options: document.getElementById('options-container'),
+            modal: document.getElementById('modal-feedback'),
+            mCard: document.getElementById('modal-card'),
+            mTitle: document.getElementById('fb-title'),
+            mIcon: document.getElementById('fb-icon'),
+            mMsg: document.getElementById('fb-msg'),
+            mImgArea: document.getElementById('fb-image-area'),
+            mImgSrc: document.getElementById('dawuh-img-src'),
+            mSpinner: document.getElementById('img-spinner'),
+            fbBtn: document.getElementById('fb-btn'),
+            sidebar: document.getElementById('sidebar'),
+            soundToggle: document.getElementById('sound-toggle'),
+            adminPanel: document.getElementById('admin-panel'),
+            adminLogin: document.getElementById('admin-login'),
+            adminDash: document.getElementById('admin-dash'),
+            adminPass: document.getElementById('admin-pass')
+        };
 
-    </script>
+        // Event Listeners
+        document.getElementById('secret-logo').addEventListener('click', handleSecretTap);
+        document.getElementById('btn-admin-login').addEventListener('click', handleAdminLogin);
+        document.getElementById('btn-close-admin').addEventListener('click', closeAdmin);
+        document.getElementById('btn-menu').addEventListener('click', () => toggleSidebar(true));
+        document.getElementById('btn-close-sidebar').addEventListener('click', () => toggleSidebar(false));
+        document.getElementById('btn-start').addEventListener('click', startLearningCycle);
+        document.getElementById('btn-send-saran').addEventListener('click', sendSuggestion);
+
+        // Image Handling
+        els.mImgSrc.onload = () => { els.mSpinner.style.display = 'none'; els.mImgSrc.style.display = 'block'; };
+        els.mImgSrc.onerror = () => { els.mSpinner.style.display = 'none'; els.mImgArea.style.display = 'none'; els.mMsg.innerText = "Gagal memuat gambar."; };
+
+        // Data Loading
+        loadPublicDawuh();
+        loadSuggestions();
+    }
+
+    // Safety Bootstrap
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+        initApp();
+    }
+</script>
+
 </body>
 </html>
