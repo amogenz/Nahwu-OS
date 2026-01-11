@@ -4,37 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>Nahwu OS - Belajar Nahwu & I'rob Otomatis</title>
-    <meta name="description" content="Belajar Nahwu dan I'rob otomatis dengan kecerdasan buatan (AI). Rujukan kitab Jurumiyah & Imrithi. Powered by Amogenz.">
-    <meta name="keywords" content="Nahwu, I'rob, Shorof, Belajar Bahasa Arab, Jurumiyah, Imrithi, AI Nahwu, Amogenz, Santri Coding">
-    <meta name="author" content="Amogenz.Inc">
-    <meta name="robots" content="index, follow">
-    
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://nahwu-os.vercel.app/">
-    <meta property="og:title" content="Nahwu OS - AI Guru Nahwu Pribadi">
-    <meta property="og:description" content="Analisa I'rob instan dengan penjelasan mendalam sesuai kaidah kitab kuning.">
-    <meta property="og:image" content="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
-
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="Nahwu OS">
-    <meta property="twitter:description" content="Belajar I'rob jadi mudah dengan Nahwu OS.">
-    <meta property="twitter:image" content="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
-
+    <title>Nahwu OS from Amogenz</title>
+    <meta name="robots" content="noindex"> 
     <link rel="icon" type="image/webp" href="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
-    <link rel="apple-touch-icon" href="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
 
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
-        /* --- CSS VARIABLES --- */
         :root { --ios-blue: #007AFF; --ios-green: #34C759; --ios-red: #FF3B30; --text-primary: #000000; --text-light: #ffffff; --text-muted: rgba(255, 255, 255, 0.6); --glass-bg-card: rgba(30, 30, 30, 0.6); --glass-header: rgba(30, 30, 30, 0.7); --glass-border: rgba(255, 255, 255, 0.15); --sidebar-bg: rgba(10, 10, 10, 0.9); --msg-received: rgba(255, 255, 255, 0.1); }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop') no-repeat center center fixed; background-size: cover; height: 100vh; width: 100vw; overflow: hidden; display: flex; justify-content: center; align-items: center; color: var(--text-light); }
         .glass-container { width: 100%; max-width: 480px; height: 100%; background: var(--glass-bg-card); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; position: relative; }
         
-        /* HEADER */
         .chat-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--glass-header); border-bottom: 1px solid var(--glass-border); z-index: 20; }
         .header-content { display: flex; align-items: center; gap: 12px; }
         .header-actions { display: flex; gap: 15px; align-items: center; }
@@ -43,28 +25,16 @@
         .title-wrapper h1 { font-size: 16px; font-weight: 700; color: white; letter-spacing: 0.5px; }
         .subtitle { font-size: 11px; color: var(--text-muted); font-weight: 500; }
         .icon-btn { background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.2s;}
-        .icon-btn:active { transform: scale(0.9); opacity: 0.8; }
-
-        /* CONTENT */
         .content-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; scroll-behavior: smooth; position: relative; }
         .center-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; animation: fadeIn 0.5s ease; }
-        
-        /* START SCREEN LOGO STYLE */
-        .start-logo {
-            width: 120px; height: 120px; object-fit: cover;
-            border-radius: 28px; margin-bottom: 25px;
-            box-shadow: 0 10px 40px rgba(0, 122, 255, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            animation: floatLogo 4s ease-in-out infinite;
-        }
+        .start-logo { width: 120px; height: 120px; object-fit: cover; border-radius: 28px; margin-bottom: 25px; box-shadow: 0 10px 40px rgba(0, 122, 255, 0.25); border: 1px solid rgba(255, 255, 255, 0.1); animation: floatLogo 4s ease-in-out infinite; cursor: pointer; transition: transform 0.1s; }
+        .start-logo:active { transform: scale(0.9); }
         @keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
         .hero-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; }
         .hero-desc { color: var(--text-muted); font-size: 0.9rem; max-width: 80%; line-height: 1.5; margin-bottom: 30px; }
         .btn-primary { background: var(--ios-blue); color: white; border: none; padding: 14px 24px; border-radius: 20px; font-weight: 600; font-size: 1rem; width: 80%; cursor: pointer; box-shadow: 0 4px 15px rgba(0,122,255,0.3); transition: 0.2s; }
         .btn-primary:active { transform: scale(0.95); }
         
-        /* QUIZ & OTHER STYLES */
         .quiz-card { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .badge-step { position: absolute; top: 10px; right: 10px; background: rgba(0,122,255,0.2); color: #60a5fa; font-size: 10px; padding: 4px 8px; border-radius: 10px; font-weight: 700; }
         .arabic-text { font-family: 'Amiri', serif; font-size: 2.5rem; margin: 10px 0; line-height: 1.4; }
@@ -75,17 +45,17 @@
         .btn-option { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); padding: 15px; border-radius: 15px; color: white; text-align: left; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
         .btn-option:hover { background: rgba(255,255,255,0.15); }
         .btn-option:active { transform: scale(0.98); }
-        .suggestion-list { width: 100%; flex: 1; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;}
-        .suggest-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .suggest-name { font-weight: bold; color: var(--ios-blue); margin-bottom: 4px; display: block; }
-        .suggest-msg { color: rgba(255,255,255,0.8); line-height: 1.4; }
-        .input-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .glass-field { background: rgba(255,255,255,0.1); border: none; padding: 12px; border-radius: 12px; color: white; width: 100%; font-family: inherit; }
+        
         .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 50; display: none; align-items: center; justify-content: center; padding: 30px; }
         .modal-card { background: #1C1C1E; border: 1px solid var(--glass-border); border-radius: 24px; padding: 30px; text-align: center; width: 100%; max-width: 320px; transform: scale(0.9); transition: 0.3s; }
         .modal-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
         .modal-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; }
         .modal-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
+        .dawuh-image-wrapper { margin: 15px 0; border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); width: 100%; max-height: 250px; }
+        .dawuh-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .input-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .glass-field { background: rgba(255,255,255,0.1); border: none; padding: 12px; border-radius: 12px; color: white; width: 100%; font-family: inherit; }
         #sidebar { position: absolute; top: 0; right: -100%; width: 100%; height: 100%; background: var(--sidebar-bg); backdrop-filter: blur(30px); z-index: 100; transition: right 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; }
         #sidebar.active { right: 0; }
         .sidebar-header { padding: 20px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
@@ -97,9 +67,38 @@
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--ios-green); }
         input:checked + .slider:before { transform: translateX(20px); }
+        .suggestion-list { width: 100%; flex: 1; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;}
+        .suggest-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--ios-blue); border-radius: 50%; animation: spin 1s infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        #admin-panel {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 200;
+            display: none; flex-direction: column; padding: 20px;
+            overflow-y: auto;
+        }
+        .admin-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+        .btn-danger { background: var(--ios-red); color: white; border: none; padding: 8px 16px; border-radius: 12px; cursor: pointer; font-weight: 600; }
+        
+        .admin-tabs { display: flex; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; background: transparent; border: none; color: rgba(255,255,255,0.5); padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: rgba(255,255,255,0.15); color: white; }
+
+        .file-upload-area {
+            border: 2px dashed rgba(255,255,255,0.2); border-radius: 15px;
+            padding: 30px; text-align: center; color: rgba(255,255,255,0.5);
+            cursor: pointer; margin-bottom: 10px; transition: 0.2s; position: relative;
+        }
+        .file-upload-area:hover { border-color: var(--ios-blue); color: white; }
+        .preview-img-box {
+            width: 100%; height: 200px; object-fit: cover; border-radius: 12px;
+            display: none; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.2);
+        }
+        input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
     </style>
 </head>
 <body>
@@ -119,18 +118,16 @@
                 <a href="https://amogenz.my.id" target="_blank" class="icon-btn" title="Kunjungi Amogenz">
                     <i class="ph ph-globe"></i>
                 </a>
-                <button class="icon-btn" onclick="toggleSidebar(true)"><i class="ph ph-list"></i></button>
+                <button class="icon-btn" id="btn-menu"><i class="ph ph-list"></i></button>
             </div>
         </div>
 
         <div id="main-content" class="content-area">
-            
             <div id="view-start" class="center-view">
-                <img src="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp" alt="Nahwu OS Logo" class="start-logo">
-                
+                <img src="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp" alt="Nahwu OS Logo" class="start-logo" id="secret-logo">
                 <h2 class="hero-title">Assalamualaikum</h2>
                 <p class="hero-desc">Saya <b>Ammo 🦉</b> Ai kolaborasi Amogenz dengan para Santri. Saya akan menemanimu belajar I'rob dengan rujukan kitab Jurumiyah & Imrithi. <b>Ai bisa membuat kesalahan</b> harap cek ulang !</p>
-                <button class="btn-primary" onclick="startLearningCycle()">Mulai Belajar</button>
+                <button class="btn-primary" id="btn-start">Mulai Belajar</button>
             </div>
 
             <div id="view-loading" class="center-view" style="display: none;">
@@ -156,6 +153,9 @@
             <div class="modal-card" id="modal-card">
                 <span id="fb-icon" class="modal-icon">✨</span>
                 <h3 id="fb-title" class="modal-title">Benar!</h3>
+                <div id="fb-image-area" style="display: none;" class="dawuh-image-wrapper">
+                    <img id="dawuh-img-src" src="" class="dawuh-image" alt="Dawuh">
+                </div>
                 <p id="fb-msg" class="modal-desc">Penjelasan...</p>
                 <button id="fb-btn" class="btn-primary" style="width: 100%;">Lanjut</button>
             </div>
@@ -163,7 +163,7 @@
 
         <div id="sidebar">
             <div class="sidebar-header">
-                <button class="back-btn" onclick="toggleSidebar(false)"><i class="ph ph-caret-left"></i> Kembali</button>
+                <button class="back-btn" id="btn-close-sidebar"><i class="ph ph-caret-left"></i> Kembali</button>
                 <h2 style="font-size: 1rem; font-weight: 700;">Menu</h2>
             </div>
             <div class="content-area" style="padding-bottom: 0;">
@@ -181,50 +181,198 @@
                 <div class="input-box" style="margin-bottom: 20px;">
                     <input type="text" id="saran-name" class="glass-field" placeholder="Nama Kamu">
                     <textarea id="saran-msg" class="glass-field" rows="3" placeholder="Tulis saran untuk pengembangan..."></textarea>
-                    <button onclick="sendSuggestion()" class="btn-primary" style="width: 100%; font-size: 0.9rem; padding: 10px;">Kirim Saran</button>
+                    <button id="btn-send-saran" class="btn-primary" style="width: 100%; font-size: 0.9rem; padding: 10px;">Kirim Saran</button>
                 </div>
                 <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px; padding-left: 5px;">Masukan Terbaru</h3>
-                <div id="suggestion-list" class="suggestion-list">
-                    <p style="text-align: center; color: gray; font-size: 12px; margin-top: 20px;">Memuat data...</p>
-                </div>
+                <div id="suggestion-list" class="suggestion-list"></div>
                 <div style="text-align: center; padding: 20px; font-size: 10px; color: gray;">Amogenz.Inc © 2026</div>
             </div>
         </div>
+
+        <div id="admin-panel">
+            <div class="admin-header">
+                <h2>Admin Mode</h2>
+                <button class="btn-danger" id="btn-close-admin">Keluar</button>
+            </div>
+            
+            <div id="admin-login">
+                <p class="modal-desc">Bismillah</p>
+                <input type="password" id="admin-pass" class="glass-field" placeholder="Password...">
+                <button id="btn-admin-login" class="btn-primary" style="margin-top: 10px;">Masuk</button>
+            </div>
+
+            <div id="admin-dash" style="display: none;"></div>
+        </div>
+
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 1. FIREBASE CONFIG
-        const firebaseConfig = {
-            apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8",
-            authDomain: "amogenz.firebaseapp.com",
-            databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "amogenz",
-            storageBucket: "amogenz.firebasestorage.app",
-            messagingSenderId: "864003468268",
-            appId: "1:864003468268:web:7c861806529a0dacd66ec9"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8", authDomain: "amogenz.firebaseapp.com", databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "amogenz", storageBucket: "amogenz.firebasestorage.app", messagingSenderId: "864003468268", appId: "1:864003468268:web:7c861806529a0dacd66ec9" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 2. SOUND ASSETS
         const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
         const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3');
         sndCorrect.load(); sndWrong.load();
 
-        // 3. STATE
         let quizData = null;
         let wordIndex = 0;
         let stepIndex = 1;
+        let dawuhImagesCache = [];
+        let uploadBase64 = null;
+        let tapCount = 0;
+        let tapTimer;
+        const SECRET_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa";
 
-        // 4. DOM ELEMENTS
-        const views = { start: document.getElementById('view-start'), loading: document.getElementById('view-loading'), quiz: document.getElementById('view-quiz') };
-        const els = { ctxSent: document.getElementById('ctx-sentence'), ctxWord: document.getElementById('ctx-word'), badge: document.getElementById('badge-step'), qText: document.getElementById('question-text'), options: document.getElementById('options-container'), modal: document.getElementById('modal-feedback'), sidebar: document.getElementById('sidebar'), fbBtn: document.getElementById('fb-btn'), soundToggle: document.getElementById('sound-toggle') };
+        let els = {};
 
-        // 5. FUNCTIONS
-        window.toggleSidebar = (show) => { if(show) els.sidebar.classList.add('active'); else els.sidebar.classList.remove('active'); };
+        function initApp() {
+            els = {
+                viewStart: document.getElementById('view-start'), viewLoading: document.getElementById('view-loading'), viewQuiz: document.getElementById('view-quiz'),
+                ctxSent: document.getElementById('ctx-sentence'), ctxWord: document.getElementById('ctx-word'), badge: document.getElementById('badge-step'), qText: document.getElementById('question-text'), options: document.getElementById('options-container'),
+                modal: document.getElementById('modal-feedback'), mCard: document.getElementById('modal-card'), mTitle: document.getElementById('fb-title'), mIcon: document.getElementById('fb-icon'), mMsg: document.getElementById('fb-msg'), mImgArea: document.getElementById('fb-image-area'), mImgSrc: document.getElementById('dawuh-img-src'), fbBtn: document.getElementById('fb-btn'),
+                sidebar: document.getElementById('sidebar'), soundToggle: document.getElementById('sound-toggle'),
+                adminPanel: document.getElementById('admin-panel'), adminLogin: document.getElementById('admin-login'), adminDash: document.getElementById('admin-dash'), adminPass: document.getElementById('admin-pass')
+            };
+
+            document.getElementById('secret-logo').addEventListener('click', handleSecretTap);
+            document.getElementById('btn-admin-login').addEventListener('click', handleAdminLogin);
+            document.getElementById('btn-close-admin').addEventListener('click', closeAdmin);
+            document.getElementById('btn-menu').addEventListener('click', () => toggleSidebar(true));
+            document.getElementById('btn-close-sidebar').addEventListener('click', () => toggleSidebar(false));
+            document.getElementById('btn-start').addEventListener('click', startLearningCycle);
+            document.getElementById('btn-send-saran').addEventListener('click', sendSuggestion);
+
+            loadPublicDawuh();
+            loadSuggestions();
+        }
+
+        function handleSecretTap() {
+            tapCount++; clearTimeout(tapTimer); tapTimer = setTimeout(() => tapCount = 0, 500); 
+            if(tapCount === 3) { els.adminPanel.style.display = 'flex'; tapCount = 0; }
+        }
+
+        async function handleAdminLogin() {
+            const hash = await sha256(els.adminPass.value);
+            if(hash === SECRET_HASH) unlockAdminPanel(); else alert("Sandi Salah!");
+        }
+
+        function closeAdmin() {
+            els.adminPanel.style.display = 'none'; els.adminPass.value = '';
+            els.adminLogin.style.display = 'block'; els.adminDash.style.display = 'none';
+        }
+
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function compressImage(file, callback) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; 
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    callback(canvas.toDataURL('image/jpeg', 0.8));
+                }
+            }
+        }
+
+        function unlockAdminPanel() {
+            els.adminLogin.style.display = 'none';
+            els.adminDash.style.display = 'block';
+            
+            els.adminDash.innerHTML = `
+                <div class="admin-tabs"><button class="tab-btn active" id="tab-url">Link URL</button><button class="tab-btn" id="tab-upl">Upload Galeri</button></div>
+                <div id="form-url"><input type="text" id="dawuh-url" class="glass-field" placeholder="https://instagram.com/foto.jpg..."></div>
+                <div id="form-upl" style="display:none;"><img id="img-preview" class="preview-img-box"><div class="file-upload-area"><i class="ph ph-upload-simple" style="font-size:24px;"></i><br>Klik untuk Pilih Foto<input type="file" id="file-inp" accept="image/*"></div></div>
+                <input type="text" id="dawuh-caption" class="glass-field" placeholder="Keterangan (Opsional)" style="margin-top:10px;">
+                <button id="btn-save-img" class="btn-primary" style="margin-top: 10px; background: var(--ios-green);">Simpan Gambar</button>
+                <h3 style="margin-top: 20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">Galeri Dawuh</h3>
+                <div id="admin-list" class="suggestion-list" style="margin-top: 10px;"></div>
+            `;
+
+            const btnUrl = document.getElementById('tab-url'); const btnUpl = document.getElementById('tab-upl');
+            const boxUrl = document.getElementById('form-url'); const boxUpl = document.getElementById('form-upl');
+            const inpUrl = document.getElementById('dawuh-url');
+            let mode = 'url'; 
+
+            btnUrl.onclick = () => { mode='url'; btnUrl.classList.add('active'); btnUpl.classList.remove('active'); boxUrl.style.display='block'; boxUpl.style.display='none'; }
+            btnUpl.onclick = () => { mode='upl'; btnUpl.classList.add('active'); btnUrl.classList.remove('active'); boxUpl.style.display='block'; boxUrl.style.display='none'; }
+
+            document.getElementById('file-inp').addEventListener('change', (e) => {
+                if(e.target.files[0]) {
+                    compressImage(e.target.files[0], (base64) => {
+                        uploadBase64 = base64;
+                        const preview = document.getElementById('img-preview');
+                        preview.src = base64; preview.style.display = 'block';
+                    });
+                }
+            });
+
+            document.getElementById('btn-save-img').addEventListener('click', () => {
+                const cap = document.getElementById('dawuh-caption').value.trim();
+                let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64;
+                if(!finalUrl) return alert("Gambar belum dipilih/diisi!");
+                
+                push(ref(db, 'dawuh_images'), { url: finalUrl, caption: cap }).then(() => {
+                    alert("Gambar Berhasil Disimpan!");
+                    inpUrl.value = ''; document.getElementById('dawuh-caption').value = '';
+                    uploadBase64 = null; document.getElementById('img-preview').style.display = 'none';
+                });
+            });
+
+            loadAdminList();
+        }
+
+        function loadAdminList() {
+            onValue(ref(db, 'dawuh_images'), (snapshot) => {
+                const list = document.getElementById('admin-list');
+                if(!list) return;
+                list.innerHTML = '';
+                const data = snapshot.val();
+                if(data) {
+                    Object.entries(data).forEach(([key, val]) => {
+                        const div = document.createElement('div');
+                        div.className = 'suggest-item';
+                        div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.alignItems = 'center';
+                        
+                        const leftDiv = document.createElement('div');
+                        leftDiv.style.cssText = "display:flex; align-items:center; gap:10px;";
+                        leftDiv.innerHTML = `<img src="${val.url}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;"> <span style="font-size:10px; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${val.caption || 'No Caption'}</span>`;
+                        
+                        const delBtn = document.createElement('button');
+                        delBtn.innerText = "Hapus";
+                        delBtn.style.cssText = "background:var(--ios-red); border:none; color:white; padding:5px 10px; border-radius:5px; font-size:10px; cursor:pointer;";
+                        delBtn.onclick = () => { if(confirm("Hapus?")) remove(ref(db, `dawuh_images/${key}`)); };
+
+                        div.appendChild(leftDiv); div.appendChild(delBtn);
+                        list.appendChild(div);
+                    });
+                }
+            });
+        }
+
+        function loadPublicDawuh() {
+            onValue(ref(db, 'dawuh_images'), (snapshot) => {
+                const data = snapshot.val();
+                if(data) dawuhImagesCache = Object.values(data); else dawuhImagesCache = [];
+            });
+        }
+
+        function toggleSidebar(show) { if(show) els.sidebar.classList.add('active'); else els.sidebar.classList.remove('active'); }
         
         function playSound(isCorrect) {
             if(!els.soundToggle.checked) return;
@@ -232,33 +380,24 @@
             else { sndWrong.currentTime = 0; sndWrong.play().catch(e => {}); }
         }
 
-        // --- FETCH SERVERLESS ---
-        window.startLearningCycle = async () => {
-            views.start.style.display = 'none';
-            views.quiz.style.display = 'none';
-            views.loading.style.display = 'flex';
+        async function startLearningCycle() {
+            if(window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
+                alert("⚠️ PERHATIAN: AI tidak akan jalan di preview Acode/Local karena endpoint '/api/generate' butuh server Vercel. \n\nSilahkan deploy ke Vercel untuk mencoba fitur AI.");
+                return;
+            }
 
+            els.viewStart.style.display = 'none'; els.viewQuiz.style.display = 'none'; els.viewLoading.style.display = 'flex';
             try {
                 const response = await fetch('/api/generate'); 
                 if (!response.ok) throw new Error("Gagal menghubungi server");
-                
                 const data = await response.json();
-                let text = data.result;
-                text = text.replace(/```json|```/g, '').trim();
+                let text = data.result.replace(/```json|```/g, '').trim();
                 quizData = JSON.parse(text);
-                
-                wordIndex = 0;
-                stepIndex = 1;
-                views.loading.style.display = 'none';
-                views.quiz.style.display = 'block';
+                wordIndex = 0; stepIndex = 1;
+                els.viewLoading.style.display = 'none'; els.viewQuiz.style.display = 'block';
                 renderQuestion();
-
-            } catch (error) {
-                alert("Ammo Error: " + error.message);
-                views.loading.style.display = 'none';
-                views.start.style.display = 'flex';
-            }
-        };
+            } catch (error) { alert("Ammo Error: " + error.message); els.viewLoading.style.display = 'none'; els.viewStart.style.display = 'flex'; }
+        }
 
         function renderQuestion() {
             const curWord = quizData.analysis[wordIndex];
@@ -272,8 +411,7 @@
             els.options.innerHTML = '';
             const shuffled = [...curStep.options].sort(() => Math.random() - 0.5);
             shuffled.forEach(opt => {
-                const btn = document.createElement('div');
-                btn.className = 'btn-option';
+                const btn = document.createElement('div'); btn.className = 'btn-option';
                 btn.innerHTML = `<span>${opt}</span> <i class="ph ph-caret-right"></i>`;
                 btn.onclick = () => handleAnswer(opt, curStep);
                 els.options.appendChild(btn);
@@ -283,59 +421,74 @@
         function handleAnswer(ans, data) {
             const isCorrect = ans === data.correct;
             playSound(isCorrect);
-            const mTitle = document.getElementById('fb-title');
-            const mIcon = document.getElementById('fb-icon');
-            const mMsg = document.getElementById('fb-msg');
-            const mCard = document.getElementById('modal-card');
-            mTitle.innerText = isCorrect ? "Benar!" : "Kurang Tepat";
-            mTitle.style.color = isCorrect ? "#34C759" : "#FF3B30";
-            mIcon.innerText = isCorrect ? "✨" : "❌";
-            mMsg.innerText = isCorrect ? (data.explanation || "Jawaban Tepat.") : `Jawaban yang benar adalah: ${data.correct}`;
-            els.modal.style.display = 'flex';
-            setTimeout(() => mCard.style.transform = 'scale(1)', 10);
-            els.fbBtn.onclick = () => {
-                mCard.style.transform = 'scale(0.9)';
-                setTimeout(() => els.modal.style.display = 'none', 200);
-                if (isCorrect) {
-                    if (stepIndex < 6) { stepIndex++; renderQuestion(); }
-                    else if (wordIndex < quizData.analysis.length - 1) { wordIndex++; stepIndex = 1; showTransition("Lafadz Selesai", "Lanjut ke lafadz berikutnya.", false); }
-                    else { showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true); }
+            els.mImgArea.style.display = 'none'; els.mMsg.style.display = 'block';
+
+            if (isCorrect) {
+                if (stepIndex < 6) {
+                    els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; els.mIcon.innerText = "✨";
+                    els.mMsg.innerText = data.explanation || "Jawaban Tepat.";
+                    els.modal.style.display = 'flex';
+                    setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+                    els.fbBtn.onclick = () => {
+                        els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200);
+                        stepIndex++; renderQuestion();
+                    };
+                } else {
+                    els.mTitle.innerText = "Lafadz Selesai"; els.mTitle.style.color = "#FFD700"; els.mIcon.innerText = "🖼️";
+                    if(dawuhImagesCache.length > 0) {
+                        const randImg = dawuhImagesCache[Math.floor(Math.random() * dawuhImagesCache.length)];
+                        els.mImgSrc.src = randImg.url;
+                        els.mImgArea.style.display = 'block';
+                        els.mMsg.innerText = randImg.caption || "Tetap Semangat Ngaji!";
+                    } else { els.mMsg.innerText = "Alhamdulillah. Lanjut?"; }
+                    els.modal.style.display = 'flex';
+                    setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+                    els.fbBtn.onclick = () => {
+                        els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200);
+                        if (wordIndex < quizData.analysis.length - 1) { wordIndex++; stepIndex = 1; renderQuestion(); }
+                        else { showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true); }
+                    };
                 }
-            };
+            } else {
+                els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; els.mIcon.innerText = "❌";
+                els.mMsg.innerText = `Jawaban yang benar adalah: ${data.correct}`;
+                els.modal.style.display = 'flex';
+                setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+                els.fbBtn.onclick = () => { els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200); };
+            }
         }
 
         function showTransition(title, msg, isNewSentence) {
-            const mTitle = document.getElementById('fb-title');
-            const mIcon = document.getElementById('fb-icon');
-            const mMsg = document.getElementById('fb-msg');
-            mIcon.innerText = "🚀";
-            mTitle.innerText = title;
-            mTitle.style.color = "#007AFF";
-            mMsg.innerText = msg;
+            els.mImgArea.style.display = 'none'; els.mMsg.style.display = 'block';
+            els.mIcon.innerText = "🚀"; els.mTitle.innerText = title; els.mTitle.style.color = "#007AFF"; els.mMsg.innerText = msg;
             els.modal.style.display = 'flex';
             els.fbBtn.onclick = () => {
                 els.modal.style.display = 'none';
-                if(isNewSentence) startLearningCycle();
-                else renderQuestion();
+                if(isNewSentence) startLearningCycle(); else renderQuestion();
             };
         }
 
-        // FIREBASE SUGGESTION
-        const suggestList = document.getElementById('suggestion-list');
-        window.sendSuggestion = () => {
-            const name = document.getElementById('saran-name').value.trim();
-            const msg = document.getElementById('saran-msg').value.trim();
+        function sendSuggestion() {
+            const name = document.getElementById('saran-name').value.trim(); const msg = document.getElementById('saran-msg').value.trim();
             if(!name || !msg) return alert("Isi nama dan pesan dulu.");
-            push(ref(db, 'suggestions'), { name: name, message: msg, timestamp: Date.now() }).then(() => {
-                alert("Terima kasih sarannya!"); document.getElementById('saran-msg').value = '';
+            push(ref(db, 'suggestions'), { name: name, message: msg, timestamp: Date.now() }).then(() => { alert("Terima kasih sarannya!"); document.getElementById('saran-msg').value = ''; });
+        }
+        
+        function loadSuggestions() {
+            onValue(query(ref(db, 'suggestions'), limitToLast(10)), (snapshot) => {
+                const list = document.getElementById('suggestion-list');
+                list.innerHTML = ''; const data = snapshot.val();
+                if(data) { Object.values(data).reverse().forEach(item => { const div = document.createElement('div'); div.className = 'suggest-item'; div.innerHTML = `<span class="suggest-name">${item.name}</span><span class="suggest-msg">${item.message}</span>`; list.appendChild(div); }); }
+                else { list.innerHTML = '<p style="text-align:center; font-size:12px; opacity:0.5;">Belum ada saran.</p>'; }
             });
-        };
-        const recentSuggestions = query(ref(db, 'suggestions'), limitToLast(10));
-        onValue(recentSuggestions, (snapshot) => {
-            suggestList.innerHTML = ''; const data = snapshot.val();
-            if(data) { Object.values(data).reverse().forEach(item => { const div = document.createElement('div'); div.className = 'suggest-item'; div.innerHTML = `<span class="suggest-name">${item.name}</span><span class="suggest-msg">${item.message}</span>`; suggestList.appendChild(div); }); }
-            else { suggestList.innerHTML = '<p style="text-align:center; font-size:12px; opacity:0.5;">Belum ada saran.</p>'; }
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+
     </script>
 </body>
 </html>
