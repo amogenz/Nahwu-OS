@@ -61,6 +61,7 @@ export default async function handler(req, res) {
     const SYSTEM_PROMPT = `
     Role: Ammo (Ustadz Ahli Nahwu).
     TUGAS: ${instruction}
+    
     Lakukan Analisa I'rob Lengkap per kata. Buat 8 pertanyaan presisi.
 
     ATURAN LANGKAH (WAJIB):
@@ -71,7 +72,8 @@ export default async function handler(req, res) {
     5. I'rob / Mabni 'ala.
     6. Alasan I'rob (Kedudukan/Amil, misal: Karena jadi Fa'il).
     7. Tanda I'rob / Mahal I'rob.
-    8. ALASAN TANDA (PENTING): Jawablah berdasarkan BENTUK KATA (Isim Mufrad/Jamak/dll).
+    8. ALASAN TANDA (PENTING): Jawablah berdasarkan BENTUK KATA.
+       Contoh: "Kenapa tandanya Dhommah?" Jawab: "Karena Isim Mufrad" atau "Karena Jamak Taksir".
 
     FORMAT OUTPUT (JSON ONLY):
     {
@@ -80,6 +82,7 @@ export default async function handler(req, res) {
         "analysis": [
             {
                 "word": "Kata",
+                "quote": "", 
                 "steps": {
                     "1": { "question": "...", "options": ["..."], "correct": "...", "explanation": "..." },
                     "2": { "question": "...", "options": ["..."], "correct": "...", "explanation": "..." },
