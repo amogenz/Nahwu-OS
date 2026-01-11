@@ -13,20 +13,7 @@ const BANK_SOAL = [
     "أَكَلْتُ الْخُبْزَ وَالْلَحْمَ", "سَافَرَ زَيْدٌ صَبَاحًا", "الْعِلْمُ نُوْرٌ"
 ];
 
-const DAWUH_SAYA = [
-    "Pelajarilah bahasa Arab, karena ia adalah bagian dari agamamu.",
-    "Barangsiapa mencari ilmu Nahwu, maka ia akan mendapat petunjuk ke segala ilmu.",
-    "Kalam (ucapan) menurut ahli nahwu adalah lafazh yang tersusun yang memberi faedah dengan disengaja.",
-    "Kesalahan dalam Nahwu ibarat cacat di wajah yang rupawan.",
-    "Awal ilmu adalah diam, kemudian mendengarkan, kemudian menghafal, kemudian mengamalkan, kemudian menyebarkan.",
-    "Ilmu tanpa amal bagaikan pohon tanpa buah.",
-    "Jangan takut salah I'rob, karena dari kesalahan itulah kita memahami kaidah yang benar.",
-    "Setiap Fa'il itu Rafa', setiap Maf'ul itu Nashob.",
-    "Tanda I'rob bukan sekedar harakat, tapi cerminan kedudukan kata dalam kalimat.",
-    "Man jadda wajada. Barangsiapa bersungguh-sungguh, pasti dapat.",
-    "Keutamaan Nahwu bagi lisan, seperti garam bagi masakan.",
-    "Jadikan kitab Jurumiyah & Imrithi sebagai sahabat setiamu."
-];
+// (BAGIAN DAWUH SUDAH DIHAPUS TOTAL DARI SINI)
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -37,17 +24,16 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   try {
-    // ROTASI API KEY
+    // LOGIC ROTASI API KEY
     const potentialKeys = [
         process.env.GEMINI_API_KEY_1, process.env.GEMINI_API_KEY_2, 
         process.env.GEMINI_API_KEY_3, process.env.GEMINI_API_KEY
     ];
     const activeKeys = potentialKeys.filter(key => key && key.trim().length > 10);
     if (activeKeys.length === 0) throw new Error("API Key Missing.");
+    
     const selectedKey = activeKeys[Math.floor(Math.random() * activeKeys.length)];
     const genAI = new GoogleGenerativeAI(selectedKey);
-    
-    // HAPUS CONFIG JSON (Manual Cleaning lebih aman)
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // LOGIC BANK SOAL
@@ -75,7 +61,6 @@ export default async function handler(req, res) {
     const SYSTEM_PROMPT = `
     Role: Ammo (Ustadz Ahli Nahwu).
     TUGAS: ${instruction}
-    
     Lakukan Analisa I'rob Lengkap per kata. Buat 8 pertanyaan presisi.
 
     ATURAN LANGKAH (WAJIB):
@@ -86,8 +71,7 @@ export default async function handler(req, res) {
     5. I'rob / Mabni 'ala.
     6. Alasan I'rob (Kedudukan/Amil, misal: Karena jadi Fa'il).
     7. Tanda I'rob / Mahal I'rob.
-    8. ALASAN TANDA (PENTING): Jawablah berdasarkan BENTUK KATA.
-       Contoh: "Kenapa tandanya Dhommah?" Jawab: "Karena Isim Mufrad" atau "Karena Jamak Taksir".
+    8. ALASAN TANDA (PENTING): Jawablah berdasarkan BENTUK KATA (Isim Mufrad/Jamak/dll).
 
     FORMAT OUTPUT (JSON ONLY):
     {
@@ -96,7 +80,6 @@ export default async function handler(req, res) {
         "analysis": [
             {
                 "word": "Kata",
-                "quote": "", 
                 "steps": {
                     "1": { "question": "...", "options": ["..."], "correct": "...", "explanation": "..." },
                     "2": { "question": "...", "options": ["..."], "correct": "...", "explanation": "..." },
@@ -116,7 +99,7 @@ export default async function handler(req, res) {
     const response = await result.response;
     let text = response.text();
     
-    // Manual Cleaning JSON
+    // Cleaning
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace !== -1) text = text.substring(firstBrace, lastBrace + 1);
@@ -124,16 +107,12 @@ export default async function handler(req, res) {
     let jsonData = JSON.parse(text);
     jsonData.id = questionId;
 
-    if (jsonData.analysis && Array.isArray(jsonData.analysis)) {
-        jsonData.analysis.forEach((item) => {
-            item.quote = DAWUH_SAYA[Math.floor(Math.random() * DAWUH_SAYA.length)];
-        });
-    }
+    // (LOGIKA INJECT DAWUH SUDAH DIHAPUS - BERSIH)
 
     res.status(200).json({ result: JSON.stringify(jsonData) });
 
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Backend Error:", error);
     res.status(500).json({ error: error.message });
   }
 }
