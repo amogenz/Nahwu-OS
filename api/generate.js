@@ -36,32 +36,34 @@ export default async function handler(req, res) {
 
   try {
     // ============================================================
-    // 2. LOGIC ROTASI API KEY (ANTI LIMIT)
+    // 2. LOGIC ROTASI API KEY (ANTI LIMIT + FALLBACK)
     // ============================================================
-    // Masukkan semua key dari environment ke dalam array
-    const allKeys = [
+    
+    // Cek semua kemungkinan nama variabel Key
+    const potentialKeys = [
         process.env.GEMINI_API_KEY_1,
         process.env.GEMINI_API_KEY_2,
-        process.env.GEMINI_API_KEY_3
+        process.env.GEMINI_API_KEY_3,
+        process.env.GEMINI_API_KEY // Cadangan jika user lupa isi yang angka
     ];
 
-    // Filter: Hanya ambil key yang benar-benar ada isinya (Valid)
-    // Ini berguna jika misal Anda baru isi 2 key, sistem tidak akan error
-    const activeKeys = allKeys.filter(key => key && key.trim() !== "");
+    // Filter hanya key yang ada isinya (Valid)
+    const activeKeys = potentialKeys.filter(key => key && key.trim().length > 10);
 
     if (activeKeys.length === 0) {
-        throw new Error("Server Error: Tidak ada API Key yang ditemukan di Vercel Environment.");
+        console.error("CRITICAL: Tidak ada API Key yang ditemukan di Environment Variables Vercel.");
+        throw new Error("Server Misconfiguration: API Key Missing.");
     }
 
-    // Pilih 1 Key secara Acak (Random)
+    // Pilih 1 Key secara Acak
     const selectedKey = activeKeys[Math.floor(Math.random() * activeKeys.length)];
     
-    // Inisialisasi Google AI dengan Key terpilih
+    // Inisialisasi Google AI
     const genAI = new GoogleGenerativeAI(selectedKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // ============================================================
-    // 3. LOGIC GENERATE SOAL (8 LANGKAH + TOPIK ACAK)
+    // 3. LOGIC GENERATE SOAL
     // ============================================================
     const randomTopik = TOPIK_KALIMAT[Math.floor(Math.random() * TOPIK_KALIMAT.length)];
 
@@ -70,40 +72,36 @@ export default async function handler(req, res) {
     Rujukan Wajib: Kitab Matan Al-Ajurrumiyyah & Nazhom Imrithi.
     
     TUGAS UTAMA:
-    1. Buatlah SATU kalimat Arab pendek (jumlah mufidah, 3-5 kata) dengan topik: "${randomTopik}".
+    1. Buatlah SATU kalimat Arab pendek (3-5 kata) dengan topik: "${randomTopik}".
     2. Analisa kalimat tersebut per kata (Lafadz).
     3. Buat 8 pertanyaan berurutan yang SANGAT PRESISI secara kaidah Nahwu.
 
     ATURAN LOGIKA & SOAL (WAJIB DIPATUHI):
     
     A. PENCEGAHAN ERROR UMUM:
-    - JANGAN PERNAH membuat pertanyaan singkat seperti "Alasannya?". Pertanyaan HARUS LENGKAP & KONTEKSTUAL.
-    - JANGAN gunakan kata "tersebut". Sebutkan lafadz atau statusnya.
+    - JANGAN PERNAH membuat pertanyaan singkat seperti "Alasannya?". Pertanyaan HARUS LENGKAP.
+    - JANGAN gunakan kata "tersebut".
     
     B. LOGIKA LANGKAH 1 & 2 (IDENTIFIKASI):
     - Step 1: Jenis Kalimat (Isim/Fi'il/Huruf).
-    - Step 2: Alasan Jenis.
-      *PENTING:* Jika Isim, alasannya HARUS tanda fisik (Tanwin, Al, Jar) atau Makna. JANGAN jawab "Karena Isim Mufrad" (Itu salah fatal!).
+    - Step 2: Alasan Jenis (Harus tanda fisik atau makna, BUKAN 'Isim Mufrad').
     
     C. LOGIKA LANGKAH 3 s/d 8 (CABANG MU'ROB vs MABNI):
     - Step 3: Tentukan status: "Mu'rob" atau "Mabni".
-    - Step 4: Alasan Mu'rob/Mabni (Misal: Karena Isim Mufrad (Mu'rob) atau Karena Fi'il Madhi (Mabni)).
+    - Step 4: Alasan Mu'rob/Mabni.
     
-    JIKA MU'ROB (Berubah):
+    JIKA MU'ROB:
     - Step 5: Apa I'rob-nya? (Rafa/Nashob/Jar/Jazm).
-    - Step 6: Kenapa I'rob-nya begitu? (Amil/Kedudukan, misal: Karena jadi Fa'il).
-    - Step 7: Apa Tanda I'rob-nya? (Dhommah/Fathah/Kasrah/Wawu/dll).
-    - Step 8: Kenapa tandanya itu? (Misal: Karena Isim Mufrad / Jamak Taksir).
+    - Step 6: Kenapa I'rob-nya begitu? (Amil/Kedudukan).
+    - Step 7: Apa Tanda I'rob-nya?
+    - Step 8: Kenapa tandanya itu?
     
-    JIKA MABNI (Tetap):
-    - Step 5: Mabni 'ala apa? (Sukun/Fathah/Dhommah/Kasrah).
-    - Step 6: Kenapa Mabni 'ala itu? (Misal: Asal mabni / Mengikuti harakat akhir).
-    - Step 7: Menempati Mahal apa? (Fi Mahalli Rafa'/Nashob/Jar/Jazm).
-    - Step 8: Kenapa menempati Mahal itu? (Misal: Karena menjadi Fa'il / Mubtada).
+    JIKA MABNI:
+    - Step 5: Mabni 'ala apa?
+    - Step 6: Kenapa Mabni 'ala itu?
+    - Step 7: Menempati Mahal apa? (Fi Mahalli...).
+    - Step 8: Kenapa menempati Mahal itu?
 
-    ATURAN JSON:
-    - Field 'correct' HARUS SAMA PERSIS dengan salah satu opsi di 'options'.
-    
     OUTPUT JSON MURNI:
     {
         "sentence": "Kalimat Arab Lengkap",
@@ -132,7 +130,13 @@ export default async function handler(req, res) {
     let text = response.text();
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     
-    let jsonData = JSON.parse(text);
+    let jsonData;
+    try {
+        jsonData = JSON.parse(text);
+    } catch (e) {
+        console.error("JSON Parse Error:", text);
+        throw new Error("AI memberikan format yang salah. Coba lagi.");
+    }
 
     // Overwrite Quote dengan Database Lokal
     if (jsonData.analysis && Array.isArray(jsonData.analysis)) {
@@ -145,8 +149,8 @@ export default async function handler(req, res) {
     res.status(200).json({ result: JSON.stringify(jsonData) });
 
   } catch (error) {
-    console.error("Error generating content:", error);
-    // Info error lebih detail untuk debugging di Vercel Logs
-    res.status(500).json({ error: error.message || "Terjadi kesalahan pada server AI." });
+    console.error("Backend Error:", error);
+    // Kirim pesan error yang jelas ke Frontend
+    res.status(500).json({ error: error.message || "Gagal terhubung ke AI." });
   }
 }
