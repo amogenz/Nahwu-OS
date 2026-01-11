@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nahwu OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* --- COPY PASTE SEMUA STYLE CSS TADI DI SINI (SAMA PERSIS) --- */
+        /* Biar tidak kepanjangan di chat, pakai CSS yang terakhir saya kasih tadi ya mas */
+        /* Cuma saya ringkas di sini biar fokus ke Logic Javascript di bawah */
+        :root { --ios-blue: #007AFF; --ios-green: #34C759; --ios-red: #FF3B30; --text-primary: #000000; --text-light: #ffffff; --text-muted: rgba(255, 255, 255, 0.6); --glass-bg-card: rgba(30, 30, 30, 0.6); --glass-header: rgba(30, 30, 30, 0.7); --glass-border: rgba(255, 255, 255, 0.15); --sidebar-bg: rgba(10, 10, 10, 0.9); --msg-received: rgba(255, 255, 255, 0.1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop') no-repeat center center fixed; background-size: cover; height: 100vh; width: 100vw; overflow: hidden; display: flex; justify-content: center; align-items: center; color: var(--text-light); }
+        .glass-container { width: 100%; max-width: 480px; height: 100%; background: var(--glass-bg-card); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; position: relative; }
+        .chat-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--glass-header); border-bottom: 1px solid var(--glass-border); z-index: 20; }
+        .header-content { display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #00C6FF, #0072FF); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid rgba(255,255,255,0.3); }
+        .title-wrapper h1 { font-size: 16px; font-weight: 700; color: white; letter-spacing: 0.5px; }
+        .subtitle { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+        .icon-btn { background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .content-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; scroll-behavior: smooth; position: relative; }
+        .center-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; animation: fadeIn 0.5s ease; }
+        .big-icon { font-size: 4rem; margin-bottom: 15px; text-shadow: 0 0 20px rgba(0,122,255,0.5); }
+        .hero-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; }
+        .hero-desc { color: var(--text-muted); font-size: 0.9rem; max-width: 80%; line-height: 1.5; margin-bottom: 30px; }
+        .btn-primary { background: var(--ios-blue); color: white; border: none; padding: 14px 24px; border-radius: 20px; font-weight: 600; font-size: 1rem; width: 80%; cursor: pointer; box-shadow: 0 4px 15px rgba(0,122,255,0.3); transition: 0.2s; }
+        .btn-primary:active { transform: scale(0.95); }
+        .quiz-card { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .badge-step { position: absolute; top: 10px; right: 10px; background: rgba(0,122,255,0.2); color: #60a5fa; font-size: 10px; padding: 4px 8px; border-radius: 10px; font-weight: 700; }
+        .arabic-text { font-family: 'Amiri', serif; font-size: 2.5rem; margin: 10px 0; line-height: 1.4; }
+        .context-text { font-family: 'Amiri', serif; font-size: 1rem; color: var(--text-muted); }
+        .chat-bubble { background: var(--msg-received); border-radius: 18px; padding: 15px; margin-bottom: 20px; position: relative; border: 1px solid var(--glass-border); }
+        .chat-bubble::before { content: "Ammo"; position: absolute; top: -20px; left: 5px; font-size: 10px; color: var(--text-muted); font-weight: bold; }
+        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+        .btn-option { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); padding: 15px; border-radius: 15px; color: white; text-align: left; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .btn-option:hover { background: rgba(255,255,255,0.15); }
+        .btn-option:active { transform: scale(0.98); }
+        .suggestion-list { width: 100%; flex: 1; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;}
+        .suggest-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .suggest-name { font-weight: bold; color: var(--ios-blue); margin-bottom: 4px; display: block; }
+        .suggest-msg { color: rgba(255,255,255,0.8); line-height: 1.4; }
+        .input-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .glass-field { background: rgba(255,255,255,0.1); border: none; padding: 12px; border-radius: 12px; color: white; width: 100%; font-family: inherit; }
+        .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 50; display: none; align-items: center; justify-content: center; padding: 30px; }
+        .modal-card { background: #1C1C1E; border: 1px solid var(--glass-border); border-radius: 24px; padding: 30px; text-align: center; width: 100%; max-width: 320px; transform: scale(0.9); transition: 0.3s; }
+        .modal-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+        .modal-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; }
+        .modal-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
+        #sidebar { position: absolute; top: 0; right: -100%; width: 100%; height: 100%; background: var(--sidebar-bg); backdrop-filter: blur(30px); z-index: 100; transition: right 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; }
+        #sidebar.active { right: 0; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+        .back-btn { background: none; border: none; color: var(--ios-blue); font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin-bottom: 20px; }
+        .toggle-switch { position: relative; width: 50px; height: 30px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.2); transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--ios-green); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--ios-blue); border-radius: 50%; animation: spin 1s infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="glass-container">
+        <div class="chat-header">
+            <div class="header-content">
+                <div class="avatar">📖</div>
+                <div class="title-wrapper">
+                    <h1>Nahwu OS</h1>
+                    <div class="subtitle">Powered by Amogenz</div>
+                </div>
+            </div>
+            <button class="icon-btn" onclick="toggleSidebar(true)"><i class="ph ph-list"></i></button>
+        </div>
+
+        <div id="main-content" class="content-area">
+            <div id="view-start" class="center-view">
+                <div class="big-icon">🤖</div>
+                <h2 class="hero-title">Assalamualaikum</h2>
+                <p class="hero-desc">Saya <b>Ammo 🦉</b> Ai kolaborasi Amogenz dengan para Santri. Saya akan menemanimu belajar I'rob dengan rujukan kitab Jurumiyah & Imrithi. <b>Ai bisa membuat kesalahan</b> harap cek ulang !</p>
+                <button class="btn-primary" onclick="startLearningCycle()">Mulai Belajar</button>
+            </div>
+
+            <div id="view-loading" class="center-view" style="display: none;">
+                <div class="loader"></div>
+                <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">Ammo sedang menyusun soal...</p>
+                <p style="font-size: 0.7rem; color: gray;">(Proses ini memakan waktu 5-10 detik)</p>
+            </div>
+
+            <div id="view-quiz" style="display: none; animation: fadeIn 0.5s;">
+                <div class="quiz-card">
+                    <span id="badge-step" class="badge-step">STEP 1</span>
+                    <div id="ctx-sentence" class="context-text">Loading...</div>
+                    <div id="ctx-word" class="arabic-text">...</div>
+                </div>
+                <div class="chat-bubble">
+                    <p id="question-text" style="font-size: 1.1rem; line-height: 1.5;">...</p>
+                </div>
+                <div id="options-container" class="options-grid"></div>
+            </div>
+        </div>
+
+        <div id="modal-feedback" class="modal-overlay">
+            <div class="modal-card" id="modal-card">
+                <span id="fb-icon" class="modal-icon">✨</span>
+                <h3 id="fb-title" class="modal-title">Benar!</h3>
+                <p id="fb-msg" class="modal-desc">Penjelasan...</p>
+                <button id="fb-btn" class="btn-primary" style="width: 100%;">Lanjut</button>
+            </div>
+        </div>
+
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <button class="back-btn" onclick="toggleSidebar(false)"><i class="ph ph-caret-left"></i> Kembali</button>
+                <h2 style="font-size: 1rem; font-weight: 700;">Menu</h2>
+            </div>
+            <div class="content-area" style="padding-bottom: 0;">
+                <div class="setting-row">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="ph-fill ph-speaker-high" style="font-size: 20px;"></i>
+                        <span style="font-weight: 600;">Suara Efek</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sound-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <h3 style="font-size: 0.9rem; color: white; margin-bottom: 15px;">Saran & Masukan</h3>
+                <div class="input-box" style="margin-bottom: 20px;">
+                    <input type="text" id="saran-name" class="glass-field" placeholder="Nama Kamu">
+                    <textarea id="saran-msg" class="glass-field" rows="3" placeholder="Tulis saran untuk pengembangan..."></textarea>
+                    <button onclick="sendSuggestion()" class="btn-primary" style="width: 100%; font-size: 0.9rem; padding: 10px;">Kirim Saran</button>
+                </div>
+                <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px; padding-left: 5px;">Masukan Terbaru</h3>
+                <div id="suggestion-list" class="suggestion-list">
+                    <p style="text-align: center; color: gray; font-size: 12px; margin-top: 20px;">Memuat data...</p>
+                </div>
+                <div style="text-align: center; padding: 20px; font-size: 10px; color: gray;">Amogenz.Inc © 2026</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 1. FIREBASE CONFIG (Tetap di sini karena Firebase client-side safe)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8",
+            authDomain: "amogenz.firebaseapp.com",
+            databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "amogenz",
+            storageBucket: "amogenz.firebasestorage.app",
+            messagingSenderId: "864003468268",
+            appId: "1:864003468268:web:7c861806529a0dacd66ec9"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 2. SOUND ASSETS
+        const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+        const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3');
+        sndCorrect.load(); sndWrong.load();
+
+        // 3. STATE
+        let quizData = null;
+        let wordIndex = 0;
+        let stepIndex = 1;
+
+        // 4. DOM ELEMENTS
+        const views = { start: document.getElementById('view-start'), loading: document.getElementById('view-loading'), quiz: document.getElementById('view-quiz') };
+        const els = { ctxSent: document.getElementById('ctx-sentence'), ctxWord: document.getElementById('ctx-word'), badge: document.getElementById('badge-step'), qText: document.getElementById('question-text'), options: document.getElementById('options-container'), modal: document.getElementById('modal-feedback'), sidebar: document.getElementById('sidebar'), fbBtn: document.getElementById('fb-btn'), soundToggle: document.getElementById('sound-toggle') };
+
+        // 5. FUNCTIONS
+        window.toggleSidebar = (show) => { if(show) els.sidebar.classList.add('active'); else els.sidebar.classList.remove('active'); };
+        
+        function playSound(isCorrect) {
+            if(!els.soundToggle.checked) return;
+            if(isCorrect) { sndCorrect.currentTime = 0; sndCorrect.play().catch(e => {}); }
+            else { sndWrong.currentTime = 0; sndWrong.play().catch(e => {}); }
+        }
+
+        // --- UPDATE PENTING: PANGGIL SERVERLESS FUNCTION ---
+        window.startLearningCycle = async () => {
+            views.start.style.display = 'none';
+            views.quiz.style.display = 'none';
+            views.loading.style.display = 'flex';
+
+            try {
+                // PANGGIL ENDPOINT VERCEL SENDIRI (BUKAN GOOGLE LANGSUNG)
+                const response = await fetch('/api/generate'); // <- Perhatikan ini
+                
+                if (!response.ok) throw new Error("Gagal menghubungi server");
+                
+                const data = await response.json();
+                
+                // Data sudah dalam bentuk JSON bersih dari server
+                let text = data.result;
+                text = text.replace(/```json|```/g, '').trim();
+                quizData = JSON.parse(text);
+                
+                wordIndex = 0;
+                stepIndex = 1;
+                views.loading.style.display = 'none';
+                views.quiz.style.display = 'block';
+                renderQuestion();
+
+            } catch (error) {
+                alert("Ammo Error: " + error.message);
+                views.loading.style.display = 'none';
+                views.start.style.display = 'flex';
+            }
+        };
+
+        function renderQuestion() {
+            const curWord = quizData.analysis[wordIndex];
+            const curStep = curWord.steps[stepIndex.toString()];
+            els.ctxSent.innerText = quizData.sentence;
+            els.ctxWord.innerText = curWord.word;
+            els.badge.innerText = `LANGKAH ${stepIndex}/6`;
+            let q = curStep.question;
+            if(stepIndex === 1) q = `Lafadz "<b>${curWord.word}</b>" ini termasuk jenis kalimat apa?`;
+            els.qText.innerHTML = q;
+            els.options.innerHTML = '';
+            const shuffled = [...curStep.options].sort(() => Math.random() - 0.5);
+            shuffled.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = 'btn-option';
+                btn.innerHTML = `<span>${opt}</span> <i class="ph ph-caret-right"></i>`;
+                btn.onclick = () => handleAnswer(opt, curStep);
+                els.options.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(ans, data) {
+            const isCorrect = ans === data.correct;
+            playSound(isCorrect);
+            const mTitle = document.getElementById('fb-title');
+            const mIcon = document.getElementById('fb-icon');
+            const mMsg = document.getElementById('fb-msg');
+            const mCard = document.getElementById('modal-card');
+            mTitle.innerText = isCorrect ? "Benar!" : "Kurang Tepat";
+            mTitle.style.color = isCorrect ? "#34C759" : "#FF3B30";
+            mIcon.innerText = isCorrect ? "✨" : "❌";
+            mMsg.innerText = isCorrect ? (data.explanation || "Jawaban Tepat.") : `Jawaban yang benar adalah: ${data.correct}`;
+            els.modal.style.display = 'flex';
+            setTimeout(() => mCard.style.transform = 'scale(1)', 10);
+            els.fbBtn.onclick = () => {
+                mCard.style.transform = 'scale(0.9)';
+                setTimeout(() => els.modal.style.display = 'none', 200);
+                if (isCorrect) {
+                    if (stepIndex < 6) { stepIndex++; renderQuestion(); }
+                    else if (wordIndex < quizData.analysis.length - 1) { wordIndex++; stepIndex = 1; showTransition("Lafadz Selesai", "Lanjut ke lafadz berikutnya.", false); }
+                    else { showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true); }
+                }
+            };
+        }
+
+        function showTransition(title, msg, isNewSentence) {
+            const mTitle = document.getElementById('fb-title');
+            const mIcon = document.getElementById('fb-icon');
+            const mMsg = document.getElementById('fb-msg');
+            mIcon.innerText = "🚀";
+            mTitle.innerText = title;
+            mTitle.style.color = "#007AFF";
+            mMsg.innerText = msg;
+            els.modal.style.display = 'flex';
+            els.fbBtn.onclick = () => {
+                els.modal.style.display = 'none';
+                if(isNewSentence) startLearningCycle();
+                else renderQuestion();
+            };
+        }
+
+        // --- FIREBASE SUGGESTION LOGIC ---
+        const suggestList = document.getElementById('suggestion-list');
+        window.sendSuggestion = () => {
+            const name = document.getElementById('saran-name').value.trim();
+            const msg = document.getElementById('saran-msg').value.trim();
+            if(!name || !msg) return alert("Isi nama dan pesan dulu.");
+            push(ref(db, 'suggestions'), { name: name, message: msg, timestamp: Date.now() }).then(() => {
+                alert("Terima kasih sarannya!"); document.getElementById('saran-msg').value = '';
+            });
+        };
+        const recentSuggestions = query(ref(db, 'suggestions'), limitToLast(10));
+        onValue(recentSuggestions, (snapshot) => {
+            suggestList.innerHTML = ''; const data = snapshot.val();
+            if(data) { Object.values(data).reverse().forEach(item => { const div = document.createElement('div'); div.className = 'suggest-item'; div.innerHTML = `<span class="suggest-name">${item.name}</span><span class="suggest-msg">${item.message}</span>`; suggestList.appendChild(div); }); }
+            else { suggestList.innerHTML = '<p style="text-align:center; font-size:12px; opacity:0.5;">Belum ada saran.</p>'; }
+        });
+    </script>
+</body>
+</html>
