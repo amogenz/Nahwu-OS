@@ -493,53 +493,99 @@
         }
 
         function handleAnswer(ans, data) {
-            const isCorrect = ans === data.correct;
+            // LOGIC PEMBERSIH (FIX BUG)
+            // Kita bersihkan jawaban user & kunci jawaban dari spasi dan huruf besar
+            const cleanUserAns = ans.trim().toLowerCase();
+            const cleanCorrectAns = data.correct.trim().toLowerCase();
+            
+            const isCorrect = cleanUserAns === cleanCorrectAns;
+            
             playSound(isCorrect);
-            els.mImgArea.style.display = 'none'; els.mMsg.style.display = 'block';
+            
+            // Reset Tampilan Modal
+            els.mImgArea.style.display = 'none';
+            els.mMsg.style.display = 'block';
             els.mIcon.style.display = 'block';
 
             if (isCorrect) {
+                // JIKA BENAR
                 if (stepIndex < 6) {
-                    els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; els.mIcon.innerText = "✨";
-                    els.mMsg.innerText = data.explanation || "Jawaban Tepat.";
+                    // Masih lanjut step berikutnya di kata yang sama
+                    els.mTitle.innerText = "Benar!"; 
+                    els.mTitle.style.color = "#34C759"; 
+                    els.mIcon.innerText = "✨";
+                    els.mMsg.innerText = data.explanation || "Jawaban Tepat sesuai kaidah.";
+                    
                     els.modal.style.display = 'flex';
                     setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+                    
                     els.fbBtn.onclick = () => {
-                        els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200);
-                        stepIndex++; renderQuestion();
+                        els.mCard.style.transform = 'scale(0.9)'; 
+                        setTimeout(() => els.modal.style.display = 'none', 200);
+                        stepIndex++; 
+                        renderQuestion();
                     };
                 } else {
-                    els.mTitle.innerText = "Lafadz Selesai"; els.mTitle.style.color = "#FFD700"; 
-                    els.mIcon.style.display = 'none';
+                    // STEP 6 SELESAI -> TAMPILKAN GAMBAR DAWUH
+                    els.mTitle.innerText = "Lafadz Selesai"; 
+                    els.mTitle.style.color = "#FFD700"; 
+                    els.mIcon.style.display = 'none'; // Icon dihapus sesuai request
                     
+                    // Ambil gambar dari cache Firebase
                     if(dawuhImagesCache.length > 0) {
                         const randImg = dawuhImagesCache[Math.floor(Math.random() * dawuhImagesCache.length)];
                         
-                        // SETUP LOADING STATE
-                        els.mImgArea.style.display = 'flex'; // Munculkan area
-                        els.mSpinner.style.display = 'block'; // Munculkan spinner
-                        els.mImgSrc.style.display = 'none'; // Sembunyikan gambar dulu
+                        // Set Image & Spinner
+                        els.mImgArea.style.display = 'flex';
+                        els.mSpinner.style.display = 'block'; 
+                        els.mImgSrc.style.display = 'none'; 
                         
-                        els.mImgSrc.src = randImg.url; // Trigger load
+                        els.mImgSrc.src = randImg.url;
                         els.mMsg.innerText = randImg.caption || "Tetap Semangat Ngaji!";
-                    } else { els.mMsg.innerText = "Alhamdulillah. Lanjut?"; }
+                    } else {
+                        // Fallback jika tidak ada gambar
+                        els.mMsg.innerText = "Alhamdulillah. Lanjut ke lafadz berikutnya?";
+                    }
                     
                     els.modal.style.display = 'flex';
                     setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+                    
+                    // TOMBOL LANJUT
                     els.fbBtn.onclick = () => {
-                        els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200);
-                        if (wordIndex < quizData.analysis.length - 1) { wordIndex++; stepIndex = 1; renderQuestion(); }
-                        else { showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true); }
+                        els.mCard.style.transform = 'scale(0.9)'; 
+                        setTimeout(() => els.modal.style.display = 'none', 200);
+                        
+                        // Cek apakah masih ada kata di kalimat ini?
+                        if (wordIndex < quizData.analysis.length - 1) {
+                            wordIndex++; 
+                            stepIndex = 1; 
+                            renderQuestion();
+                        } else {
+                            // Kalimat Habis -> Minta Kalimat Baru ke Server
+                            showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true);
+                        }
                     };
                 }
             } else {
-                els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; els.mIcon.innerText = "❌";
+                // JIKA SALAH
+                els.mTitle.innerText = "Kurang Tepat"; 
+                els.mTitle.style.color = "#FF3B30"; 
+                els.mIcon.innerText = "❌";
+                // Tampilkan jawaban yang benar agar user belajar
                 els.mMsg.innerText = `Jawaban yang benar adalah: ${data.correct}`;
+                
                 els.modal.style.display = 'flex';
                 setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
-                els.fbBtn.onclick = () => { els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200); };
+                
+                els.fbBtn.onclick = () => { 
+                    els.mCard.style.transform = 'scale(0.9)'; 
+                    setTimeout(() => els.modal.style.display = 'none', 200); 
+                };
             }
         }
+
+        // ... (Sisa kode ke bawah tetap sama) ...
+
 
         function showTransition(title, msg, isNewSentence) {
             els.mImgArea.style.display = 'none'; els.mMsg.style.display = 'block';
