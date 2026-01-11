@@ -45,16 +45,21 @@ export default async function handler(req, res) {
     TUGAS: 
     1. Buatlah SATU kalimat Arab pendek (3-6 kata) dengan topik: "${randomTopik}".
     2. Analisa kalimat tersebut per kata (Lafadz).
-    3. Buat 6 level pertanyaan berurutan untuk setiap kata.
+    3. Buat 8 level pertanyaan berurutan untuk setiap kata (Sesuai urutan di bawah).
     
-    ATURAN LOGIKA (PENTING):
-    - Penjelasan MENGAPA (alasan) harus berdasarkan kaidah Jurumiyah/Imrithi.
-      Contoh: "Kenapa Rafa? Karena menjadi Fa'il, dan Fa'il itu hukumnya Rafa menurut Jurumiyah."
-    - JANGAN gunakan kata "tersebut" untuk menunjuk kata sebelumnya. Gunakan nama katanya langsung.
-    
+    URUTAN PERTANYAAN (8 LANGKAH):
+    1. Kalimat apa? (Isim/Fi'il/Huruf)
+    2. Alasannya? (Kenapa disebut Isim/Fi'il/Huruf?)
+    3. Mu'rob atau Mabni? (Status perubahannya)
+    4. Alasannya? (Kenapa Mu'rob/Mabni?)
+    5. I'rob-nya apa? (Rafa/Nashob/Jer/Jazm - Jika Mabni sebutkan Mahal-nya)
+    6. Alasannya? (Amil/Kedudukan, misal: Karena jadi Fa'il)
+    7. Tanda I'rob-nya apa? (Harakat/Huruf)
+    8. Alasannya? (Bentuk kata, misal: Karena Isim Mufrod)
+
     ATURAN JSON (WAJIB):
-    - Field 'correct' HARUS SAMA PERSIS (Copy-Paste) dengan salah satu string di dalam array 'options'. Jangan beda satu huruf pun.
-    - Jangan ada spasi tambahan di awal/akhir string.
+    - Field 'correct' HARUS SAMA PERSIS dengan salah satu 'options'.
+    - JANGAN gunakan kata "tersebut" untuk menunjuk kata sebelumnya. Gunakan nama kategorinya langsung.
     
     OUTPUT JSON MURNI:
     {
@@ -66,10 +71,12 @@ export default async function handler(req, res) {
                 "steps": {
                     "1": { "question": "...", "options": ["Isim","Fi'il","Huruf"], "correct": "Isim", "explanation": "..." },
                     "2": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
-                    "3": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
+                    "3": { "question": "...", "options": ["Mu'rob","Mabni"], "correct": "...", "explanation": "..." },
                     "4": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
-                    "5": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
-                    "6": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." }
+                    "5": { "question": "...", "options": ["Rafa","Nashob","Jer","Jazm"], "correct": "...", "explanation": "..." },
+                    "6": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
+                    "7": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." },
+                    "8": { "question": "...", "options": ["...","..."], "correct": "...", "explanation": "..." }
                 }
             }
         ]
@@ -78,13 +85,11 @@ export default async function handler(req, res) {
 
     const result = await model.generateContent(SYSTEM_PROMPT);
     const response = await result.response;
-    
     let text = response.text();
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    
     let jsonData = JSON.parse(text);
 
-    // Overwrite Quote dengan Database Lokal
+    // Overwrite Quote
     if (jsonData.analysis && Array.isArray(jsonData.analysis)) {
         jsonData.analysis.forEach((item) => {
             const randomDawuh = DAWUH_SAYA[Math.floor(Math.random() * DAWUH_SAYA.length)];
