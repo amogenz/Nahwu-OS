@@ -585,12 +585,18 @@
             }
         }
 
-        function renderQuestion() {
+           function renderQuestion() {
             const curWord = quizData.analysis[wordIndex];
             const curStep = curWord.steps[stepIndex.toString()];
+            
+            // Hitung total step dinamis
+            const totalSteps = Object.keys(curWord.steps).length;
+
             els.ctxSent.innerText = quizData.sentence;
             els.ctxWord.innerText = curWord.word;
-            els.badge.innerText = `LANGKAH ${stepIndex}/8`;
+            
+            // Badge menampilkan total step yang sesuai (bisa /8 atau /9)
+            els.badge.innerText = `LANGKAH ${stepIndex}/${totalSteps}`;
 
             els.qText.innerHTML = curStep.question;
             els.options.innerHTML = '';
@@ -605,19 +611,24 @@
             });
         }
 
-        function handleAnswer(ans, data) {
+
+           function handleAnswer(ans, data) {
             const cleanUser = ans.trim().toLowerCase();
             const cleanCorrect = data.correct.trim().toLowerCase();
             const isCorrect = cleanUser === cleanCorrect;
 
             playSound(isCorrect);
-
             els.mImgArea.style.display = 'none'; 
             els.mMsg.style.display = 'block';
             els.mIcon.style.display = 'block';
 
+            // HITUNG TOTAL STEP YANG ADA DI KATA INI (BISA 8 ATAU 9)
+            const currentWordData = quizData.analysis[wordIndex];
+            const totalSteps = Object.keys(currentWordData.steps).length;
+
             if (isCorrect) {
-                if (stepIndex < 8) {
+                if (stepIndex < totalSteps) {
+                    // MASIH ADA LANGKAH SELANJUTNYA
                     els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; els.mIcon.innerText = "✨";
                     els.mMsg.innerText = data.explanation;
                     
@@ -627,15 +638,17 @@
                     els.fbBtn.onclick = () => {
                         els.mCard.style.transform = 'scale(0.9)'; 
                         setTimeout(() => { els.modal.style.display = 'none'; }, 200);
-                        stepIndex++; renderQuestion();
+                        stepIndex++; 
+                        renderQuestion(); // Render ulang badge step
                     };
                 } else {
-                    // RANDOM GAMBAR SETIAP SELESAI
+                    // SUDAH DI LANGKAH TERAKHIR (Entah itu step 8 atau 9)
                     els.mTitle.innerText = "Lafadz Selesai"; els.mTitle.style.color = "#FFD700"; els.mIcon.style.display = 'none';
+                    
+                    // TAMPILKAN GAMBAR DAWUH ACAK
                     if (dawuhImagesCache.length > 0) {
                         const randomIdx = Math.floor(Math.random() * dawuhImagesCache.length);
                         const randImg = dawuhImagesCache[randomIdx];
-                        
                         els.mImgArea.style.display = 'flex'; 
                         els.mSpinner.style.display = 'block'; 
                         els.mImgSrc.style.display = 'none';
@@ -662,6 +675,7 @@
                     };
                 }
             } else {
+                // JIKA SALAH
                 els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; els.mIcon.innerText = "❌";
                 els.mMsg.innerHTML = `Jawaban Benar: <b>${data.correct}</b><br><br>${data.explanation}`;
                 els.modal.style.display = 'flex';
@@ -670,20 +684,33 @@
             }
         }
 
-        function showTransition(title, msg, isNewSentence) {
+
+         function showTransition(title, msg, isNewSentence) {
             els.mImgArea.style.display = 'none';
             els.mMsg.style.display = 'block';
             els.mIcon.style.display = 'block';
             els.mIcon.innerText = "🚀"; els.mTitle.innerText = title; els.mTitle.style.color = "#007AFF"; els.mMsg.innerText = msg;
             els.modal.style.display = 'flex';
+            
             els.fbBtn.onclick = () => {
                 els.modal.style.display = 'none';
-                if (isNewSentence) startLearningCycle(); else renderQuestion();
+                
+                if (isNewSentence) {
+                    // --- LOGIKA BARU: AUTO RESUME ---
+                    // 1. Simpan tanda "Lanjut" di memori HP user
+                    localStorage.setItem('nahwu_auto_start', 'true');
+                    
+                    // 2. Refresh Halaman (Agar API Key & Memori fresh)
+                    window.location.reload(); 
+                } else {
+                    renderQuestion();
+                }
             };
         }
 
+
         // 6. INIT
-        function initApp() {
+                function initApp() {
             els = {
                 viewStart: document.getElementById('view-start'), viewLoading: document.getElementById('view-loading'), viewQuiz: document.getElementById('view-quiz'),
                 ctxSent: document.getElementById('ctx-sentence'), ctxWord: document.getElementById('ctx-word'), badge: document.getElementById('badge-step'), qText: document.getElementById('question-text'), options: document.getElementById('options-container'),
@@ -701,7 +728,6 @@
             document.getElementById('btn-start').addEventListener('click', startLearningCycle);
             document.getElementById('btn-send-saran').addEventListener('click', sendSuggestion);
 
-            // EVENT MARQUEE LOOPING
             if(els.marqueeText) {
                 els.marqueeText.addEventListener('animationiteration', () => {
                     dawuhIndex = (dawuhIndex + 1) % DAWUH_PLAYLIST.length;
@@ -714,7 +740,18 @@
 
             loadPublicDawuh();
             loadSuggestions();
+
+            // --- LOGIKA BARU: CEK AUTO START ---
+            // Apakah user habis refresh karena lanjut soal?
+            if (localStorage.getItem('nahwu_auto_start') === 'true') {
+                // 1. Hapus tandanya (agar kalau user refresh manual, dia kembali ke menu awal)
+                localStorage.removeItem('nahwu_auto_start');
+                
+                // 2. Langsung jalankan kuis tanpa klik tombol start
+                startLearningCycle();
+            }
         }
+
 
         if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } else { initApp(); }
     </script>
