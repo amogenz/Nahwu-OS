@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>Nahwu OS - Belajar I'rob & Nahwu Jurumiyah Otomatis</title>
+    <title>Nahwu OS - Belajar I'rob & Nahwu</title>
     <meta name="description" content="Aplikasi belajar Nahwu Shorof bertenaga AI. Analisa I'rob otomatis 8 langkah, latihan interaktif kitab Jurumiyah & Imrithi. Gratis untuk Santri. Powered by Amogenz.">
-    <meta name="keywords" content="Nahwu OS, Belajar I'rob, Aplikasi Nahwu, Jurumiyah, Imrithi, Shorof, Belajar Bahasa Arab, AI Nahwu, Irob Otomatis, Santri Coding, Amogenz">
+    <meta name="keywords" content="Nahwu OS, Belajar I'rob, Aplikasi Nahwu, Jurumiyah, Imrithi, Shorof, Belajar Bahasa Arab, AI Nahwu, Irob Otomatis, Santri Coding, Amogenz, Nawhu pesantren, Nahwu santri, Nahwu Ai, Ai Nahwu, Shrof pesantren, Santri, Shorof Anak Pondok, Ai Nahwu Shorof, Nahwu Mudah">
     <meta name="author" content="Amogenz.Inc">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#007AFF">
@@ -156,9 +156,41 @@
         .modal-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; }
         .modal-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
         
-        .-image-wrapper { margin: 15px 0; border-radius: 15px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); width: 100%; max-height: 250px; background-color: #000; display: flex; justify-content: center; align-items: center; position: relative; min-height: 150px; }
-        .-image { width: 100%; height: 100%; object-fit: contain; display: none; z-index: 2; }
-        .img-spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--ios-blue); border-radius: 50%; animation: spin 1s infinite; position: absolute; z-index: 1; }
+                /* FIX GAMBAR DAWUH (RESPONSIF & PRESISI) */
+        .dawuh-image-wrapper { 
+            margin: 15px auto; /* Posisi Tengah */
+            border-radius: 15px; 
+            overflow: hidden; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            width: 100%; 
+            height: 250px; /* Tinggi Tetap agar layout stabil */
+            background-color: #000; /* Background hitam biar kontras */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative; 
+        }
+        
+        .dawuh-image { 
+            max-width: 100%;      /* Mentok Lebar 100% (Gak boleh lebih) */
+            max-height: 100%;     /* Mentok Tinggi 100% (Gak boleh lebih) */
+            width: auto;          /* Biarkan browser hitung otomatis */
+            height: auto;         /* Biarkan browser hitung otomatis */
+            object-fit: contain;  /* KUNCI: Gambar utuh, tidak dicrop/kepotong */
+            display: none;        /* Sembunyi dulu sebelum load */
+            z-index: 2; 
+        }
+        
+        .img-spinner { 
+            width: 30px; height: 30px; 
+            border: 3px solid rgba(255,255,255,0.2); 
+            border-top-color: var(--ios-blue); 
+            border-radius: 50%; 
+            animation: spin 1s infinite; 
+            position: absolute; 
+            z-index: 1; 
+        }
+
 
         .input-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
         .glass-field { background: rgba(255,255,255,0.1); border: none; padding: 12px; border-radius: 12px; color: white; width: 100%; font-family: inherit; }
@@ -173,8 +205,56 @@
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--ios-green); }
         input:checked + .slider:before { transform: translateX(20px); }
-        .suggestion-list { width: 100%; flex: 1; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;}
-        .suggest-item { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        
+                /* --- STYLE BARU LIST SARAN (VERTIKAL) --- */
+        .suggestion-list { 
+            width: 100%; 
+            flex: 1; 
+            overflow-y: auto; 
+            margin-bottom: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; /* Jarak antar kotak komentar */
+        }
+
+        .suggest-item { 
+            background: rgba(255,255,255,0.08); /* Background sedikit lebih terang */
+            padding: 12px 15px; 
+            border-radius: 16px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            display: flex;          /* Aktifkan Flexbox */
+            flex-direction: column; /* KUNCI: Susun Atas-Bawah */
+            gap: 5px;               /* Jarak antara Nama & Pesan */
+        }
+
+        /* Style untuk Nama Pengirim */
+        .suggest-name {
+            font-weight: 700;       /* Tebal */
+            font-size: 0.9rem;
+            color: var(--ios-blue); /* Warna Biru biar beda */
+            letter-spacing: 0.5px;
+        }
+
+        /* Style untuk Isi Pesan */
+        .suggest-msg {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.85); /* Putih agak abu */
+            line-height: 1.4;       /* Spasi baris biar enak dibaca */
+            word-wrap: break-word;  /* Agar teks panjang turun ke bawah */
+        }
+                /* ... CSS suggest-name & suggest-msg yang tadi ... */
+
+        /* TAMBAHAN BARU: Style Tanggal */
+        .suggest-date {
+            font-size: 0.65rem;             /* Ukuran kecil */
+            color: rgba(255, 255, 255, 0.4); /* Warna agak redup/abu */
+            align-self: flex-end;           /* Posisi di Kanan Bawah */
+            margin-top: 4px;                /* Jarak dari pesan */
+            font-style: italic;
+        }
+
+
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--ios-blue); border-radius: 50%; animation: spin 1s infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -372,15 +452,40 @@
         }
     }
 
-    function loadSuggestions() {
-        onValue(query(ref(db, 'suggestions'), limitToLast(10)), (snapshot) => {
-            const list = document.getElementById('suggestion-list');
-            if(!list) return; list.innerHTML = '';
-            const data = snapshot.val();
-            if (data) { Object.values(data).reverse().forEach(item => { const div = document.createElement('div'); div.className = 'suggest-item'; div.innerHTML = `<span class="suggest-name">${item.name}</span><span class="suggest-msg">${item.message}</span>`; list.appendChild(div); }); }
-            else { list.innerHTML = '<p style="text-align:center; font-size:12px; opacity:0.5;">Belum ada saran.</p>'; }
-        });
-    }
+            function loadSuggestions() {
+            onValue(query(ref(db, 'suggestions'), limitToLast(10)), (snapshot) => {
+                const list = document.getElementById('suggestion-list');
+                if(!list) return; 
+                list.innerHTML = '';
+                
+                const data = snapshot.val();
+                if (data) { 
+                    Object.values(data).reverse().forEach(item => { 
+                        // 1. Format Tanggal (Dari Timestamp ke Teks)
+                        let dateStr = "";
+                        if (item.timestamp) {
+                            dateStr = new Date(item.timestamp).toLocaleDateString('id-ID', {
+                                day: 'numeric', month: 'short', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                            });
+                        }
+
+                        // 2. Render HTML dengan Tanggal
+                        const div = document.createElement('div'); 
+                        div.className = 'suggest-item'; 
+                        div.innerHTML = `
+                            <span class="suggest-name">${item.name}</span>
+                            <span class="suggest-msg">${item.message}</span>
+                            <span class="suggest-date">${dateStr}</span>
+                        `; 
+                        list.appendChild(div); 
+                    }); 
+                } else { 
+                    list.innerHTML = '<p style="text-align:center; font-size:12px; opacity:0.5;">Belum ada saran.</p>'; 
+                }
+            });
+        }
+
 
     function getSeenSentences() { const seen = localStorage.getItem('nahwu_seen_indices'); return seen ? JSON.parse(seen) : []; }
     function markSentenceSeen(id) { if (id !== "ai_generated") { const seen = getSeenSentences(); if (!seen.includes(id)) { seen.push(id); localStorage.setItem('nahwu_seen_indices', JSON.stringify(seen)); } } }
@@ -394,8 +499,53 @@
     async function sha256(message) { const msgBuffer = new TextEncoder().encode(message); const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer); return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join(''); }
     function compressImage(file, callback) { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 600; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); callback(canvas.toDataURL('image/jpeg', 0.8)); } } }
     function unlockAdminPanel() { els.adminLogin.style.display = 'none'; els.adminDash.style.display = 'block'; els.adminDash.innerHTML = `<div class="admin-tabs"><button class="tab-btn active" id="tab-url">Link URL</button><button class="tab-btn" id="tab-upl">Upload Galeri</button></div><div id="form-url"><input type="text" id="dawuh-url" class="glass-field" placeholder="https://..."></div><div id="form-upl" style="display:none;"><img id="img-preview" class="preview-img-box"><div class="file-upload-area"><i class="ph ph-upload-simple" style="font-size:24px;"></i><br>Klik untuk Pilih Foto<input type="file" id="file-inp" accept="image/*"></div></div><input type="text" id="dawuh-caption" class="glass-field" placeholder="Keterangan (Opsional)" style="margin-top:10px;"><button id="btn-save-img" class="btn-primary" style="margin-top: 10px; background: var(--ios-green);">Simpan Gambar</button><h3 style="margin-top: 20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">Galeri Dawuh</h3><div id="admin-list" class="suggestion-list" style="margin-top: 10px;"></div>`; const btnUrl = document.getElementById('tab-url'); const btnUpl = document.getElementById('tab-upl'); const boxUrl = document.getElementById('form-url'); const boxUpl = document.getElementById('form-upl'); const inpUrl = document.getElementById('dawuh-url'); let mode = 'url'; btnUrl.onclick = () => { mode = 'url'; btnUrl.classList.add('active'); btnUpl.classList.remove('active'); boxUrl.style.display = 'block'; boxUpl.style.display = 'none'; }; btnUpl.onclick = () => { mode = 'upl'; btnUpl.classList.add('active'); btnUrl.classList.remove('active'); boxUpl.style.display='block'; boxUrl.style.display='none'; }; document.getElementById('file-inp').addEventListener('change', (e) => { if (e.target.files[0]) { compressImage(e.target.files[0], (base64) => { uploadBase64 = base64; const preview = document.getElementById('img-preview'); preview.src = base64; preview.style.display = 'block'; }); } }); document.getElementById('btn-save-img').addEventListener('click', () => { const cap = document.getElementById('dawuh-caption').value.trim(); let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64; if (!finalUrl) return alert("Gambar belum dipilih/diisi!"); push(ref(db, 'dawuh_images'), { url: finalUrl, caption: cap }).then(() => { alert("Gambar Berhasil Disimpan!"); inpUrl.value = ''; document.getElementById('dawuh-caption').value = ''; uploadBase64 = null; document.getElementById('img-preview').style.display = 'none'; }); }); loadAdminList(); }
-    function loadAdminList() { onValue(ref(db, 'dawuh_images'), (snapshot) => { const list = document.getElementById('admin-list'); if (!list) return; list.innerHTML = ''; const data = snapshot.val(); if (data) { Object.entries(data).forEach(([key, val]) => { const div = document.createElement('div'); div.className = 'suggest-item'; div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.alignItems = 'center'; const leftDiv = document.createElement('div'); leftDiv.style.cssText = "display:flex; align-items:center; gap:10px;"; leftDiv.innerHTML = `<img src="${val.url}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;"> <span style="font-size:10px; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${val.caption || 'No Caption'}</span>`; const delBtn = document.createElement('button'); delBtn.innerText = "Hapus"; delBtn.style.cssText = "background:var(--ios-red); border:none; color:white; padding:5px 10px; border-radius:5px; font-size:10px; cursor:pointer;"; delBtn.onclick = () => { if (confirm("Hapus?")) remove(ref(db, `dawuh_images/${key}`)); }; div.appendChild(leftDiv); div.appendChild(delBtn); list.appendChild(div); }); } }); }
+    
+            function loadAdminList() { 
+            onValue(ref(db, 'dawuh_images'), (snapshot) => { 
+                const list = document.getElementById('admin-list'); 
+                if (!list) return; 
+                list.innerHTML = ''; 
+                const data = snapshot.val(); 
+                
+                if (data) { 
+                    Object.entries(data).forEach(([key, val]) => { 
+                        const div = document.createElement('div'); 
+                        div.className = 'suggest-item'; 
+                        
+                        // --- PERBAIKAN DI SINI ---
+                        // Kita timpa style CSS agar kembali ke baris (Row/Samping)
+                        div.style.display = 'flex';
+                        div.style.flexDirection = 'row';      /* Paksa ke samping */
+                        div.style.justifyContent = 'space-between';
+                        div.style.alignItems = 'center';
+                        div.style.gap = '10px';
 
+                        const leftDiv = document.createElement('div'); 
+                        leftDiv.style.cssText = "display:flex; align-items:center; gap:10px; flex:1; overflow:hidden;"; 
+                        leftDiv.innerHTML = `
+                            <img src="${val.url}" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0;"> 
+                            <span style="font-size:12px; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${val.caption || 'Tanpa Keterangan'}</span>
+                        `; 
+                        
+                        const delBtn = document.createElement('button'); 
+                        delBtn.innerText = "Hapus"; 
+                        // Style tombol dirapikan
+                        delBtn.style.cssText = "background:var(--ios-red); border:none; color:white; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; flex-shrink:0;"; 
+                        delBtn.onclick = () => { 
+                            if (confirm("Yakin mau hapus gambar ini?")) remove(ref(db, `dawuh_images/${key}`)); 
+                        }; 
+                        
+                        div.appendChild(leftDiv); 
+                        div.appendChild(delBtn); 
+                        list.appendChild(div); 
+                    }); 
+                } else {
+                    list.innerHTML = '<p style="text-align:center; opacity:0.5; font-size:12px;">Galeri kosong.</p>';
+                }
+            }); 
+        }
+
+    
         // --- 5. MAIN LOGIC (QUIZ) ---
         async function startLearningCycle() {
             const isLocal = window.location.hostname === 'localhost' || window.location.protocol === 'file:';
