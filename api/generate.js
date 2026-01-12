@@ -26,8 +26,13 @@ export default async function handler(req, res) {
   try {
     // LOGIC ROTASI API KEY
     const potentialKeys = [
-        process.env.GEMINI_API_KEY_1, process.env.GEMINI_API_KEY_2, 
-        process.env.GEMINI_API_KEY_3, process.env.GEMINI_API_KEY
+        process.env.GEMINI_API_KEY_1,
+        process.env.GEMINI_API_KEY_2, 
+        process.env.GEMINI_API_KEY_3,
+        process.env.GEMINI_API_KEY_4,
+        process.env.GEMINI_API_KEY_5,
+        process.env.GEMINI_API_KEY_6,
+        process.env.GEMINI_API_KEY
     ];
     const activeKeys = potentialKeys.filter(key => key && key.trim().length > 10);
     if (activeKeys.length === 0) throw new Error("API Key Missing.");
