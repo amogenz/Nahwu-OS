@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // 1. BANK SOAL (TOTAL 54 LAFADZ: DASAR + LANJUTAN)
 const BANK_SOAL = [
-    // --- SET 1: DASAR (27 Kalimat) ---
+    // --- SET 1: DASAR ---
     "الْقَمَرُ جَمِيْلٌ", "ذَهَبَ زَيْدٌ إِلَى الْمَسْجِدِ", "يَشْرَحُ الْأُسْتَاذُ الدَّرْسَ",
     "الْبَيْتُ وَاسِعٌ وَنَظِيْفٌ", "قَرَأَ الطَّالِبُ الْقُرْآنَ", "الْكِتَابُ عَلَى الْمَكْتَبِ",
     "صَلَّى الْمُسْلِمُوْنَ فِي الْمَسْجِدِ", "بَابُ الْمَدْرَسَةِ مَفْتُوْحٌ", "إِنَّ اللهَ غَفُوْرٌ رَحِيْمٌ",
@@ -13,7 +13,7 @@ const BANK_SOAL = [
     "لَا تَلْعَبْ فِي الشَّارِعِ", "رَجَعَ الْمُسَافِرُ إِلَى بَلَدِهِ", "السَّيَّارَةُ لَوْنُهَا أَحْمَرُ",
     "أَكَلْتُ الْخُبْزَ وَالْلَحْمَ", "سَافَرَ زَيْدٌ صَبَاحًا", "الْعِلْمُ نُوْرٌ",
 
-    // --- SET 2: LANJUTAN (27 Kalimat - Mamnu' Min As-Sarf & I'rob Khusus) ---
+    // --- SET 2: LANJUTAN (ISIM GHAIRU MUNSHARIF & LAINNYA) ---
     "سَافَرَ زَيْدٌ إِلَى حَضْرَمَوْتَ", "لَيْسَ أَحْمَدُ بِكَسْلَانَ", "مَرَرْتُ بِفَاطِمَةَ وَزَيْنَبَ",
     "جَاءَ الْقَاضِي إِلَى النَّادِي", "زُرْتُ بَعْلَبَكَّ قَبْلَ يَوْمَيْنِ", "إِنَّ أَخَاكَ ذُو أَدَبٍ",
     "صَلَّيْتُ فِي مَسَاجِدَ كَثِيرَةٍ", "هَذَا الْفَتَى يَحْمِلُ عَصًا", "رَأَيْتُ أَحَدَ عَشَرَ كَوْكَبًا",
@@ -26,7 +26,6 @@ const BANK_SOAL = [
 ];
 
 export default async function handler(req, res) {
-  // SETUP CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -35,7 +34,6 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   try {
-    // 2. LOGIC ROTASI 7 API KEY
     const potentialKeys = [
         process.env.GEMINI_API_KEY_1, process.env.GEMINI_API_KEY_2,
         process.env.GEMINI_API_KEY_3, process.env.GEMINI_API_KEY_4,
@@ -50,7 +48,6 @@ export default async function handler(req, res) {
     const genAI = new GoogleGenerativeAI(selectedKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    // 3. LOGIC SOAL
     let seenIndices = [];
     if (req.body && req.body.seen) seenIndices = req.body.seen;
 
@@ -73,32 +70,36 @@ export default async function handler(req, res) {
 
     let instruction = (questionId !== "ai_generated") ? `Analisa kalimat berikut ini: "${targetSentence}".` : targetSentence;
 
-    // 4. SYSTEM PROMPT BARU (LOGIC ILLAT MAMNU' MIN AS-SARF)
+    // --- SYSTEM PROMPT DIPERBARUI ---
     const SYSTEM_PROMPT = `
     Role: Ammo (Ustadz Ahli Nahwu Senior).
     TUGAS: ${instruction}
     
     Lakukan Analisa I'rob Lengkap per kata.
     
-    ATURAN LANGKAH (LOGIKA BERCABANG):
+    ATURAN PENTING:
+    1. GUNAKAN LAFADZ ARABNYA dalam setiap pertanyaan. 
+       - SALAH: "Apa status kata ini?"
+       - BENAR: "Apa status kata الْمَسْجِدِ?"
+       - BENAR: "Apa status kata زَيْدٌ?"
+    2. JANGAN gunakan frasa "kata ini", "kalimat ini", atau "lafadz ini" di dalam teks pertanyaan ('question'). Sebutkan lafadznya secara eksplisit.
     
+    ATURAN LANGKAH (LOGIKA BERCABANG):
     LANGKAH DASAR (1-8):
-    1. Jenis Kalimat (Isim/Fi'il/Huruf).
-    2. Alasan Jenis (Tanda fisik/makna). JANGAN jawab 'Isim Mufrad' disini.
-    3. Status (Mu'rob/Mabni).
-    4. Alasan Status (Misal: Karena Isim Mufrad (Mu'rob) atau Fi'il Madhi (Mabni)).
-    5. I'rob / Mabni 'ala.
-    6. Alasan I'rob (Kedudukan/Amil, misal: Karena jadi Fa'il).
+    1. Jenis Kalimat (Isim/Fi'il/Huruf). Contoh Pertanyaan: "Apa jenis kalimat الْمَسْجِدِ?"
+    2. Alasan Jenis (Tanda fisik/makna).
+    3. Status (Mu'rob/Mabni). Contoh Pertanyaan: "Apakah status الْمَسْجِدِ Mu'rob atau Mabni?"
+    4. Alasan Status.
+    5. I'rob / Mabni 'ala. Contoh Pertanyaan: "Apa kedudukan I'rob kata الْمَسْجِدِ?"
+    6. Alasan I'rob (Kedudukan/Amil).
     7. Tanda I'rob / Mahal I'rob.
-    8. ALASAN TANDA (PENTING): Jawablah berdasarkan BENTUK KATA.
-       Contoh: "Kenapa tandanya Dhommah?" Jawab: "Karena Isim Mufrad" atau "Karena Jamak Taksir".
+    8. Alasan Tanda (Isim Mufrad/Jamak/Asmaul Khomsah/dll).
 
     LANGKAH KHUSUS (9) - HANYA JIKA ISIM GHAIRU MUNSHARIF:
-    - Cek apakah kata tersebut termasuk "Isim Ghairu Munsharif" (Mamnu' min as-sarf).
+    - Cek apakah kata tersebut termasuk "Isim Ghairu Munsharif".
     - JIKA YA: Tambahkan Step 9.
-    - Pertanyaan Step 9: "Apa Illat (Penyebab) kata ini tidak menerima tanwin?"
-    - Opsi Jawaban: (Pilih yang sesuai kaidah, misal: Sighat Muntahal Jumu', Alamiyah + 'Adl, Washfiyah + Wazan Fi'il, Alamiyah + Taknis, dll).
-    - JIKA TIDAK: Cukup sampai Step 8.
+    - Pertanyaan Step 9: "Apa Illat (Penyebab) kata [LAFADZ] tidak menerima tanwin?"
+    - Opsi: Sighat Muntahal Jumu', Alamiyah + 'Adl, dll.
 
     OUTPUT JSON ONLY:
     {
@@ -106,9 +107,9 @@ export default async function handler(req, res) {
         "id": "${questionId}",
         "analysis": [
             {
-                "word": "Kata 1",
+                "word": "Kata 1 (Tulis Arabnya)",
                 "steps": {
-                    "1": { "question": "...", "options": ["..."], "correct": "...", "explanation": "..." },
+                    "1": { "question": "Apa jenis kalimat [LAFADZ]?", "options": ["..."], "correct": "...", "explanation": "..." },
                     "2": { "question": "...", "options": ["..."], "correct": "...", "explanation": "..." },
                     "3": { "question": "...", "options": ["..."], "correct": "...", "explanation": "..." },
                     "4": { "question": "...", "options": ["..."], "correct": "...", "explanation": "..." },
@@ -121,7 +122,6 @@ export default async function handler(req, res) {
             }
         ]
     }
-    *Catatan: Step 9 bersifat opsional dalam JSON, hanya muncul jika kata tersebut Isim Ghairu Munsharif.*
     `;
 
     const result = await model.generateContent(SYSTEM_PROMPT);
