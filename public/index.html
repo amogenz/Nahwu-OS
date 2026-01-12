@@ -13,7 +13,7 @@
     <link rel="canonical" href="https://nahwu.amogenz.my.id/">
 
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://nahwu.amogenz.my.if/">
+    <meta property="og:url" content="https://nahwu.amogrnz.my.id/">
     <meta property="og:title" content="Nahwu OS - Guru Nahwu Pribadi di Saku Anda">
     <meta property="og:description" content="Belajar I'rob jadi mudah! Analisa kalimat Arab secara instan dengan kecerdasan buatan (AI). Coba sekarang gratis.">
     <meta property="og:image" content="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
@@ -611,8 +611,7 @@
             });
         }
 
-
-           function handleAnswer(ans, data) {
+             function handleAnswer(ans, data) {
             const cleanUser = ans.trim().toLowerCase();
             const cleanCorrect = data.correct.trim().toLowerCase();
             const isCorrect = cleanUser === cleanCorrect;
@@ -622,58 +621,37 @@
             els.mMsg.style.display = 'block';
             els.mIcon.style.display = 'block';
 
-            // HITUNG TOTAL STEP YANG ADA DI KATA INI (BISA 8 ATAU 9)
+            // Hitung total step dinamis (bisa 8 atau 9)
             const currentWordData = quizData.analysis[wordIndex];
             const totalSteps = Object.keys(currentWordData.steps).length;
 
             if (isCorrect) {
-                if (stepIndex < totalSteps) {
-                    // MASIH ADA LANGKAH SELANJUTNYA
-                    els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; els.mIcon.innerText = "✨";
-                    els.mMsg.innerText = data.explanation;
-                    
-                    els.modal.style.display = 'flex';
-                    setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
-                    
-                    els.fbBtn.onclick = () => {
+                // TAMPILKAN PENJELASAN DULU (MESKIPUN LANGKAH TERAKHIR)
+                els.mTitle.innerText = "Benar!"; 
+                els.mTitle.style.color = "#34C759"; 
+                els.mIcon.innerText = "✨";
+                
+                // Ini yang penting: Penjelasan Step 9 akan muncul di sini
+                els.mMsg.innerText = data.explanation; 
+                
+                els.modal.style.display = 'flex';
+                setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+                
+                // LOGIKA TOMBOL LANJUT
+                els.fbBtn.onclick = () => {
+                    if (stepIndex < totalSteps) {
+                        // Kalau belum langkah terakhir, lanjut step berikutnya
                         els.mCard.style.transform = 'scale(0.9)'; 
                         setTimeout(() => { els.modal.style.display = 'none'; }, 200);
                         stepIndex++; 
-                        renderQuestion(); // Render ulang badge step
-                    };
-                } else {
-                    // SUDAH DI LANGKAH TERAKHIR (Entah itu step 8 atau 9)
-                    els.mTitle.innerText = "Lafadz Selesai"; els.mTitle.style.color = "#FFD700"; els.mIcon.style.display = 'none';
-                    
-                    // TAMPILKAN GAMBAR DAWUH ACAK
-                    if (dawuhImagesCache.length > 0) {
-                        const randomIdx = Math.floor(Math.random() * dawuhImagesCache.length);
-                        const randImg = dawuhImagesCache[randomIdx];
-                        els.mImgArea.style.display = 'flex'; 
-                        els.mSpinner.style.display = 'block'; 
-                        els.mImgSrc.style.display = 'none';
-                        els.mImgSrc.src = randImg.url; 
-                        els.mMsg.innerText = randImg.caption || "Tetap Semangat!";
-                    } else { els.mMsg.innerText = "Alhamdulillah. Lanjut?"; }
-                    
-                    els.modal.style.display = 'flex';
-                    setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
-                    
-                    els.fbBtn.onclick = () => {
-                        els.mCard.style.transform = 'scale(0.9)';
-                        setTimeout(() => {
-                            els.modal.style.display = 'none'; 
-                            setTimeout(() => {
-                                if (wordIndex < quizData.analysis.length - 1) {
-                                    wordIndex++; stepIndex = 1; renderQuestion();
-                                } else {
-                                    wordIndex = 0; stepIndex = 1; quizData = null;
-                                    showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true);
-                                }
-                            }, 100);
-                        }, 200);
-                    };
-                }
+                        renderQuestion();
+                    } else {
+                        // KALAU LANGKAH TERAKHIR (8 atau 9), JANGAN TUTUP MODAL
+                        // TAPI GANTI TAMPILAN JADI REWARD GAMBAR
+                        showRewardPhase(); 
+                    }
+                };
+
             } else {
                 // JIKA SALAH
                 els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; els.mIcon.innerText = "❌";
@@ -683,6 +661,49 @@
                 els.fbBtn.onclick = () => { els.mCard.style.transform = 'scale(0.9)'; setTimeout(() => els.modal.style.display = 'none', 200); };
             }
         }
+
+        // FUNGSI BARU: MENAMPILKAN GAMBAR SETELAH PENJELASAN SELESAI
+        function showRewardPhase() {
+            els.mTitle.innerText = "Lafadz Selesai"; 
+            els.mTitle.style.color = "#FFD700"; 
+            els.mIcon.style.display = 'none'; // Ikon hilang, ganti gambar
+            
+            // Tampilkan Gambar Dawuh Acak
+            if (dawuhImagesCache.length > 0) {
+                const randomIdx = Math.floor(Math.random() * dawuhImagesCache.length);
+                const randImg = dawuhImagesCache[randomIdx];
+                els.mImgArea.style.display = 'flex'; 
+                els.mSpinner.style.display = 'block'; 
+                els.mImgSrc.style.display = 'none';
+                els.mImgSrc.src = randImg.url; 
+                els.mMsg.innerText = randImg.caption || "Tetap Semangat!";
+            } else { 
+                els.mMsg.innerText = "Alhamdulillah. Lanjut?"; 
+            }
+
+            // Update fungsi tombol untuk pindah kata/kalimat
+            els.fbBtn.onclick = () => {
+                els.mCard.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    els.modal.style.display = 'none'; 
+                    setTimeout(() => {
+                        // Cek apakah masih ada kata berikutnya?
+                        if (wordIndex < quizData.analysis.length - 1) {
+                            wordIndex++; 
+                            stepIndex = 1; 
+                            renderQuestion();
+                        } else {
+                            // Kalimat Selesai
+                            wordIndex = 0; 
+                            stepIndex = 1; 
+                            quizData = null;
+                            showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true);
+                        }
+                    }, 100);
+                }, 200);
+            };
+        }
+
 
 
          function showTransition(title, msg, isNewSentence) {
