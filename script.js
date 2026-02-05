@@ -493,6 +493,7 @@
     const input = document.getElementById('arabic-input').value.trim();
     const resultArea = document.getElementById('syarah-result');
     const loadingArea = document.getElementById('syarah-loading');
+    const resultDiv = document.getElementById('syarah-content'); // Pastikan variabel ini ada
     
     // 1. Validasi Input
     if (!input) {
@@ -513,7 +514,7 @@
 
     // 2. Cek Koneksi Internet (Wajib untuk APK Android)
     if (!navigator.onLine) {
-        alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet untuk berdiskusi dengan santri.');
+        alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet.');
         return;
     }
     
@@ -521,16 +522,20 @@
     resultArea.style.display = 'none';
     loadingArea.style.display = 'flex';
     
-    // 4. Deteksi Domain Otomatis (Support Multi-Domain & APK)
+    // 4. Pengaturan API URL (Diarahkan ke Playground Vercel)
     const hostname = window.location.hostname;
-    let apiUrl = 'https://nahwu.amogenz.xyz/api/syarah'; // Default / APK target
+    // Kita paksa apiUrl ke playground untuk testing di Acode
+    let apiUrl = 'https://nahwu-os-git-playground-ammos-projects-0b62d4a2.vercel.app/api/syarah';
 
-    if (hostname.includes('amogenz.my.id')) {
+    // Jika nanti sudah di-merge, kode ini akan otomatis menyesuaikan domain
+    if (hostname.includes('amogenz.xyz')) {
+        apiUrl = 'https://nahwu.amogenz.xyz/api/syarah';
+    } else if (hostname.includes('amogenz.my.id')) {
         apiUrl = 'https://nahwu.amogenz.my.id/api/syarah';
     }
 
+    // --- LOGIC ANALISIS AI STREAMING ---
     try {
-        // Prompt diperkuat agar AI memberikan ilmu yang luas untuk santri
         const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
 Kalimat: ${input}
 
@@ -547,46 +552,79 @@ Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
 8. Alasan Tanda: [Contoh: Isim Mufrad/Asmaul Khomsah/Af'alul Khomsah, dll]
 9. Bina'nya: [Jika Mabni, sebutkan Mabni 'ala apa. Jika Fi'il sebutkan Bina' Shohih/Mu'tal dll]
 10. Shighotnya: [Jenis kata secara Shorof: Madhi/Mudhari/Masdar/Isim Fa'il dll]
-11. Tasrifnya: [Penjelasan rinci asal kata, perubahan dari bentuk asal ke bentuk sekarang]
+11. Tasrifnya: dari istilahy dan lughowinya [Penjelasan rinci asal kata, perubahan dari bentuk asal ke bentuk sekarang]
+12. dalil dari jurumiyah, imrithi, al fiyah (kalau memang ada)
 
 Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan pembatas ===.`;
 
-        // 5. Eksekusi Fetch ke Vercel
+        // 5. Eksekusi Fetch Streaming
         const response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream'
+            },
             body: JSON.stringify({ prompt: promptText })
         });
-        
-        const data = await response.json();
 
-        // 6. Handling Rate Limit (429) dengan Akurat
-        if (response.status === 429) {
-            alert("Sabar ya Syekh... Limit harian AI tercapai. Mohon tunggu 1 menit lagi agar sistem reset kembali.");
-            return;
-        }
-
+        // 6. Handling Error
         if (!response.ok) {
-            throw new Error(data.error || 'Waduh, server sedang dalam pemeliharaan.');
+            // Jika streaming error, coba ambil pesan error-nya
+            const errorData = await response.json().catch(() => ({ error: 'Server Error' }));
+            throw new Error(errorData.error || 'Terjadi kesalahan pada server AI.');
         }
 
-        // 7. Render Hasil (Pastikan response dari vercel adalah { text: "hasil" })
-        const finalResult = data.text || (data.candidates && data.candidates[0].content.parts[0].text);
-        
-        if (finalResult) {
-            // Memanggil fungsi display yang sudah ada di script.js asli kamu
-            displaySyarahResult(finalResult); 
-        } else {
-            throw new Error('AI memberikan jawaban kosong.');
+        // 7. Proses Membaca Stream (Real-time)
+        loadingArea.style.display = 'none';
+        resultArea.style.display = 'block';
+        resultDiv.innerHTML = ""; // Bersihkan konten lama
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let cumulativeText = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            
+            // Format SSE Gemini: data: {"candidates": ...}
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    try {
+                        const jsonStr = line.replace('data: ', '').trim();
+                        const data = JSON.parse(jsonStr);
+                        
+                        if (data.candidates && data.candidates[0].content.parts[0].text) {
+                            const newText = data.candidates[0].content.parts[0].text;
+                            cumulativeText += newText;
+
+                            // Update UI secara bertahap (efek ngetik)
+                            displaySyarahResult(cumulativeText); 
+                        }
+                    } catch (e) {
+                        // Jika JSON parsial/potong, abaikan dan tunggu chunk berikutnya
+                        continue;
+                    }
+                }
+            }
         }
-        
+
     } catch (error) {
         console.error('Syarah Error:', error);
-        alert('Maaf, terjadi kendala: ' + error.message);
+        // Jika Failed to fetch muncul lagi, kita berikan instruksi jelas
+        if (error.message === 'Failed to fetch') {
+            alert('Gagal terhubung ke API Playground. Pastikan link preview Vercel sudah aktif dan izin CORS sudah diset di backend.');
+        } else {
+            alert('Maaf, terjadi kendala: ' + error.message);
+        }
     } finally {
         loadingArea.style.display = 'none';
     }
 }
+
 
 
 // Fungsi Display agar TIDAK "Kotak dalam Kotak"
