@@ -10,17 +10,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Gemini API Config
-    const GEMINI_API_KEY = "AIzaSyA_nRMyLndmI6oUsgsGXAkt656XNN-4axc"; // Ganti dengan API key Gemini Anda
-    
-    // Validasi API key
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "AIzaSyBZmWLfNxW4SN_FFDCHqGGV6xD4BrK1LR8") {
-        console.warn('⚠️ PERINGATAN: API key Gemini belum diganti! Fitur Syarah AI tidak akan berfungsi.');
-        console.warn('Dapatkan API key gratis di: https://aistudio.google.com/app/apikey');
-    }
-    
-    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
     const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
     const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3');
     sndCorrect.load(); sndWrong.load();
@@ -505,28 +494,26 @@
     const resultArea = document.getElementById('syarah-result');
     const loadingArea = document.getElementById('syarah-loading');
     
-    // 1. Validasi Dasar
+    // 1. Validasi Input
     if (!input) {
         alert('Mohon masukkan lafadz Arab terlebih dahulu!');
         return;
     }
     
-    // Fungsi cek bahasa Arab (Pastikan fungsi ini sudah ada di kodemu)
     if (typeof isArabicText === 'function' && !isArabicText(input)) {
         alert('Hanya kalimat Arab yang diperbolehkan!');
         return;
     }
     
-    // Fungsi hitung kata
-    const wordCount = input.split(/\s+/).length;
+    const wordCount = input.split(/\s+/).filter(w => w.length > 0).length;
     if (wordCount > 7) {
-        alert(`Kalimat terlalu panjang! (${wordCount} kata). Maksimal 7 kata.`);
+        alert(`Kalimat terlalu panjang! (${wordCount} kata). Maksimal 7 kata agar analisis mendalam.`);
         return;
     }
 
-    // 2. Cek Koneksi (Penting untuk versi Android APK)
+    // 2. Cek Koneksi Internet (Wajib untuk APK Android)
     if (!navigator.onLine) {
-        alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet.');
+        alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet untuk berdiskusi dengan santri.');
         return;
     }
     
@@ -534,30 +521,38 @@
     resultArea.style.display = 'none';
     loadingArea.style.display = 'flex';
     
+    // 4. Deteksi Domain Otomatis (Support Multi-Domain & APK)
+    const hostname = window.location.hostname;
+    let apiUrl = 'https://nahwu.amogenz.xyz/api/syarah'; // Default / APK target
+
+    if (hostname.includes('amogenz.my.id')) {
+        apiUrl = 'https://nahwu.amogenz.my.id/api/syarah';
+    }
+
     try {
-        const promptText = `Analisis kalimat Arab berikut per lafadz dengan detail sesuai ilmu Nahwu:
+        // Prompt diperkuat agar AI memberikan ilmu yang luas untuk santri
+        const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
 Kalimat: ${input}
 
 Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
 
 === LAFADZ: [kata arab] ===
 1. Jenis: [Isim/Fi'il/Huruf]
-2. Alasannya: [penjelasan]
+2. Alasannya: [Penjelasan tanda-tanda yang ada pada kata tersebut]
 3. Status: [Mu'rob/Mabni]
-4. Alasan Status: [penjelasan]
+4. Alasan Status: [Kenapa mu'rob atau kenapa mabni]
 5. I'robnya: [Rafa'/Nashab/Jarr/Jazm/Mabni]
-6. Alasan I'rob: [contoh: Karena menjadi Fa'il]
-7. Tanda I'rob: [Contoh: Dhammah]
-8. Alasan Tanda: [Contoh: Isim Mufrad]
-9. Bina'nya: [Jika Mabni, sebutkan Mabni 'ala apa]
-10. Shighotnya: [Jenis kata secara Shofof]
-11. Tasrifnya: [Penjelasan rinci asal kata]
+6. Alasan I'rob: [Contoh: Karena menjadi Khobar, dll]
+7. Tanda I'rob: [Contoh: Dhammah/Fathah/Ya'/Tsubutun Nun, dll]
+8. Alasan Tanda: [Contoh: Isim Mufrad/Asmaul Khomsah/Af'alul Khomsah, dll]
+9. Bina'nya: [Jika Mabni, sebutkan Mabni 'ala apa. Jika Fi'il sebutkan Bina' Shohih/Mu'tal dll]
+10. Shighotnya: [Jenis kata secara Shorof: Madhi/Mudhari/Masdar/Isim Fa'il dll]
+11. Tasrifnya: [Penjelasan rinci asal kata, perubahan dari bentuk asal ke bentuk sekarang]
 
-Gunakan Bahasa Indonesia. Pisahkan antar kata dengan pembatas ===.`;
+Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan pembatas ===.`;
 
-        // 4. Panggil Backend Vercel
-        // Jika running di Android, gunakan full URL: https://nahwu.amogenz.xyz/api/syarah
-        const response = await fetch('https://nahwu.amogenz.xyz/api/syarah', {
+        // 5. Eksekusi Fetch ke Vercel
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: promptText })
@@ -565,37 +560,29 @@ Gunakan Bahasa Indonesia. Pisahkan antar kata dengan pembatas ===.`;
         
         const data = await response.json();
 
-        // 5. Handling Limit Token / Rate Limit (429)
+        // 6. Handling Rate Limit (429) dengan Akurat
         if (response.status === 429) {
-            let secondsLeft = 60; // Default limit Gemini biasanya 1 menit
-            const interval = setInterval(() => {
-                secondsLeft--;
-                if (secondsLeft <= 0) {
-                    clearInterval(interval);
-                }
-            }, 1000);
-
-            alert(`Limit AI tercapai! Mohon tunggu sekitar ${secondsLeft} detik lagi sebelum mencoba kembali. Sabar ya, server lagi antri.`);
+            alert("Sabar ya Syekh... Limit harian AI tercapai. Mohon tunggu 1 menit lagi agar sistem reset kembali.");
             return;
         }
 
         if (!response.ok) {
-            throw new Error(data.error || 'Server Vercel sedang sibuk.');
+            throw new Error(data.error || 'Waduh, server sedang dalam pemeliharaan.');
         }
 
-        // 6. Tampilkan Hasil
-        // Sesuaikan dengan struktur return dari syarah.js yang saya buat sebelumnya (data.text)
-        const finalContent = data.text || (data.candidates && data.candidates[0].content.parts[0].text);
+        // 7. Render Hasil (Pastikan response dari vercel adalah { text: "hasil" })
+        const finalResult = data.text || (data.candidates && data.candidates[0].content.parts[0].text);
         
-        if (finalContent) {
-            displaySyarahResult(finalContent);
+        if (finalResult) {
+            // Memanggil fungsi display yang sudah ada di script.js asli kamu
+            displaySyarahResult(finalResult); 
         } else {
-            throw new Error('Format data AI tidak dikenali.');
+            throw new Error('AI memberikan jawaban kosong.');
         }
         
     } catch (error) {
-        console.error('Error Syarah:', error);
-        alert('Terjadi kesalahan: ' + error.message);
+        console.error('Syarah Error:', error);
+        alert('Maaf, terjadi kendala: ' + error.message);
     } finally {
         loadingArea.style.display = 'none';
     }
