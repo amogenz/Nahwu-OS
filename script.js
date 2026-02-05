@@ -502,30 +502,39 @@
 
     async function analyzeSyarah() {
     const input = document.getElementById('arabic-input').value.trim();
+    const resultArea = document.getElementById('syarah-result');
+    const loadingArea = document.getElementById('syarah-loading');
     
-    // Validasi Dasar
+    // 1. Validasi Dasar
     if (!input) {
         alert('Mohon masukkan lafadz Arab terlebih dahulu!');
         return;
     }
     
-    if (!isArabicText(input)) {
+    // Fungsi cek bahasa Arab (Pastikan fungsi ini sudah ada di kodemu)
+    if (typeof isArabicText === 'function' && !isArabicText(input)) {
         alert('Hanya kalimat Arab yang diperbolehkan!');
         return;
     }
     
-    const wordCount = countArabicWords(input);
+    // Fungsi hitung kata
+    const wordCount = input.split(/\s+/).length;
     if (wordCount > 7) {
         alert(`Kalimat terlalu panjang! (${wordCount} kata). Maksimal 7 kata.`);
         return;
     }
+
+    // 2. Cek Koneksi (Penting untuk versi Android APK)
+    if (!navigator.onLine) {
+        alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet.');
+        return;
+    }
     
-    // UI Feedback
-    document.getElementById('syarah-result').style.display = 'none';
-    document.getElementById('syarah-loading').style.display = 'flex';
+    // 3. UI Feedback - Mulai Loading
+    resultArea.style.display = 'none';
+    loadingArea.style.display = 'flex';
     
     try {
-        // Prompt yang lebih ketat agar formatnya konsisten
         const promptText = `Analisis kalimat Arab berikut per lafadz dengan detail sesuai ilmu Nahwu:
 Kalimat: ${input}
 
@@ -542,33 +551,56 @@ Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
 8. Alasan Tanda: [Contoh: Isim Mufrad]
 9. Bina'nya: [Jika Mabni, sebutkan Mabni 'ala apa]
 10. Shighotnya: [Jenis kata secara Shofof]
-11. Tasrifnya: [Penjelasan singkat asal kata]
+11. Tasrifnya: [Penjelasan rinci asal kata]
 
 Gunakan Bahasa Indonesia. Pisahkan antar kata dengan pembatas ===.`;
 
-        // Panggil Backend Vercel kita
-        const response = await fetch('/api/syarah', {
+        // 4. Panggil Backend Vercel
+        // Jika running di Android, gunakan full URL: https://nahwu.amogenz.xyz/api/syarah
+        const response = await fetch('https://nahwu.amogenz.xyz/api/syarah', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: promptText })
         });
         
         const data = await response.json();
+
+        // 5. Handling Limit Token / Rate Limit (429)
+        if (response.status === 429) {
+            let secondsLeft = 60; // Default limit Gemini biasanya 1 menit
+            const interval = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    clearInterval(interval);
+                }
+            }, 1000);
+
+            alert(`Limit AI tercapai! Mohon tunggu sekitar ${secondsLeft} detik lagi sebelum mencoba kembali. Sabar ya, server lagi antri.`);
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Server Vercel sedang sibuk.');
+        }
+
+        // 6. Tampilkan Hasil
+        // Sesuaikan dengan struktur return dari syarah.js yang saya buat sebelumnya (data.text)
+        const finalContent = data.text || (data.candidates && data.candidates[0].content.parts[0].text);
         
-        if (data.candidates && data.candidates[0]) {
-            const result = data.candidates[0].content.parts[0].text;
-            displaySyarahResult(result);
+        if (finalContent) {
+            displaySyarahResult(finalContent);
         } else {
-            throw new Error(data.error || 'Gagal mendapatkan jawaban dari AI.');
+            throw new Error('Format data AI tidak dikenali.');
         }
         
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error Syarah:', error);
         alert('Terjadi kesalahan: ' + error.message);
     } finally {
-        document.getElementById('syarah-loading').style.display = 'none';
+        loadingArea.style.display = 'none';
     }
 }
+
 
 // Fungsi Display agar TIDAK "Kotak dalam Kotak"
 
