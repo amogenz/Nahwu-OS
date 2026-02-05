@@ -24,7 +24,8 @@ export default async function handler(req, res) {
         process.env.GEMINI_API_KEY_4,
         process.env.GEMINI_API_KEY_5,
         process.env.GEMINI_API_KEY_6,
-        process.env.GEMINI_API_KEY
+process.env.GEMINI_API_KEY
+        
     ].filter(k => k);
 
     if (keys.length === 0) {
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
     const selectedKey = keys[Math.floor(Math.random() * keys.length)];
     
     // PERBAIKAN: Gunakan model 1.5-flash atau 2.0-flash
-    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${selectedKey}`;
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${selectedKey}`;
 
     try {
         const response = await fetch(GEMINI_URL, {
