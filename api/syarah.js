@@ -44,8 +44,9 @@ process.env.GEMINI_API_KEY
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: { 
-                    temperature: 0.7, 
-                    maxOutputTokens: 7000 // Sudah sangat cukup untuk detail Nahwu
+                temperature: 0.5, // Diturunkan agar jawaban AI lebih konsisten & tidak ngawur
+                 maxOutputTokens: 3077, // Angka ideal untuk analisis mendalam santri
+                  topP: 0.9
                 }
             })
         });
