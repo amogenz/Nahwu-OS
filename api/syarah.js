@@ -45,8 +45,8 @@ process.env.GEMINI_API_KEY
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: { 
                 temperature: 0.5, // Diturunkan agar jawaban AI lebih konsisten & tidak ngawur
-                 maxOutputTokens: 3077, // Angka ideal untuk analisis mendalam santri
-                  topP: 0.9
+                 maxOutputTokens: 3077 // Angka ideal untuk analisis mendalam santri
+                
                 }
             })
         });
