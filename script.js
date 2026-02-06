@@ -522,12 +522,7 @@
     resultArea.style.display = 'none';
     loadingArea.style.display = 'flex';
     // PAKSA LOADING MATI MAX 3 DETIK
-    const loadingTimeout = setTimeout(() => {
-        if (loadingArea.style.display !== 'none') {
-            loadingArea.style.display = 'none';
-            resultArea.style.display = 'block';
-        }
-    }, 3000); 
+  
     // 4. Pengaturan API URL (Diarahkan ke Playground Vercel)
     const hostname = window.location.hostname;
     // Kita paksa apiUrl ke playground untuk testing di Acode
@@ -548,18 +543,19 @@ Kalimat: ${input}
 Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
 
 === LAFADZ: [kata arab] ===
-1. Jenis: [Isim/Fi'il/Huruf]
-2. Alasannya: [Penjelasan tanda-tanda yang ada pada kata tersebut]
+1. Jenis: [Isim/Fi'il/Huruf] 
+2. Alasannya: [Penjelasan tanda-tanda yang ada pada kata tersebut] + dalil dari jurumiyah, imrithi, dan al fiyah (kalau memang ada)
 3. Status: [Mu'rob/Mabni]
-4. Alasan Status: [Kenapa mu'rob atau kenapa mabni]
+4. Alasan Status: [Kenapa mu'rob atau kenapa mabni] + dalil dari jurumiyah, imrithi, dan al fiyah (kalau memang ada)
 5. I'robnya: [Rafa'/Nashab/Jarr/Jazm/Mabni]
-6. Alasan I'rob: [Contoh: Karena menjadi Khobar, dll]
+6. Alasan I'rob: [Contoh: Karena menjadi Khobar, dll] + dalil dari jurumiyah, imrithi, dan al fiyah (kalau memang ada)
 7. Tanda I'rob: [Contoh: Dhammah/Fathah/Ya'/Tsubutun Nun, dll]
-8. Alasan Tanda: [Contoh: Isim Mufrad/Asmaul Khomsah/Af'alul Khomsah, dll]
+8. Alasan Tanda: [Contoh: Isim Mufrad/Asmaul Khomsah/Af'alul Khomsah, dll] + dalil dari jurumiyah, imrithi, dan  al fiyah (kalau memang ada)
 9. Bina'nya: [Jika Mabni, sebutkan Mabni 'ala apa. Jika Fi'il sebutkan Bina' Shohih/Mu'tal dll]
 10. Shighotnya: [Jenis kata secara Shorof: Madhi/Mudhari/Masdar/Isim Fa'il dll]
 11. Tasrifnya: dari istilahy dan lughowinya [Penjelasan rinci asal kata, perubahan dari bentuk asal ke bentuk sekarang]
-12. dalil dari jurumiyah, imrithi, al fiyah (kalau memang ada)
+
+PENTING !!! Berikan jawaban secara lengkap sampai tuntas hingga poin ke-11 untuk setiap kata.  Jangan memotong penjelasan di tengah kalimat
 
 Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan pembatas ===.`;
 
@@ -569,56 +565,59 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
             body: JSON.stringify({ prompt: promptText })
         });
 
-        if (!response.ok) throw new Error('Server Error');
+        if (!response.ok) throw new Error('Gagal menghubungi AI.');
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let cumulativeText = "";
-        let buffer = ""; // <--- KUNCI ANTI POTONG
+        let buffer = ""; 
+        let hasStarted = false; // Flag untuk menandai teks pertama masuk
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            // Masukkan data baru ke buffer
             buffer += decoder.decode(value, { stream: true });
-            
-            // Pecah berdasarkan baris
             let lines = buffer.split('\n');
-            
-            // Simpan baris terakhir yang belum tentu lengkap kembali ke buffer
-            buffer = lines.pop(); 
+            buffer = lines.pop(); // Simpan baris terakhir yang menggantung
 
             for (const line of lines) {
                 const trimmedLine = line.trim();
                 if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
 
                 try {
-                    const jsonStr = trimmedLine.replace('data: ', '');
+                    const jsonStr = trimmedLine.replace('data: ', '').trim();
                     const data = JSON.parse(jsonStr);
                     
                     if (data.candidates && data.candidates[0].content.parts[0].text) {
-                        // Jika data masuk sebelum 3 detik, matikan loading sekarang
-                        clearTimeout(loadingTimeout);
-                        loadingArea.style.display = 'none';
-                        resultArea.style.display = 'block';
+                        // KUNCI: Loading HANYA mati jika teks sudah ada
+                        if (!hasStarted) {
+                            hasStarted = true;
+                            loadingArea.style.display = 'none';
+                            resultArea.style.display = 'block';
+                            resultDiv.innerHTML = "";
+                        }
 
                         cumulativeText += data.candidates[0].content.parts[0].text;
                         displaySyarahResult(cumulativeText); 
                     }
                 } catch (e) {
-                    // Jika JSON gagal diparse karena kepotong, 
-                    // simpan lagi ke buffer untuk disambung chunk depan
+                    // Jika gagal parse, sambungkan lagi ke buffer baris berikutnya
                     buffer = line + '\n' + buffer;
                 }
             }
         }
-    }
+
+        // Jika sampai selesai loop teks tidak muncul (misal error tersembunyi)
+        if (!hasStarted) {
+            throw new Error('AI tidak memberikan respon. Coba ulangi.');
+        }
+
+    } 
     catch (error) {
-        clearTimeout(loadingTimeout);
-        loadingArea.style.display = 'none';
+        console.error('Syarah Error:', error);
         alert('Maaf, kendala: ' + error.message);
-    }
+    } 
     finally {
         loadingArea.style.display = 'none';
     }
