@@ -49,9 +49,21 @@ export default async function handler(req) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.5, maxOutputTokens: 4000 }
-            })
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { 
+        temperature: 0.5, // Sedikit dinaikkan agar lebih luwes
+        maxOutputTokens: 8000, // Gass ke 8000 bray, jangan takut
+        topP: 0.95,
+    },
+    // Tambahkan ini agar AI tidak ragu-ragu mengeluarkan teks panjang
+    safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+    ]
+})
+
         });
 
         if (!response.ok) {
