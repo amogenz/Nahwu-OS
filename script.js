@@ -631,16 +631,18 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
 
     function displaySyarahResult(result) {
     const resultDiv = document.getElementById('syarah-content');
+    const resultContainer = document.getElementById('syarah-result');
     
     // 1. Bersihkan Markdown Bold (**teks**) menjadi <strong>
+    // Kita tambahkan penanganan agar teks yang belum tutup (misal **teks...) tidak rusak
     let cleanText = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-    // 2. Pecah per baris untuk diproses
+    // 2. Pecah per baris
     const lines = cleanText.split('\n');
     
     const formattedHtml = lines.map(line => {
         const trimmedLine = line.trim();
-        if (!trimmedLine) return '<br>'; // Baris kosong jadi jarak
+        if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
 
         // Jika baris adalah Header (=== LAFADZ ===)
         if (trimmedLine.startsWith('===')) {
@@ -649,6 +651,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         }
 
         // Jika baris adalah Poin (1. Jenis: ...)
+        // Regex diperkuat agar tetap rapi saat teks baru setengah jalan
         if (/^\d+\./.test(trimmedLine)) {
             return `<div class="analysis-point">${trimmedLine}</div>`;
         }
@@ -657,9 +660,21 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         return `<div class="normal-line">${trimmedLine}</div>`;
     }).join('');
 
-    resultDiv.innerHTML = formattedHtml;
-    document.getElementById('syarah-result').style.display = 'block';
+    // RENDER: Gunakan requestAnimationFrame agar browser merender lebih mulus
+    requestAnimationFrame(() => {
+        resultDiv.innerHTML = formattedHtml;
+        
+        // Pastikan container tampil
+        if (resultContainer.style.display !== 'block') {
+            resultContainer.style.display = 'block';
+        }
+
+        // AUTO SCROLL: Agar user selalu melihat teks terbaru di bawah
+        // Ini yang bikin efek seperti ChatGPT
+        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'bottom' });
+    });
 }
+
 
 
     function copySyarahResult() {
