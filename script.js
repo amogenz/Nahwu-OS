@@ -521,6 +521,7 @@
     // 3. UI Feedback - Mulai Loading
     resultArea.style.display = 'none';
     loadingArea.style.display = 'flex';
+    // PAKSA LOADING MATI MAX 3 DETIK
   
     // 4. Pengaturan API URL (Diarahkan ke Playground Vercel)
     const hostname = window.location.hostname;
@@ -534,7 +535,7 @@
         apiUrl = 'https://nahwu.amogenz.my.id/api/syarah';
     }
 
-    // --- LOGIC ANALISIS AI STREAMING + DALIL ---
+    // --- LOGIC ANALISIS AI STREAMING ---
     try {
 const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
 Kalimat: ${input}
@@ -554,7 +555,7 @@ Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
 10. Shighotnya: [Jenis kata secara Shorof: Madhi/Mudhari/Masdar/Isim Fa'il dll]
 11. Tasrifnya: dari istilahy dan lughowinya [Penjelasan rinci asal kata, perubahan dari bentuk asal ke bentuk sekarang]
 
-PENTING !!! Berikan jawaban secara lengkap sampai tuntas hingga poin ke-11 untuk setiap kata.  Jangan memotong penjelasan di tengah kalimat
+PENTING HARGA MATI !!! Berikan jawaban secara lengkap sampai tuntas hingga poin ke-11 untuk setiap kata.  Jangan memotong penjelasan di tengah kalimat. PASTIKAN SELESAI DAN KOMPLIT
 
 Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan pembatas ===.`;
 
