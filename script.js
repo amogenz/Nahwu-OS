@@ -521,7 +521,13 @@
     // 3. UI Feedback - Mulai Loading
     resultArea.style.display = 'none';
     loadingArea.style.display = 'flex';
-    
+    // PAKSA LOADING MATI MAX 3 DETIK
+    const loadingTimeout = setTimeout(() => {
+        if (loadingArea.style.display !== 'none') {
+            loadingArea.style.display = 'none';
+            resultArea.style.display = 'block';
+        }
+    }, 3000); 
     // 4. Pengaturan API URL (Diarahkan ke Playground Vercel)
     const hostname = window.location.hostname;
     // Kita paksa apiUrl ke playground untuk testing di Acode
@@ -536,7 +542,7 @@
 
     // --- LOGIC ANALISIS AI STREAMING ---
     try {
-        const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
+const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
 Kalimat: ${input}
 
 Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
@@ -557,75 +563,66 @@ Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
 
 Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan pembatas ===.`;
 
-        // 5. Eksekusi Fetch Streaming
         const response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'text/event-stream'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: promptText })
         });
 
-        // 6. Handling Error
-        if (!response.ok) {
-            // Jika streaming error, coba ambil pesan error-nya
-            const errorData = await response.json().catch(() => ({ error: 'Server Error' }));
-            throw new Error(errorData.error || 'Terjadi kesalahan pada server AI.');
-        }
-
-        // 7. Proses Membaca Stream (Real-time)
-        loadingArea.style.display = 'none';
-        resultArea.style.display = 'block';
-        resultDiv.innerHTML = ""; // Bersihkan konten lama
+        if (!response.ok) throw new Error('Server Error');
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let cumulativeText = "";
+        let buffer = ""; // <--- KUNCI ANTI POTONG
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value, { stream: true });
+            // Masukkan data baru ke buffer
+            buffer += decoder.decode(value, { stream: true });
             
-            // Format SSE Gemini: data: {"candidates": ...}
-            const lines = chunk.split('\n');
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    try {
-                        const jsonStr = line.replace('data: ', '').trim();
-                        const data = JSON.parse(jsonStr);
-                        
-                        if (data.candidates && data.candidates[0].content.parts[0].text) {
-                            const newText = data.candidates[0].content.parts[0].text;
-                            cumulativeText += newText;
+            // Pecah berdasarkan baris
+            let lines = buffer.split('\n');
+            
+            // Simpan baris terakhir yang belum tentu lengkap kembali ke buffer
+            buffer = lines.pop(); 
 
-                            // Update UI secara bertahap (efek ngetik)
-                            displaySyarahResult(cumulativeText); 
-                        }
-                    } catch (e) {
-                        // Jika JSON parsial/potong, abaikan dan tunggu chunk berikutnya
-                        continue;
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+
+                try {
+                    const jsonStr = trimmedLine.replace('data: ', '');
+                    const data = JSON.parse(jsonStr);
+                    
+                    if (data.candidates && data.candidates[0].content.parts[0].text) {
+                        // Jika data masuk sebelum 3 detik, matikan loading sekarang
+                        clearTimeout(loadingTimeout);
+                        loadingArea.style.display = 'none';
+                        resultArea.style.display = 'block';
+
+                        cumulativeText += data.candidates[0].content.parts[0].text;
+                        displaySyarahResult(cumulativeText); 
                     }
+                } catch (e) {
+                    // Jika JSON gagal diparse karena kepotong, 
+                    // simpan lagi ke buffer untuk disambung chunk depan
+                    buffer = line + '\n' + buffer;
                 }
             }
         }
-
-    } catch (error) {
-        console.error('Syarah Error:', error);
-        // Jika Failed to fetch muncul lagi, kita berikan instruksi jelas
-        if (error.message === 'Failed to fetch') {
-            alert('Gagal terhubung ke API Playground. Pastikan link preview Vercel sudah aktif dan izin CORS sudah diset di backend.');
-        } else {
-            alert('Maaf, terjadi kendala: ' + error.message);
-        }
-    } finally {
+    }
+    catch (error) {
+        clearTimeout(loadingTimeout);
+        loadingArea.style.display = 'none';
+        alert('Maaf, kendala: ' + error.message);
+    }
+    finally {
         loadingArea.style.display = 'none';
     }
 }
-
-
 
 // Fungsi Display agar TIDAK "Kotak dalam Kotak"
 
@@ -661,21 +658,24 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     }).join('');
 
     // RENDER: Gunakan requestAnimationFrame agar browser merender lebih mulus
-    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
         resultDiv.innerHTML = formattedHtml;
         
-        // Pastikan container tampil
         if (resultContainer.style.display !== 'block') {
             resultContainer.style.display = 'block';
         }
 
-        // AUTO SCROLL: Agar user selalu melihat teks terbaru di bawah
-        // Ini yang bikin efek seperti ChatGPT
-        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'bottom' });
+        // Scroll otomatis hanya jika user berada di dekat bawah
+        // Agar tidak "memaksa" layar lompat-lompat
+        const threshold = 150; 
+        const isNearBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - threshold;
+        
+        if (isNearBottom) {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
+        }
     });
+
 }
-
-
 
     function copySyarahResult() {
         const content = document.getElementById('syarah-content').innerText;
