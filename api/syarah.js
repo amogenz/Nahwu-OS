@@ -51,7 +51,7 @@ export default async function handler(req) {
             body: JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { 
-        temperature: 0.5, // Sedikit dinaikkan agar lebih luwes
+        temperature: 0.7, // Sedikit dinaikkan agar lebih luwes
         maxOutputTokens: 8000, // Gass ke 8000 bray, jangan takut
         topP: 0.95,
     },
