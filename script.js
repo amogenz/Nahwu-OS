@@ -493,6 +493,7 @@
     const input = document.getElementById('arabic-input').value.trim();
     const resultArea = document.getElementById('syarah-result');
     const loadingArea = document.getElementById('syarah-loading');
+    const resultDiv = document.getElementById('syarah-content'); // Pastikan variabel ini ada
     
     // 1. Validasi Input
     if (!input) {
@@ -513,96 +514,131 @@
 
     // 2. Cek Koneksi Internet (Wajib untuk APK Android)
     if (!navigator.onLine) {
-        alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet untuk berdiskusi dengan santri.');
+        alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet.');
         return;
     }
     
     // 3. UI Feedback - Mulai Loading
     resultArea.style.display = 'none';
     loadingArea.style.display = 'flex';
-    
-    // 4. Deteksi Domain Otomatis (Support Multi-Domain & APK)
+    // PAKSA LOADING MATI MAX 3 DETIK
+  
+    // 4. Pengaturan API URL (Diarahkan ke Playground Vercel)
     const hostname = window.location.hostname;
-    let apiUrl = 'https://nahwu.amogenz.xyz/api/syarah'; // Default / APK target
+    // Kita paksa apiUrl ke playground untuk testing di Acode
+    let apiUrl = 'https://nahwu-os-git-playground-ammos-projects-0b62d4a2.vercel.app/api/syarah';
 
-    if (hostname.includes('amogenz.my.id')) {
+    // Jika nanti sudah di-merge, kode ini akan otomatis menyesuaikan domain
+    if (hostname.includes('amogenz.xyz')) {
+        apiUrl = 'https://nahwu.amogenz.xyz/api/syarah';
+    } else if (hostname.includes('amogenz.my.id')) {
         apiUrl = 'https://nahwu.amogenz.my.id/api/syarah';
     }
 
+    // --- LOGIC ANALISIS AI STREAMING ---
     try {
-        // Prompt diperkuat agar AI memberikan ilmu yang luas untuk santri
-        const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
+const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
 Kalimat: ${input}
 
 Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
 
 === LAFADZ: [kata arab] ===
-1. Jenis: [Isim/Fi'il/Huruf]
-2. Alasannya: [Penjelasan tanda-tanda yang ada pada kata tersebut]
+1. Jenis: [Isim/Fi'il/Huruf] 
+2. Alasannya: [Penjelasan tanda-tanda yang ada pada kata tersebut] + dalil dari jurumiyah, imrithi, dan al fiyah (kalau memang ada)
 3. Status: [Mu'rob/Mabni]
-4. Alasan Status: [Kenapa mu'rob atau kenapa mabni]
+4. Alasan Status: [Kenapa mu'rob atau kenapa mabni] + dalil dari jurumiyah, imrithi, dan al fiyah (kalau memang ada)
 5. I'robnya: [Rafa'/Nashab/Jarr/Jazm/Mabni]
-6. Alasan I'rob: [Contoh: Karena menjadi Khobar, dll]
+6. Alasan I'rob: [Contoh: Karena menjadi Khobar, dll] + dalil dari jurumiyah, imrithi, dan al fiyah (kalau memang ada)
 7. Tanda I'rob: [Contoh: Dhammah/Fathah/Ya'/Tsubutun Nun, dll]
-8. Alasan Tanda: [Contoh: Isim Mufrad/Asmaul Khomsah/Af'alul Khomsah, dll]
+8. Alasan Tanda: [Contoh: Isim Mufrad/Asmaul Khomsah/Af'alul Khomsah, dll] + dalil dari jurumiyah, imrithi, dan  al fiyah (kalau memang ada)
 9. Bina'nya: [Jika Mabni, sebutkan Mabni 'ala apa. Jika Fi'il sebutkan Bina' Shohih/Mu'tal dll]
 10. Shighotnya: [Jenis kata secara Shorof: Madhi/Mudhari/Masdar/Isim Fa'il dll]
-11. Tasrifnya: [Penjelasan rinci asal kata, perubahan dari bentuk asal ke bentuk sekarang]
+11. Tasrifnya: dari istilahy dan lughowinya [Penjelasan rinci asal kata, perubahan dari bentuk asal ke bentuk sekarang]
+
+PENTING HARGA MATI !!! Berikan jawaban secara lengkap sampai tuntas hingga poin ke-11 untuk setiap kata.  Jangan memotong penjelasan di tengah kalimat. PASTIKAN SELESAI DAN KOMPLIT
 
 Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan pembatas ===.`;
 
-        // 5. Eksekusi Fetch ke Vercel
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: promptText })
         });
-        
-        const data = await response.json();
 
-        // 6. Handling Rate Limit (429) dengan Akurat
-        if (response.status === 429) {
-            alert("Sabar ya Syekh... Limit harian AI tercapai. Mohon tunggu 1 menit lagi agar sistem reset kembali.");
-            return;
+        if (!response.ok) throw new Error('Gagal menghubungi AI.');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let cumulativeText = "";
+        let buffer = ""; 
+        let hasStarted = false; // Flag untuk menandai teks pertama masuk
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            let lines = buffer.split('\n');
+            buffer = lines.pop(); // Simpan baris terakhir yang menggantung
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+
+                try {
+                    const jsonStr = trimmedLine.replace('data: ', '').trim();
+                    const data = JSON.parse(jsonStr);
+                    
+                    if (data.candidates && data.candidates[0].content.parts[0].text) {
+                        // KUNCI: Loading HANYA mati jika teks sudah ada
+                        if (!hasStarted) {
+                            hasStarted = true;
+                            loadingArea.style.display = 'none';
+                            resultArea.style.display = 'block';
+                            resultDiv.innerHTML = "";
+                        }
+
+                        cumulativeText += data.candidates[0].content.parts[0].text;
+                        displaySyarahResult(cumulativeText); 
+                    }
+                } catch (e) {
+                    // Jika gagal parse, sambungkan lagi ke buffer baris berikutnya
+                    buffer = line + '\n' + buffer;
+                }
+            }
         }
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Waduh, server sedang dalam pemeliharaan.');
+        // Jika sampai selesai loop teks tidak muncul (misal error tersembunyi)
+        if (!hasStarted) {
+            throw new Error('AI tidak memberikan respon. Coba ulangi.');
         }
 
-        // 7. Render Hasil (Pastikan response dari vercel adalah { text: "hasil" })
-        const finalResult = data.text || (data.candidates && data.candidates[0].content.parts[0].text);
-        
-        if (finalResult) {
-            // Memanggil fungsi display yang sudah ada di script.js asli kamu
-            displaySyarahResult(finalResult); 
-        } else {
-            throw new Error('AI memberikan jawaban kosong.');
-        }
-        
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Syarah Error:', error);
-        alert('Maaf, terjadi kendala: ' + error.message);
-    } finally {
+        alert('Maaf, kendala: ' + error.message);
+    } 
+    finally {
         loadingArea.style.display = 'none';
     }
 }
-
 
 // Fungsi Display agar TIDAK "Kotak dalam Kotak"
 
     function displaySyarahResult(result) {
     const resultDiv = document.getElementById('syarah-content');
+    const resultContainer = document.getElementById('syarah-result');
     
     // 1. Bersihkan Markdown Bold (**teks**) menjadi <strong>
+    // Kita tambahkan penanganan agar teks yang belum tutup (misal **teks...) tidak rusak
     let cleanText = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-    // 2. Pecah per baris untuk diproses
+    // 2. Pecah per baris
     const lines = cleanText.split('\n');
     
     const formattedHtml = lines.map(line => {
         const trimmedLine = line.trim();
-        if (!trimmedLine) return '<br>'; // Baris kosong jadi jarak
+        if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
 
         // Jika baris adalah Header (=== LAFADZ ===)
         if (trimmedLine.startsWith('===')) {
@@ -611,6 +647,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         }
 
         // Jika baris adalah Poin (1. Jenis: ...)
+        // Regex diperkuat agar tetap rapi saat teks baru setengah jalan
         if (/^\d+\./.test(trimmedLine)) {
             return `<div class="analysis-point">${trimmedLine}</div>`;
         }
@@ -619,10 +656,25 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         return `<div class="normal-line">${trimmedLine}</div>`;
     }).join('');
 
-    resultDiv.innerHTML = formattedHtml;
-    document.getElementById('syarah-result').style.display = 'block';
-}
+    // RENDER: Gunakan requestAnimationFrame agar browser merender lebih mulus
+        requestAnimationFrame(() => {
+        resultDiv.innerHTML = formattedHtml;
+        
+        if (resultContainer.style.display !== 'block') {
+            resultContainer.style.display = 'block';
+        }
 
+        // Scroll otomatis hanya jika user berada di dekat bawah
+        // Agar tidak "memaksa" layar lompat-lompat
+        const threshold = 150; 
+        const isNearBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - threshold;
+        
+        if (isNearBottom) {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
+        }
+    });
+
+}
 
     function copySyarahResult() {
         const content = document.getElementById('syarah-content').innerText;
