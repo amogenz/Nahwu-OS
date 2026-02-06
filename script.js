@@ -521,7 +521,6 @@
     // 3. UI Feedback - Mulai Loading
     resultArea.style.display = 'none';
     loadingArea.style.display = 'flex';
-    // PAKSA LOADING MATI MAX 3 DETIK
   
     // 4. Pengaturan API URL (Diarahkan ke Playground Vercel)
     const hostname = window.location.hostname;
@@ -535,7 +534,7 @@
         apiUrl = 'https://nahwu.amogenz.my.id/api/syarah';
     }
 
-    // --- LOGIC ANALISIS AI STREAMING ---
+    // --- LOGIC ANALISIS AI STREAMING + DALIL ---
     try {
 const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
 Kalimat: ${input}
