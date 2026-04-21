@@ -41,41 +41,57 @@ export default async function handler(req) {
             });
         }
 
-        const selectedKey = keys[Math.floor(Math.random() * keys.length)];
-        // Gunakan v1beta agar lebih stabil untuk stream
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${selectedKey}`;
+        // --- FITUR GAHAR: SMART LOAD BALANCING & AUTO-RETRY ---
+        // Acak urutan array key agar adil pembagian bebannya
+        const shuffledKeys = keys.sort(() => 0.5 - Math.random());
+        
+        let response = null;
+        let lastErrorMessage = '';
 
-        const response = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { 
-        temperature: 0.7, // Sedikit dinaikkan agar lebih luwes
-        maxOutputTokens: 8000, // Gass ke 8000 bray, jangan takut
-        topP: 0.95,
-    },
-    // Tambahkan ini agar AI tidak ragu-ragu mengeluarkan teks panjang
-    safetySettings: [
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-    ]
-})
+        // Coba satu per satu key yang ada sampai berhasil (Tembus)
+        for (const key of shuffledKeys) {
+            const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${key}`;
 
-        });
+            try {
+                const res = await fetch(GEMINI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { 
+                            temperature: 0.7, 
+                            maxOutputTokens: 8000, // Diubah! 2500 sudah sangat lega, bikin AI gak gampang limit
+                            topP: 0.95,
+                        },
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ]
+                    })
+                });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            return new Response(JSON.stringify({ error: errorData.error?.message || 'Gemini Error' }), { 
-                status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            });
+                if (res.ok) {
+                    response = res; // Key berhasil menembus Google!
+                    break; // Langsung hentikan loop pencarian key
+                } else {
+                    // Jika key gagal (biasanya status 429 Too Many Requests / Limit)
+                    const errData = await res.json().catch(() => ({}));
+                    lastErrorMessage = errData.error?.message || `Error status ${res.status}`;
+                    console.warn(`Key limit/gagal, otomatis pindah ke key lain...`, lastErrorMessage);
+                    // Kode akan lanjut memutar loop ke key berikutnya
+                }
+            } catch (e) {
+                lastErrorMessage = e.message;
+            }
         }
 
-        // BAGIAN KRITIS: Pastikan response.body ada
-        if (!response.body) {
-            throw new Error("No response body from Gemini");
+        // Jika ke-7 key sudah dicoba dan tidak ada satupun yang tembus
+        if (!response || !response.ok || !response.body) {
+            return new Response(JSON.stringify({ error: 'Server AI sedang sangat sibuk. Coba beberapa saat lagi. (' + lastErrorMessage + ')' }), { 
+                status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            });
         }
 
         return new Response(response.body, {
@@ -88,7 +104,7 @@ export default async function handler(req) {
         });
 
     } catch (error) {
-        console.error("Fetch Error:", error);
+        console.error("Critical Server Error:", error);
         return new Response(JSON.stringify({ error: error.message || 'Gagal menghubungi server AI.' }), { 
             status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         });
