@@ -480,6 +480,7 @@
     }
 
     // --- 7. SYARAH AI FUNCTIONS ---
+
     function isArabicText(text) {
         const arabicRegex = /[\u0600-\u06FF]/;
         return arabicRegex.test(text);
@@ -489,11 +490,18 @@
         return text.trim().split(/\s+/).filter(word => isArabicText(word)).length;
     }
 
-    async function analyzeSyarah() {
+    // Fungsi pembantu untuk membuat ID unik di Firebase dari lafadz Arab
+    function createCacheKey(text) {
+    // Hilangkan harakat dan ubah spasi jadi underscore agar aman masuk Firebase
+    const cleanText = text.replace(/[\u064B-\u065F]/g, "").trim().replace(/\s+/g, '_');
+    return btoa(unescape(encodeURIComponent(cleanText))).replace(/[/+=]/g, ""); 
+}
+
+async function analyzeSyarah() {
     const input = document.getElementById('arabic-input').value.trim();
     const resultArea = document.getElementById('syarah-result');
     const loadingArea = document.getElementById('syarah-loading');
-    const resultDiv = document.getElementById('syarah-content'); // Pastikan variabel ini ada
+    const resultDiv = document.getElementById('syarah-content');
     
     // 1. Validasi Input
     if (!input) {
@@ -512,7 +520,7 @@
         return;
     }
 
-    // 2. Cek Koneksi Internet (Wajib untuk APK Android)
+    // 2. Cek Koneksi Internet
     if (!navigator.onLine) {
         alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet.');
         return;
@@ -521,14 +529,37 @@
     // 3. UI Feedback - Mulai Loading
     resultArea.style.display = 'none';
     loadingArea.style.display = 'flex';
-    // PAKSA LOADING MATI MAX 3 DETIK
   
-    // 4. Pengaturan API URL (Diarahkan ke Playground Vercel)
+    // ==========================================
+    // TAHAP 1: CEK GUDANG CACHE FIREBASE DULU
+    // ==========================================
+    const cacheKey = createCacheKey(input);
+    const cacheRef = ref(db, `syarah_cache/${cacheKey}`);
+
+    try {
+        const snapshot = await get(cacheRef);
+        if (snapshot.exists()) {
+            // DATA DITEMUKAN DI FIREBASE!
+            const cachedData = snapshot.val();
+            
+            loadingArea.style.display = 'none';
+            resultArea.style.display = 'block';
+            
+            // Langsung tampilkan hasilnya tanpa panggil API AI
+            displaySyarahResult(cachedData.result);
+            console.log("⚡ [CACHE HIT] Diambil dari Firebase! Hemat API Key.");
+            
+            return; // BERHENTI DI SINI. Sisa kode di bawah tidak akan dijalankan.
+        }
+    } catch (e) {
+        console.warn("Gagal cek cache Firebase, lanjut ke AI:", e);
+    }
+    // ==========================================
+
+    // 4. Pengaturan API URL
     const hostname = window.location.hostname;
-    // Kita paksa apiUrl ke playground untuk testing di Acode
     let apiUrl = 'https://nahwu-os-git-playground-ammos-projects-0b62d4a2.vercel.app/api/syarah';
 
-    // Jika nanti sudah di-merge, kode ini akan otomatis menyesuaikan domain
     if (hostname.includes('amogenz.xyz')) {
         apiUrl = 'https://nahwu.amogenz.xyz/api/syarah';
     } else if (hostname.includes('amogenz.my.id')) {
@@ -537,7 +568,7 @@
 
     // --- LOGIC ANALISIS AI STREAMING ---
     try {
-const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
+        const promptText = `Analisis kalimat Arab berikut per lafadz dengan sangat detail sesuai kaidah ilmu Nahwu dan Shorof:
 Kalimat: ${input}
 
 Berikan analisis mendalam untuk SETIAP kata dengan format persis seperti ini:
@@ -571,7 +602,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         const decoder = new TextDecoder();
         let cumulativeText = "";
         let buffer = ""; 
-        let hasStarted = false; // Flag untuk menandai teks pertama masuk
+        let hasStarted = false; 
 
         while (true) {
             const { done, value } = await reader.read();
@@ -579,7 +610,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
 
             buffer += decoder.decode(value, { stream: true });
             let lines = buffer.split('\n');
-            buffer = lines.pop(); // Simpan baris terakhir yang menggantung
+            buffer = lines.pop(); 
 
             for (const line of lines) {
                 const trimmedLine = line.trim();
@@ -590,7 +621,6 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
                     const data = JSON.parse(jsonStr);
                     
                     if (data.candidates && data.candidates[0].content.parts[0].text) {
-                        // KUNCI: Loading HANYA mati jika teks sudah ada
                         if (!hasStarted) {
                             hasStarted = true;
                             loadingArea.style.display = 'none';
@@ -602,16 +632,33 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
                         displaySyarahResult(cumulativeText); 
                     }
                 } catch (e) {
-                    // Jika gagal parse, sambungkan lagi ke buffer baris berikutnya
                     buffer = line + '\n' + buffer;
                 }
             }
         }
 
-        // Jika sampai selesai loop teks tidak muncul (misal error tersembunyi)
         if (!hasStarted) {
             throw new Error('AI tidak memberikan respon. Coba ulangi.');
         }
+
+        // ==========================================
+        // TAHAP 2: SIMPAN HASIL AI KE FIREBASE
+        // ==========================================
+        // Setelah loop while selesai, berarti teks AI sudah komplit.
+        // Kita simpan ke database agar pencarian berikutnya tidak perlu pakai AI lagi.
+        if (cumulativeText && cumulativeText.length > 50) {
+            try {
+                await set(cacheRef, {
+                    original_input: input,
+                    result: cumulativeText,
+                    created_at: Date.now()
+                });
+                console.log("✅ [CACHE SAVED] Lafadz baru berhasil disimpan ke database.");
+            } catch (saveErr) {
+                console.warn("Gagal menyimpan ke cache Firebase:", saveErr);
+            }
+        }
+        // ==========================================
 
     } 
     catch (error) {
@@ -622,6 +669,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         loadingArea.style.display = 'none';
     }
 }
+
 
 // Fungsi Display agar TIDAK "Kotak dalam Kotak"
 
