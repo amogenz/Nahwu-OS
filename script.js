@@ -40,6 +40,7 @@
     let uploadBase64 = null;
     let tapCount = 0;
     let tapTimer;
+    let quizScore = { correct: 0, wrong: 0, total: 0 }; // Track score per session
     const SECRET_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa";
     const ADMIN_PASSWORD_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa"; // Hash untuk
     let els = {};
@@ -321,6 +322,7 @@
 
                 wordIndex = 0; 
                 stepIndex = 1;
+                quizScore = { correct: 0, wrong: 0, total: 0 };
                 
                 els.viewLoading.style.display = 'none';
                 els.viewQuiz.style.display = 'block';
@@ -366,6 +368,11 @@
         els.mImgArea.style.display = 'none'; 
         els.mMsg.style.display = 'block';
         els.mIcon.style.display = 'block';
+
+        // Track score
+        quizScore.total++;
+        if (isCorrect) quizScore.correct++;
+        else quizScore.wrong++;
 
         const currentWordData = quizData.analysis[wordIndex];
         const totalSteps = Object.keys(currentWordData.steps).length;
@@ -440,21 +447,88 @@
         };
     }
 
+    function getRankData(correct, total) {
+        const wrong = total - correct;
+        const halfOrMore = wrong >= Math.ceil(total / 2);
+
+        if (total === 0) return {
+            icon: "📖", rank: "Pemula", color: "#8E8E93",
+            msg: "Terus semangat belajar! Setiap langkah kecil adalah kemajuan."
+        };
+        if (wrong === 0) return {
+            icon: "⚔️", rank: "Panglima Nahwu", color: "#FFD700",
+            msg: "Luar biasa! Tak ada satupun yang salah. Engkau layak disebut Panglima Nahwu!"
+        };
+        if (wrong === 1) return {
+            icon: "🎖️", rank: "Komandan Nahwu", color: "#FF9F0A",
+            msg: "Hampir sempurna! Satu kesalahan saja. Komandan Nahwu, teruslah pimpin barisan!"
+        };
+        if (wrong === 2) return {
+            icon: "🏅", rank: "Batalion Nahwu", color: "#30D158",
+            msg: "Bagus sekali! Dua kesalahan masih sangat baik. Batalion Nahwu siap tempur!"
+        };
+        if (halfOrMore) return {
+            icon: "🌱", rank: "Pemula", color: "#8E8E93",
+            msg: "Jangan menyerah! من جد وجد — Siapa yang bersungguh-sungguh, pasti berhasil. Ayo ulangi!"
+        };
+        // Salah kurang dari setengah tapi lebih dari 2
+        return {
+            icon: "🛡️", rank: "Prajurit Nahwu", color: "#007AFF",
+            msg: "Cukup baik! Masih ada ruang untuk berkembang. Terus latih kaidahmu, wahai Prajurit!"
+        };
+    }
+
     function showTransition(title, msg, isNewSentence) {
         els.mImgArea.style.display = 'none';
         els.mMsg.style.display = 'block';
         els.mIcon.style.display = 'block';
-        els.mIcon.innerText = "🚀"; 
-        els.mTitle.innerText = title; 
-        els.mTitle.style.color = "#007AFF"; 
-        els.mMsg.innerText = msg;
+
+        if (isNewSentence && quizScore.total > 0) {
+            // Show rank panel
+            const rank = getRankData(quizScore.correct, quizScore.total);
+            const wrongCount = quizScore.total - quizScore.correct;
+            
+            els.mIcon.innerText = rank.icon;
+            els.mIcon.style.display = 'block';
+            els.mTitle.innerText = "Alhamdulillah! 🎉";
+            els.mTitle.style.color = "#FFD700";
+            
+            // Build score + rank HTML inside modal
+            els.mMsg.innerHTML = `
+                <div style="text-align:center; margin-bottom: 12px;">
+                    <div style="font-size: 2.2rem; margin-bottom: 6px;">${rank.icon}</div>
+                    <div style="font-size: 1.3rem; font-weight: 800; color: ${rank.color}; letter-spacing: 0.5px; margin-bottom: 4px;">${rank.rank}</div>
+                    <div style="display:flex; justify-content:center; gap:16px; margin: 10px 0;">
+                        <div style="background: rgba(52,199,89,0.15); border: 1px solid #34C759; border-radius: 12px; padding: 8px 16px; text-align:center;">
+                            <div style="font-size:1.4rem; font-weight:800; color:#34C759;">${quizScore.correct}</div>
+                            <div style="font-size:0.65rem; color:#34C759; opacity:0.8;">BENAR</div>
+                        </div>
+                        <div style="background: rgba(255,59,48,0.15); border: 1px solid #FF3B30; border-radius: 12px; padding: 8px 16px; text-align:center;">
+                            <div style="font-size:1.4rem; font-weight:800; color:#FF3B30;">${wrongCount}</div>
+                            <div style="font-size:0.65rem; color:#FF3B30; opacity:0.8;">SALAH</div>
+                        </div>
+                        <div style="background: rgba(0,122,255,0.15); border: 1px solid #007AFF; border-radius: 12px; padding: 8px 16px; text-align:center;">
+                            <div style="font-size:1.4rem; font-weight:800; color:#007AFF;">${quizScore.total}</div>
+                            <div style="font-size:0.65rem; color:#007AFF; opacity:0.8;">TOTAL</div>
+                        </div>
+                    </div>
+                    <div style="font-size:0.82rem; color: var(--text-muted); line-height:1.5; margin-top: 8px; font-style: italic;">${rank.msg}</div>
+                </div>
+            `;
+
+        } else {
+            els.mIcon.innerText = "🚀"; 
+            els.mTitle.innerText = title; 
+            els.mTitle.style.color = "#007AFF"; 
+            els.mMsg.innerText = msg;
+        }
+        
         els.modal.style.display = 'flex';
         
         els.fbBtn.onclick = () => {
             els.modal.style.display = 'none';
             
             if (isNewSentence) {
-                // Langsung mulai kalimat baru tanpa refresh
                 startLearningCycle();
             } else {
                 renderQuestion();
@@ -1013,6 +1087,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
                 quizData = null;
                 wordIndex = 0;
                 stepIndex = 1;
+                quizScore = { correct: 0, wrong: 0, total: 0 };
             }
         });
         
