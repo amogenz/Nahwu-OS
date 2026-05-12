@@ -10,28 +10,28 @@ export const AMOGENZ_DB_LV1 = [
 "id_lafadz": "amogenz_lafadz_001",
 "word": "زيد",
 "steps": {
-"1": { "question": "Apa jenis kalimat زيد?", "options": ["Isim", "Fi'il", "Huruf"], "correct": "Isim", "explanation": "Karena menunjukkan nama orang." },
-"2": { "question": "Apa tanda/alasan زيد disebut Isim?", "options": ["Tanwin", "Alif Lam", "Huruf Jer"], "correct": "Tanwin", "explanation": "Terdapat tanwin di akhir kata." },
-"3": { "question": "Apakah status زيد Mu'rob atau Mabni?", "options": ["Mu'rob", "Mabni"], "correct": "Mu'rob", "explanation": "Karena harakat akhirnya dapat berubah sesuai amil." },
-"4": { "question": "Mengapa زيد berstatus Mu'rob?", "options": ["Isim Mufrad", "Isim Isyarah", "Dhomir"], "correct": "Isim Mufrad", "explanation": "Pada asalnya isim adalah mu'rob, kecuali yang menyerupai huruf." },
-"5": { "question": "Apa kedudukan I'rob/Mabni kata زيد?", "options": ["Rafa'", "Nashab", "Jarr"], "correct": "Rafa'", "explanation": "Berada di awal kalimat sebagai subjek." },
-"6": { "question": "Apa alasan زيد dihukumi Rafa'?", "options": ["Mubtada", "Fa'il", "Isim Kaana"], "correct": "Mubtada", "explanation": "Isim rafa' yang terbebas dari amil lafdzi." },
-"7": { "question": "Apa tanda I'rob/Mahal I'rob pada زيد?", "options": ["Dhammah", "Alif", "Wawu"], "correct": "Dhammah", "explanation": "Tanda asli untuk rafa' pada isim mufrad." },
-"8": { "question": "Mengapa tandanya menggunakan Dhammah?", "options": ["Isim Mufrad", "Jamak Taksir", "Asmaul Khomsah"], "correct": "Isim Mufrad", "explanation": "Karena bukan mutsanna, jamak, maupun asmaul khomsah." }
+"1": { "question": "Apa jenis kalimat زيد?", "options": ["Isim", "Fi'il", "Huruf"], "correct": "Isim", "explanation": "Karena menunjukkan nama orang. Dan semua yang menunjukkan nama termasuk isim" },
+"2": { "question": "Apa alasan lafadz زيد termasuk Isim?", "options": ["Tanwin", "Alif Lam", "Huruf Jer"], "correct": "Tanwin", "explanation": "Terdapat tanwin di akhir kata. Dan tanwin adalah tanda khusu kalimat isim" },
+"3": { "question": "Lafadz زيد itu Mu'rob atau Mabni?", "options": ["Mu'rob", "Mabni"], "correct": "Mu'rob", "explanation": "Karena harakat akhirnya dapat berubah sesuai amil." },
+"4": { "question": "Mengapa lafadz زيد  dihukumi Mu'rob?", "options": ["Isim Mufrad", "Isim Isyarah", "Dhomir"], "correct": "Isim Mufrad", "explanation": "secara hukum asalnya isim adalah kalimat yang mu'rob, kecuali yang menyerupai huruf." },
+"5": { "question": "Apa kedudukan I'rob dari lafadz زيد?", "options": ["Rafa'", "Nashab", "Jarr"], "correct": "Rafa'", "explanation": "Berada di awal kalimat sebagai subjek (mubtada'). Dan mubtada itu rafa' " },
+"6": { "question": "Apa alasan زيد dihukumi Rafa'?", "options": ["Mubtada", "Fa'il", "Isim Kaana"], "correct": "Mubtada", "explanation": "Isim yang dihukumi rafa' dan sunyi dari amil lafdzi atau amil yang nampak." },
+"7": { "question": "Apa tanda I'rob/Mahal I'rob pada lafadz زيد?", "options": ["Dhammah", "Alif", "Wawu"], "correct": "Dhammah", "explanation": "Karena isim mufrad ketika rafa' tandanya adalah dhomah." },
+"8": { "question": "Mengapa tandanya menggunakan Dhammah?", "options": ["Isim Mufrad", "Jamak Taksir", "Asmaul Khomsah"], "correct": "Isim Mufrad", "explanation": "Karena bukan mutsanna (bermakna 2), jamak (bermakna banyak), maupun asmaul khomsah." }
 }
 },
 {
 "id_lafadz": "amogenz_lafadz_002",
 "word": "طالب",
 "steps": {
-"1": { "question": "Apa jenis kalimat طالب?", "options": ["Isim", "Fi'il", "Huruf"], "correct": "Isim", "explanation": "Menunjukkan profesi/subjek." },
-"2": { "question": "Apa tanda/alasan طالب disebut Isim?", "options": ["Tanwin", "Idhofah", "Nida'"], "correct": "Tanwin", "explanation": "Terdapat tanwin dhommah di akhir kata." },
-"3": { "question": "Apakah status طالب Mu'rob atau Mabni?", "options": ["Mu'rob", "Mabni"], "correct": "Mu'rob", "explanation": "Karena ia bukan kelompok isim mabni." },
-"4": { "question": "Mengapa طالب berstatus Mu'rob?", "options": ["Isim Mufrad", "Isim Maushul", "Isim Syarat"], "correct": "Isim Mufrad", "explanation": "Isim yang menunjukkan makna tunggal." },
-"5": { "question": "Apa kedudukan I'rob/Mabni kata طالب?", "options": ["Rafa'", "Nashab", "Jazm"], "correct": "Rafa'", "explanation": "Melengkapi makna mubtada." },
-"6": { "question": "Apa alasan طالب dihukumi Rafa'?", "options": ["Khabar", "Na'at", "Taukid"], "correct": "Khabar", "explanation": "Isim rafa' yang disandarkan kepada mubtada." },
-"7": { "question": "Apa tanda I'rob/Mahal I'rob pada طالب?", "options": ["Dhammah", "Fathah", "Wawu"], "correct": "Dhammah", "explanation": "Tanda rafa' pada isim mufrad munsharif." },
-"8": { "question": "Mengapa tandanya menggunakan Dhammah?", "options": ["Isim Mufrad", "Jamak Muannas Salim", "Fi'il Mudhori'"], "correct": "Isim Mufrad", "explanation": "Sesuai kaidah Jurumiyah." }
+"1": { "question": "lafafz طالب termasuk kalimat apa ?", "options": ["Isim", "Fi'il", "Huruf"], "correct": "Isim", "explanation": "karena Menunjukkan profesi/subjek. isim adalah kalimat yang menunjukkan arti nama provesi atau benda" },
+"2": { "question": "Apa tandanya lafafz طالب termasuk kalimat Isim?", "options": ["Tanwin", "Idhofah", "Nida'"], "correct": "Tanwin", "explanation": "Terdapat dhommah tanwin di akhir kata. Dan tanwin adalah tanda khusus kalimat isim" },
+"3": { "question": "lafadz طالب itu statusnya Mu'rob atau Mabni?", "options": ["Mu'rob", "Mabni"], "correct": "Mu'rob", "explanation": "Karena ia bukan kelompok isim mabni." },
+"4": { "question": "Mengapa طالب berstatus Mu'rob?", "options": ["Isim Mufrad", "Isim Maushul", "Isim Syarat"], "correct": "Isim Mufrad", "explanation": "Isim yang menunjukkan makna tunggal. dan isim mufrad itu hukumnya mu'rab" },
+"5": { "question": "Apa I'rob dari lafadz طالب?", "options": ["Rafa'", "Nashab", "Jazm"], "correct": "Rafa'", "explanation": "menjadi khobar (Melengkapi makna mubtada). dan hukum asal dari khobar adalah rofa'" },
+"6": { "question": "Apa alasan طالب dihukumi Rafa'?", "options": ["Khabar", "Na'at", "Taukid"], "correct": "Khabar", "explanation": "Isim yang dihukumi rafa' yang disandarkan kepada mubtada." },
+"7": { "question": "Apa tanda I'rob rofa pada lafadz طالب?", "options": ["Dhammah", "Fathah", "Wawu"], "correct": "Dhammah", "explanation": "karena Tanda rafa' pada isim mufrad munsharif adalah dhommah." },
+"8": { "question": "Mengapa tanda rqfa'nya menggunakan Dhammah?", "options": ["Isim Mufrad", "Jamak Muannas Salim", "Fi'il Mudhori'"], "correct": "Isim Mufrad", "explanation": "isim mufrad (isim yang bermakna tunggal) ketika rafa' itu tandanya dhommah." }
 }
 }
 ]
@@ -148,20 +148,20 @@ export const AMOGENZ_DB_LV1 = [
 },
   {
 "id_kalimat": "amogenz_kalimat_004",
-"teks_kalimat": "يَحْضُرْ خَالِدٌ الفصل",
+"teks_kalimat": "يَحْضُر خالد الفصل",
 "analysis": [
 {
 "id_lafadz": "amogenz_lafadz_010",
-"word": "يَحْضُرْ",
+"word": "يحضر",
 "steps": {
 "1": { "question": "Apa jenis kalimat يَحْضُرْ?", "options": ["Isim", "Fi'il", "Huruf"], "correct": "Fi'il", "explanation": "Menunjukkan pekerjaan." },
 "2": { "question": "Apa tanda/alasan يَحْضُرْ disebut Fi'il?", "options": ["Huruf Mudhoro'ah", "Tanwin", "Al"], "correct": "Huruf Mudhoro'ah", "explanation": "Diawali dengan huruf Ya'." },
 "3": { "question": "Apakah status يَحْضُرْ Mu'rob atau Mabni?", "options": ["Mu'rob", "Mabni"], "correct": "Mu'rob", "explanation": "Fi'il mudhori' yang tidak bersambung nun niswah/taukid." },
 "4": { "question": "Mengapa يَحْضُرْ berstatus Mu'rob?", "options": ["Fi'il Mudhori'", "Fi'il Madhi", "Fi'il Amr"], "correct": "Fi'il Mudhori'", "explanation": "Fi'il mudhori' hukum asalnya mu'rob." },
-"5": { "question": "Apa kedudukan I'rob/Mabni kata يَحْضُرْ?", "options": ["Jazm", "Rafa'", "Nashab"], "correct": "Jazm", "explanation": "Asumsi terdapat amil jazm sebelumnya atau dalam konteks tholab (soal ini diasumsikan sukun karena jazm)." },
-"6": { "question": "Apa alasan يَحْضُرْ dihukumi Jazm?", "options": ["Amil Jazm", "Kemurnian", "Bentuk Fi'il"], "correct": "Amil Jazm", "explanation": "Fi'il mudhori' dijazmkan oleh amil jazm." },
-"7": { "question": "Apa tanda I'rob/Mahal I'rob pada يَحْضُرْ?", "options": ["Sukun", "Hapus Huruf", "Hapus Nun"], "correct": "Sukun", "explanation": "Tanda asli jazm." },
-"8": { "question": "Mengapa tandanya menggunakan Sukun?", "options": ["Shahihul Akhir", "Mu'tal Akhir", "Af'alul Khomsah"], "correct": "Shahihul Akhir", "explanation": "Karena huruf akhirnya (Ra') bukan huruf illat." }
+"5": { "question": "Apa kedudukan I'rob/Mabni kata يَحْضُرْ?", "options": ["Jazm", "Rafa'", "Nashab"], "correct": "Rafa'", "explanation": "tidak terdapat amil jazm dan amil nawasib sebelum kalimatnya." },
+"6": { "question": "Apa alasan يَحْضُرْ dihukumi Rafa'?", "options": ["Amil Jazm", "Kemurnian", "Bentuk Fi'il"], "correct": "kemurnian", "explanation": "sunyi dari amil jazm dan amil nawasib." },
+"7": { "question": "Apa tanda I'rob/Mahal I'rob pada يَحْضُرْ?", "options": ["dhommah", "Hapus Huruf", "Hapus Nun"], "correct": "dhommah", "explanation": "karena shihul akhir." },
+"8": { "question": "Mengapa tandanya menggunakan dhommah?", "options": ["Shahihul Akhir", "Mu'tal Akhir", "Af'alul Khomsah"], "correct": "Shahihul Akhir", "explanation": "Karena huruf akhirnya (Ra') bukan huruf illat." }
 }
 },
 {
@@ -663,5 +663,5 @@ export const AMOGENZ_DB_LV1 = [
 }
 ]
 }
-
+/////// 014
   ];
