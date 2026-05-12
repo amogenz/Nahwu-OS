@@ -286,50 +286,52 @@
         }
         
         .db-options {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .db-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid var(--glass-border);
-            color: white;
-            padding: 15px;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            text-align: left;
-        }
-        
-        .db-btn i {
-            font-size: 28px;
-            color: var(--ios-blue);
-        }
-        
-        .db-btn span {
-            font-weight: 600;
-            font-size: 1rem;
-        }
-        
-        .db-btn small {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        
-        .db-btn.active {
-            background: rgba(0, 122, 255, 0.2);
-            border-color: var(--ios-blue);
-        }
-        
-        .db-btn:active {
-            transform: scale(0.98);
-        }
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.db-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 10px;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    background: rgba(255,255,255,0.06);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-muted);
+}
+
+.db-btn i {
+    font-size: 1.6rem;
+}
+
+.db-btn span {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.db-btn small {
+    font-size: 0.68rem;
+    opacity: 0.6;
+    text-align: center;
+}
+
+.db-btn.active {
+    border-color: var(--accent);
+    background: rgba(0, 122, 255, 0.15);
+    color: var(--accent);
+}
+
+.db-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.2);
+}
         
         .btn-primary { 
             background: var(--ios-blue); 

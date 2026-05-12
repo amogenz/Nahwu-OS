@@ -1,7 +1,8 @@
 
     import { AMOGENZ_DB_LV1 } from './amogenzdb-lv1.js';
-    import { AMOGENZ_DB_LV2 } from './amogenzdb-lv2.js';
-    import { AMOGENZ_DB_SHOROF } from './amogenzdb-shorof.js'; 
+    import { AMOGENZ_DB_LV2 } from './amogenzdb-lv2.js'; 
+    import { AMOGENZ_DB_ALFIYAH_FIIL } from './amogenzdb-alfiyah-fiil.js';
+    import { AMOGENZ_DB_ALFIYAH } from './amogenzdb-alfiyah-isim.js';    import { AMOGENZ_DB_SHOROF } from './amogenzdb-shorof.js'; 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 // loading 
@@ -95,17 +96,21 @@ window.addEventListener('load', () => {
 
     // Database Selection
     function getSelectedDatabase() {
-        switch(currentDatabase) {
-            case 'lv1':
-                return AMOGENZ_DB_LV1;
-            case 'lv2':
-                return AMOGENZ_DB_LV2;
-            case 'shorof':
-                return AMOGENZ_DB_SHOROF;
-            default:
-                return AMOGENZ_DB_LV1;
-        }
+    switch(currentDatabase) {
+        case 'lv1':
+            return AMOGENZ_DB_LV1;
+        case 'lv2': // sekarang khusus Imrithi saja
+            return AMOGENZ_DB_LV2;
+        case 'alfiyah-fiil':       // TAMBAH
+            return AMOGENZ_DB_ALFIYAH_FIIL;
+        case 'alfiyah-isim':       // TAMBAH
+            return AMOGENZ_DB_ALFIYAH;
+        case 'shorof':
+            return AMOGENZ_DB_SHOROF;
+        default:
+            return AMOGENZ_DB_LV1;
     }
+}
 
     function getSeenSentences() { 
         const key = `nahwu_seen_indices_${currentDatabase}`;

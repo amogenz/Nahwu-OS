@@ -26,10 +26,11 @@
     
 </head>
 <body>
-    <div id="splash-screen">
+   <div id="splash-screen">
   <img src="https://i.ibb.co.com/v6Lj03FK/20260428-132813.png" alt="Nahwu OS" />
-</div>
-    <div class="glass-container">
+</div> 
+
+   <div class="glass-container">
         <div class="chat-header">
             <div class="header-content">
                 <div class="avatar">
@@ -65,24 +66,34 @@
                     
                     <!-- Pilihan Database -->
                     <div class="database-selector">
-                        <h3 style="font-size: 1rem; margin-bottom: 15px; color: var(--text-muted);">Pilih Model:</h3>
-                        <div class="db-options">
-                            <button class="db-btn active" data-db="lv1">
-                                <i class="ph ph-book"></i>
-                                <span>Jurumiyah</span>
-                                <small>Level 1</small>
-                            </button>
-                            <button class="db-btn" data-db="lv2">
-                                <i class="ph ph-books"></i>
-                                <span>Imrithi & Alfiyah</span>
-                                <small>Level 2</small>
-                            </button>
-                            <button class="db-btn" data-db="shorof">
-                                <i class="ph ph-text-aa"></i>
-                                <span>Shorof</span>
-                                <small>Tashrif & I'lal</small>
-                            </button>
-                        </div>
+                        <h3 style="font-size: 1rem; margin-bottom: 15px; color: var(--text-muted);">Pilih Level:</h3>
+<div class="db-options">
+    <button class="db-btn active" data-db="lv1">
+        <i class="ph ph-book-open"></i>
+        <span>Jurumiyah</span>
+        <small>Pemula · Level 1</small>
+    </button>
+    <button class="db-btn" data-db="lv2">
+        <i class="ph ph-books"></i>
+        <span>Imrithi</span>
+        <small>Menengah · Level 2</small>
+    </button>
+    <button class="db-btn" data-db="alfiyah-isim">
+        <i class="ph ph-text-columns"></i>
+        <span>Alfiyah Isim</span>
+        <small>Lanjut · Nadhom Isim</small>
+    </button>
+    <button class="db-btn" data-db="alfiyah-fiil">
+        <i class="ph ph-lightning"></i>
+        <span>Alfiyah Fi'il</span>
+        <small>Lanjut · Nadhom Fi'il</small>
+    </button>
+    <button class="db-btn" data-db="shorof">
+        <i class="ph ph-text-aa"></i>
+        <span>Shorof</span>
+        <small>Tashrif & I'lal</small>
+    </button>
+</div>
                     </div>
                     
                     <button class="btn-primary" id="btn-start">Mulai Belajar</button>
@@ -303,7 +314,7 @@
 </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+<script type="module" src="script.js"></script>
 
 </body>
 </html>
