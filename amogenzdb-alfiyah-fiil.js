@@ -81,7 +81,7 @@ export const AMOGENZ_DB_ALFIYAH_FIIL = [
 "12": {
 "question": "Apa nadhom Alfiyah yang menjelaskan fungsi huruf?",
 "options": ["سواهما الحرف كهل وفي ولم || فعل مضارع يلي لم كيشم", "وكل حرف مستحق للبنا || والأصل في المبني أن يسكنا", "بالجر والتنوين والندا وأل || ومسند للاسم تمييز حصل"],
-"correct": "وكل حرف مستحق للبna || والأصل في المبني أن يسكنا",
+"correct": "وكل حرف مستحق للبنا || والأصل في المبني أن يسكنا",
 "explanation": "Karena kedudukannya yang mabni dan sebagai huruf, ia tidak memiliki ruang untuk i'rob."
 }
 }
