@@ -18,9 +18,30 @@ window.addEventListener('load', () => {
     const db = getDatabase(app);
 
     const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
-    const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3');
+    const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
     sndCorrect.load(); sndWrong.load();
 
+    let wrongSoundTimer = null;
+    // FUNGSI KHUSUS UNTUK MEMUTAR AUDIO SALAH
+    function mainkanSuaraSalah() {
+        if (wrongSoundTimer) {
+            clearTimeout(wrongSoundTimer);
+        }
+
+        // 2. Paksa stop dan reset ke awal detik 0 secara bersih
+        sndWrong.pause();
+        sndWrong.currentTime = 0;
+
+        // Kita ubah dari event 'playing' ke play() langsung karena setTimeout di sini jauh lebih stabil
+        sndWrong.play().then(() => {
+            wrongSoundTimer = setTimeout(() => {
+                sndWrong.pause();
+                sndWrong.currentTime = 0;
+            }, 1300); // <-- Ganti angka milidetik ini buat ngatur durasi (1500ms = 1.5 detik)
+        }).catch(err => {
+            console.log("Autoplay diblokir browser sebelum ada klik:", err);
+        });
+    }
     // --- 2. DATA TERPUSAT: DAWUH PLAYLIST ---
     const DAWUH_PLAYLIST = [
         "من تبحر فى علم النحو اهتدى الى كل العلوم - Barangsiapa mendalami ilmu Nahwu, akan mendapat petunjuk ke segala ilmu.",
@@ -129,16 +150,17 @@ window.addEventListener('load', () => {
         } 
     }
 
-    function playSound(isCorrect) { 
+        function playSound(isCorrect) { 
         if (!els.soundToggle || !els.soundToggle.checked) return; 
         if (isCorrect) { 
             sndCorrect.currentTime = 0; 
             sndCorrect.play().catch(e => {}); 
         } else { 
-            sndWrong.currentTime = 0; 
-            sndWrong.play().catch(e => {}); 
+            // GANTI BAGIAN INI BRAY! Panggil fungsi cerdas kita, jangan sndWrong.play() mentahan lagi
+            mainkanSuaraSalah(); 
         } 
     }
+
 
     function handleSecretTap() { 
         tapCount++; 
