@@ -1,19 +1,17 @@
 
-    import { AMOGENZ_DB_LV1 } from './amogenzdb-lv1.js';
-    import { AMOGENZ_DB_LV2 } from './amogenzdb-lv2.js'; 
-    import { AMOGENZ_DB_ALFIYAH_FIIL } from './amogenzdb-alfiyah-fiil.js';
-    import { AMOGENZ_DB_ALFIYAH } from './amogenzdb-alfiyah-isim.js';    import { AMOGENZ_DB_SHOROF } from './amogenzdb-shorof.js'; 
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 // loading 
-window.addEventListener('load', () => {
+    window.addEventListener('load', () => {
   setTimeout(() => {
     document.getElementById('splash-screen').classList.add('hide');
   }, 1700);
 });
 
     // --- 1. CONFIG ---
-    const firebaseConfig = { apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8", authDomain: "amogenz.firebaseapp.com", databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "amogenz", storageBucket: "amogenz.firebasestorage.app", messagingSenderId: "864003468268", appId: "1:864003468268:web:7c861806529a0dacd66ec9" };
+    const firebaseConfig = { 
+      apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8", authDomain: "amogenz.firebaseapp.com", databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "amogenz", storageBucket: "amogenz.firebasestorage.app", messagingSenderId: "864003468268", appId: "1:864003468268:web:7c861806529a0dacd66ec9" };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
@@ -62,6 +60,7 @@ window.addEventListener('load', () => {
 
     // --- 3. STATE ---
     let quizData = null;
+    let dbCache = {}; // <-- TAMBAHKAN INI BRAY, UNTUK MENAMPUNG DATA DARI GITHUB
     let wordIndex = 0;
     let stepIndex = 1;
     let dawuhImagesCache = [];
@@ -116,22 +115,47 @@ window.addEventListener('load', () => {
     }
 
     // Database Selection
-    function getSelectedDatabase() {
-    switch(currentDatabase) {
-        case 'lv1':
-            return AMOGENZ_DB_LV1;
-        case 'lv2': // sekarang khusus Imrithi saja
-            return AMOGENZ_DB_LV2;
-        case 'alfiyah-fiil':       // TAMBAH
-            return AMOGENZ_DB_ALFIYAH_FIIL;
-        case 'alfiyah-isim':       // TAMBAH
-            return AMOGENZ_DB_ALFIYAH;
-        case 'shorof':
-            return AMOGENZ_DB_SHOROF;
-        default:
-            return AMOGENZ_DB_LV1;
+    // Fungsi untuk mendapatkan URL mentah dari GitHub via jsDelivr CDN
+    function getDbUrl(dbName) {
+        const baseUrl = "https://cdn.jsdelivr.net/gh/amogenz/Amogenz/db";
+        switch(dbName) {
+            case 'lv1':          return `${baseUrl}/amogenzdb-lv1.js`;
+            case 'lv2':          return `${baseUrl}/amogenzdb-lv2.js`;
+            case 'alfiyah-fiil': return `${baseUrl}/amogenzdb-alfiyah-fiil.js`;
+            case 'alfiyah-isim': return `${baseUrl}/amogenzdb-alfiyah-isim.js`;
+            case 'shorof':       return `${baseUrl}/amogenzdb-shorof.js`;
+            case 'tajwid':       return `${baseUrl}/amogenzdb-tajwid.js`;
+            default:             return `${baseUrl}/amogenzdb-alfiyah-fiil.js`;
+        }
     }
-}
+
+    // Fungsi cerdas untuk fetch dan parsing file JS berisi export data
+    async function loadDatabaseAsync(dbName) {
+        // Jika sudah pernah didownload, langsung pakai yang ada di cache
+        if (dbCache[dbName]) return dbCache[dbName];
+
+        const url = getDbUrl(dbName);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Gagal mengunduh file database: ${dbName}`);
+        
+        const text = await response.text();
+
+        // Trik Regex ajaib untuk mengambil isi array/object di dalam export const AMOGENZ_DB_...
+        // Mengubah string file JS mentah menjadi objek JSON asli JavaScript
+        const match = text.match(/export\s+const\s+AMOGENZ_DB_[A-Z0-9_]+\s*=\s*([\s\S]*?);?\s*$/);
+        if (!match) throw new Error(`Format data di dalam file ${dbName} tidak valid.`);
+
+        // Bersihkan dan evaluasi teks menjadi data array
+        let rawData = match[1].trim();
+        
+        // Gunakan Function constructor (aman karena source milik kamu sendiri di GitHub)
+        const parsedData = new Function(`return ${rawData}`)();
+        
+        // Simpan ke cache memory
+        dbCache[dbName] = parsedData;
+        return parsedData;
+    }
+
 
     function getSeenSentences() { 
         const key = `nahwu_seen_indices_${currentDatabase}`;
@@ -332,43 +356,46 @@ window.addEventListener('load', () => {
         els.viewQuiz.style.display = 'none';
         els.viewLoading.style.display = 'flex';
 
-        setTimeout(() => {
-            try {
-                const DATABASE = getSelectedDatabase();
-                const seenIds = getSeenSentences();
-                let availableQuizzes = DATABASE.filter(q => !seenIds.includes(q.id_kalimat));
-                
-                if (availableQuizzes.length === 0) {
-                    availableQuizzes = DATABASE;
-                }
+        // Beri jeda sedikit untuk animasi loading yang mulus
+        await new Promise(resolve => setTimeout(resolve, 400));
 
-                const selectedQuiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
-
-                quizData = {
-                    id: selectedQuiz.id_kalimat,
-                    sentence: selectedQuiz.teks_kalimat,
-                    analysis: selectedQuiz.analysis
-                };
-
-                markSentenceSeen(quizData.id);
-                setRandomMarquee();
-
-                wordIndex = 0; 
-                stepIndex = 1;
-                quizScore = { correct: 0, wrong: 0, total: 0 };
-                
-                els.viewLoading.style.display = 'none';
-                els.viewQuiz.style.display = 'block';
-                
-                renderQuestion();
-
-            } catch (error) {
-                console.error("Error loading quiz:", error);
-                alert("Terjadi kesalahan memuat data. Pastikan database sudah benar.");
-                els.viewLoading.style.display = 'none';
-                els.viewStart.style.display = 'flex';
+        try {
+            // AMBIL DATA DARI GITHUB SCR ASYNC
+            const DATABASE = await loadDatabaseAsync(currentDatabase);
+            
+            const seenIds = getSeenSentences();
+            let availableQuizzes = DATABASE.filter(q => !seenIds.includes(q.id_kalimat));
+            
+            if (availableQuizzes.length === 0) {
+                availableQuizzes = DATABASE;
             }
-        }, 600); 
+
+            const selectedQuiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
+
+            quizData = {
+                id: selectedQuiz.id_kalimat,
+                sentence: selectedQuiz.teks_kalimat,
+                analysis: selectedQuiz.analysis
+            };
+
+            markSentenceSeen(quizData.id);
+            setRandomMarquee();
+
+            wordIndex = 0; 
+            stepIndex = 1;
+            quizScore = { correct: 0, wrong: 0, total: 0 };
+            
+            els.viewLoading.style.display = 'none';
+            els.viewQuiz.style.display = 'block';
+            
+            renderQuestion();
+
+        } catch (error) {
+            console.error("Error loading quiz data from GitHub:", error);
+            alert("Gagal memuat database dari GitHub. Pastikan koneksi internet aman bray!");
+            els.viewLoading.style.display = 'none';
+            els.viewStart.style.display = 'flex';
+        }
     }
 
     function renderQuestion() {
