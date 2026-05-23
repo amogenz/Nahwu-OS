@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>La Tahzan — Tempat Aman Bercerita</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+ <link rel="icon" type="image/webp" href="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<link rel="stylesheet" href="feed.css">
+<style>
+  /* Styling tambahan agar ikon gambar kustom tampil proporsional dan rapi */
+  .bnav-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════════ SETUP SCREEN ═══════════ -->
+  <div id="setup-screen" class="active">
+    <div class="setup-logo">✦ La Tahzan</div>
+    <div class="setup-title">Selamat datang,<br><em style="font-style:italic;color:#f0c899">siapa kamu?</em></div>
+    <div class="setup-sub">Pilih nama panggilanmu. Kamu bisa ganti kapan saja. Tidak ada login, tidak ada data pribadimu yang tersimpan.</div>
+
+    <div class="setup-card">
+      <div class="setup-label">Nama panggilanmu</div>
+      <input type="text" class="setup-name-input" id="setup-name-input" placeholder="Cth: Pengelana Fajar" maxlength="30" autocomplete="off">
+      <div class="setup-hint">Maksimal 30 karakter. Bisa huruf, angka, spasi.</div>
+
+      <div class="setup-anon-row" onclick="setupPickRandom()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a8998e" stroke-width="2"><path d="M18 3l-6 6-6-6"/><path d="M6 21l6-6 6 6"/><line x1="12" y1="9" x2="12" y2="15"/></svg>
+        <span style="font-size:13px;font-weight:700;color:var(--text2);flex:1">Pilihkan aku nama acak</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8998e" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+
+      <button class="setup-btn" onclick="finishSetup()">Mulai Bercerita</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ HOME SCREEN ═══════════ -->
+  <div id="home-screen" class="screen">
+    <div class="home-header">
+      <div class="home-header-top">
+        <div class="home-logo">✦ La Tahzan</div>
+        <div class="home-user-badge" onclick="openUsernameModal()">
+          <div class="home-user-ava" id="home-ava-badge">?</div>
+          <div class="home-user-name" id="home-name-badge">Anonim</div>
+        </div>
+      </div>
+      <h1 class="home-tagline">Tempat aman<br>untuk <em>bercerita.</em></h1>
+      <p class="home-sub">Anonim, jujur, tanpa penghakiman. Pilihlah ruangan yang paling kamu butuhkan.</p>
+    </div>
+
+    <!-- Ruang Rasa (Index 1) telah dihapus dari Grid -->
+    <div class="rooms-grid">
+      <div class="room-card" onclick="openRoom(0)">
+        <div class="room-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#e8845a" stroke-width="1.8"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M2 2l20 20"/></svg>
+        </div>
+        <div class="room-card-name">Ruang Juang</div>
+        <div class="room-card-desc">Perjuangan karir & kerja keras</div>
+        <div class="room-card-count" id="count0">memuat…</div>
+      </div>
+      <div class="room-card" onclick="openRoom(2)">
+        <div class="room-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5a9e7a" stroke-width="1.8"><path d="M12 22V12"/><path d="M20 7a8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 16 0z"/><path d="M4 7c0-3 2-5 8-5s8 2 8 5"/></svg>
+        </div>
+        <div class="room-card-name">Ruang Gembira</div>
+        <div class="room-card-desc">Kebahagiaan & rasa syukur</div>
+        <div class="room-card-count" id="count2">memuat…</div>
+      </div>
+      <div class="room-card" onclick="openRoom(3)">
+        <div class="room-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#5a8fbe" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <div class="room-card-name">Ruang Baru</div>
+        <div class="room-card-desc">Move on & babak baru</div>
+        <div class="room-card-count" id="count3">memuat…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ ROOM SCREEN ═══════════ -->
+  <div id="room-screen" class="screen r0">
+    <div class="room-accent-bar"></div>
+    <div class="room-topbar">
+      <button class="back-btn" onclick="goHome()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="topbar-info">
+        <div class="topbar-name" id="room-title">Ruang Juang</div>
+        <div class="topbar-sub" id="room-sub">Ceritakan perjuanganmu</div>
+      </div>
+      <div class="topbar-icon" id="room-icon-el"></div>
+    </div>
+
+    <div class="prompt-banner">
+      <div class="prompt-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Pemantik Minggu Ini
+      </div>
+      <div class="prompt-text" id="room-prompt"></div>
+    </div>
+
+    <div class="write-card" id="write-card">
+      <div class="write-tap-area" id="write-tap">
+        <div class="write-avatar" id="tap-avatar-initial">?</div>
+        <div class="write-placeholder-tap" onclick="openWrite()">Ceritakan sesuatu…</div>
+      </div>
+      <div class="write-form" id="write-form">
+        <div class="write-name-row">
+          <div class="write-name-ava" id="form-ava-initial">?</div>
+          <div class="write-name-display" id="form-name-display">Kamu</div>
+          <button class="write-name-edit-btn" onclick="openUsernameModal()">Ganti nama</button>
+        </div>
+        <textarea class="write-textarea" id="write-textarea"
+          placeholder="Mulai ceritamu di sini… tidak ada yang akan menghakimimu."
+          rows="4" oninput="autoResize(this)"></textarea>
+        <div class="write-actions">
+          <button class="btn-cancel" onclick="closeWrite()">Batal</button>
+          <button class="post-btn" onclick="submitPost()">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Bagikan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="posts-section">
+      <div class="section-label">Cerita dari mereka</div>
+      <div id="posts-list">
+        <div class="posts-loading">
+          <div class="spinner"></div>
+          <span>Memuat cerita…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BOTTOM NAV ── -->
+  <nav class="bottom-nav">
+    <button class="bnav-item active" id="bnav-home" onclick="goHome()">
+      <div class="bnav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="bnav-label">Beranda</div>
+      <div class="bnav-dot"></div>
+    </button>
+    <button class="bnav-item" id="bnav-0" onclick="openRoom(0)">
+      <div class="bnav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M2 2l20 20"/></svg>
+      </div>
+      <div class="bnav-label">Juang</div>
+      <div class="bnav-dot"></div>
+    </button>
+    
+    <!-- Tombol navigasi 'Rasa' diganti menjadi tautan langsung ke index.html dengan gambar kustom -->
+    <a href="../index.html" class="bnav-item" id="bnav-rasa-link" style="text-decoration: none;">
+      <div class="bnav-icon">
+        <img src="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp" alt="Nahwu Icon" class="bnav-icon-img">
+      </div>
+      <div class="bnav-label">Nahwu</div>
+      <div class="bnav-dot"></div>
+    </a>
+
+    <button class="bnav-item" id="bnav-2" onclick="openRoom(2)">
+      <div class="bnav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22V12"/><path d="M20 7a8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 16 0z"/></svg>
+      </div>
+      <div class="bnav-label">Gembira</div>
+      <div class="bnav-dot"></div>
+    </button>
+    <button class="bnav-item" id="bnav-3" onclick="openRoom(3)">
+      <div class="bnav-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      </div>
+      <div class="bnav-label">Baru</div>
+      <div class="bnav-dot"></div>
+    </button>
+  </nav>
+
+  <!-- ═══════════ SHARE MODAL ═══════════ -->
+  <div class="modal-overlay" id="share-modal" onclick="closeShareOnBg(event)">
+    <div class="share-card">
+      <div style="font-weight:800;color:var(--text);margin-bottom:4px">Bagikan Cerita</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Scan QR atau gunakan tombol di bawah</div>
+      <div id="qrcode"></div>
+      <div class="share-url-box" id="share-url-text"></div>
+      <div class="share-grid">
+        <button class="btn-share btn-wa" onclick="shareToWA()">
+          <svg viewBox="0 0 24 24" fill="white" stroke="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2.003C6.478 2.003 2 6.479 2 12.001c0 1.763.465 3.424 1.28 4.87L2 22.001l5.28-1.254A9.955 9.955 0 0 0 12 22c5.521 0 10-4.476 10-9.999S17.52 2.003 12 2.003z"/></svg>
+          WhatsApp
+        </button>
+        <button class="btn-share btn-ig" onclick="shareToIG()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="white" stroke="none"/></svg>
+          Instagram
+        </button>
+        <button class="btn-share btn-download-img" onclick="downloadPostImage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Unduh PNG
+        </button>
+        <button class="btn-share btn-copy" onclick="copyLink()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Salin Link
+        </button>
+      </div>
+      <button class="share-close" onclick="closeShare()">Tutup</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ POST ACTIONS MODAL ═══════════ -->
+  <div class="modal-overlay" id="action-modal" onclick="closeModalOnBg(event,'action-modal')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="action-modal-title">Opsi</div>
+      <div class="action-menu" id="action-menu-items"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ USERNAME MODAL ═══════════ -->
+  <div class="modal-overlay" id="username-modal" onclick="closeModalOnBg(event,'username-modal')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Ganti Nama Panggilanmu</div>
+      <input type="text" class="username-input" id="username-modal-input" placeholder="Masukkan nama baru…" maxlength="30" autocomplete="off">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--text3);cursor:pointer" onclick="pickRandomName()">Nama Acak</button>
+        <button class="modal-btn-primary" style="flex:2" onclick="saveUsername()">Simpan</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.6">Nama ini akan tampil di setiap postingan dan komentarmu. Kamu bisa ganti kapan saja.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CONFIRM MODAL ═══════════ -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="confirm-title">Hapus Postingan?</div>
+      <div class="confirm-text" id="confirm-text">Postingan ini akan dihapus permanen dan tidak bisa dikembalikan.</div>
+      <div class="confirm-actions">
+        <button class="btn-confirm-cancel" onclick="closeModal('confirm-modal')">Batal</button>
+        <button class="btn-confirm-ok" id="confirm-ok-btn">Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST CAPTURE CARD (off-screen for screenshot) -->
+  <div id="post-capture-card"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module" src="feed.js"></script>
+</body>
+</html>
