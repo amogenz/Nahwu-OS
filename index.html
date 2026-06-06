@@ -132,47 +132,90 @@
 
         <!-- PAGE SYARAH -->
         <div id="page-syarah" class="page-content">
-            <div class="content-area">
-                <div class="syarah-container">
-                    <h2 class="page-title">Syarah AI</h2>
-                    <p class="page-subtitle">Analisis kalimat dengan Ammo ai model Gemini Google</p>
-                    
-                    <div class="syarah-input-card">
-                        <label for="arabic-input" class="input-label">
-                            <i class="ph ph-pen-nib"></i> Masukkan Lafadz Arab
-                        </label>
-                        <textarea 
-                            id="arabic-input" 
-                            class="arabic-textarea" 
-                            placeholder="مثال: الطالب يذهب إلى المدرسة"
-                            maxlength="21"
-                            rows="3"
-                        ></textarea>
-                        <div class="char-counter">
-                            <span id="char-count">0</span> / 21 karakter
-                        </div>
-                        <button id="btn-syarah" class="btn-primary" disabled>
-                            <i class="ph ph-brain"></i> syarahi
+    <div class="content-area">
+        <div class="syarah-container">
+            <h2 class="page-title">Syarah AI</h2>
+            <p class="page-subtitle">Analisis kalimat dengan Ammo ai model Gemini Google</p>
+            
+            <!-- SUB NAVIGATION TABS BRAY -->
+            <div class="sub-nav-tabs">
+                <button class="sub-tab-btn active" data-sub="ai">
+                    <i class="ph ph-brain"></i> Analisis Baru
+                </button>
+                <button class="sub-tab-btn" data-sub="explore" id="btn-tab-explore">
+                    <i class="ph ph-compass"></i> Explore <span id="cache-total-badge" class="visitor-badge" style="margin-left: 5px; background: rgba(52,199,89,0.2); color: #34C759;">0</span>
+                </button>
+            </div>
+
+            <!-- SUB CONTROLLER 1: ANALISIS AI -->
+            <div id="sub-syarah-ai" class="sub-page-content active">
+                <div class="syarah-input-card">
+                    <label for="arabic-input" class="input-label">
+                        <i class="ph ph-pen-nib"></i> Masukkan Lafadz Arab
+                    </label>
+                    <textarea 
+                        id="arabic-input" 
+                        class="arabic-textarea" 
+                        placeholder="مثال: الطالب يذهب إلى المدرسة"
+                        maxlength="21"
+                        rows="3"
+                    ></textarea>
+                    <div class="char-counter">
+                        <span id="char-count">0</span> / 21 karakter
+                    </div>
+                    <button id="btn-syarah" class="btn-primary" disabled>
+                        <i class="ph ph-brain"></i> syarahi
+                    </button>
+                </div>
+
+                <div id="syarah-result" class="syarah-result" style="display: none;">
+                    <div class="result-header">
+                        <h3>Hasil Analisis</h3>
+                        <button id="btn-copy-syarah" class="btn-copy">
+                            <i class="ph ph-copy"></i> Salin
                         </button>
                     </div>
+                    <div id="syarah-content" class="syarah-content"></div>
+                </div>
 
-                    <div id="syarah-result" class="syarah-result" style="display: none;">
-                        <div class="result-header">
-                            <h3>Hasil Analisis</h3>
-                            <button id="btn-copy-syarah" class="btn-copy">
+                <div id="syarah-loading" class="center-view" style="display: none; min-height: 200px;">
+                    <div class="loader"></div>
+                    <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">Ammo AI sedang menganalisis...</p>
+                </div>
+            </div>
+
+            <!-- SUB CONTROLLER 2: EXPLORE LAFADZ CACHE -->
+            <div id="sub-syarah-explore" class="sub-page-content">
+                <!-- Tampilan Utama Grid List Cache -->
+                <div id="explore-main-view">
+                    <div id="explore-grid" class="explore-grid"></div>
+                </div>
+
+                <!-- Tampilan Detail Terpilih (Sengaja dipisah biar fokus belajarnya) -->
+                <div id="explore-detail-view" style="display: none; animation: fadeIn 0.4s ease;">
+                    <div class="back-to-home-wrapper">
+                        <button class="btn-back-home" id="btn-back-explore" style="background: rgba(0, 122, 255, 0.15); border-color: rgba(0, 122, 255, 0.3);">
+                            <i class="ph ph-arrow-left"></i> Kembali ke Jelajah
+                        </button>
+                    </div>
+                    <div class="syarah-result" style="margin-top: 10px;">
+                        <div class="result-header" style="border-bottom: 1px dashed rgba(255,255,255,0.15);">
+                            <div>
+                                <small style="color: var(--ios-blue); font-weight: bold; font-size: 0.75rem; display: block; margin-bottom: 2px;"></small>
+                                <h3 id="explore-title-text" class="arabic-text" style="font-size: 1.8rem; text-align: left; margin: 0; padding: 0;">Lafadz</h3>
+                            </div>
+                            <button id="btn-copy-explore" class="btn-copy">
                                 <i class="ph ph-copy"></i> Salin
                             </button>
                         </div>
-                        <div id="syarah-content" class="syarah-content"></div>
-                    </div>
-
-                    <div id="syarah-loading" class="center-view" style="display: none; min-height: 200px;">
-                        <div class="loader"></div>
-                        <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">Ammo AI sedang menganalisis...</p>
+                        <div id="explore-detail-content" class="syarah-content"></div>
                     </div>
                 </div>
             </div>
+
         </div>
+    </div>
+</div>
 
         <!-- PAGE INFO -->
         <div id="page-info" class="page-content">

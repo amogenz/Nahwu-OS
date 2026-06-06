@@ -1221,6 +1221,139 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
             els.mMsg.innerText = "Gagal memuat gambar."; 
         };
 
+        // ==========================================
+        // SUB-TAB NAVIGATION SETUP & EXPLORE LAFADZ
+        // ==========================================
+        const subTabBtns = document.querySelectorAll('.sub-tab-btn');
+        const subPageContents = document.querySelectorAll('.sub-page-content');
+
+        subTabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                subTabBtns.forEach(b => b.classList.remove('active'));
+                subPageContents.forEach(c => c.classList.remove('active'));
+                
+                e.currentTarget.classList.add('active');
+                const targetSub = e.currentTarget.getAttribute('data-sub');
+                document.getElementById(`sub-syarah-${targetSub}`).classList.add('active');
+                
+                if (targetSub === 'explore') {
+                    document.getElementById('explore-main-view').style.display = 'block';
+                    document.getElementById('explore-detail-view').style.display = 'none';
+                }
+            });
+        });
+
+        // Tombol kembali dari Detail View ke Grid List Utama
+        const btnBackExplore = document.getElementById('btn-back-explore');
+        if (btnBackExplore) {
+            btnBackExplore.onclick = () => {
+                document.getElementById('explore-main-view').style.display = 'block';
+                document.getElementById('explore-detail-view').style.display = 'none';
+            };
+        }
+
+        // Tombol salin hasil syarah explore
+        const btnCopyExplore = document.getElementById('btn-copy-explore');
+        if (btnCopyExplore) {
+            btnCopyExplore.onclick = () => {
+                const content = document.getElementById('explore-detail-content').innerText;
+                navigator.clipboard.writeText(content).then(() => {
+                    const originalHTML = btnCopyExplore.innerHTML;
+                    btnCopyExplore.innerHTML = '<i class="ph ph-check"></i> Tersalin!';
+                    setTimeout(() => { btnCopyExplore.innerHTML = originalHTML; }, 2000);
+                });
+            };
+        }
+
+        // Fungsi Render Detail Syarah Terpilih (Satu Scope Aman dari ReferenceError)
+        function showExploreDetail(title, resultRaw) {
+            document.getElementById('explore-main-view').style.display = 'none';
+            document.getElementById('explore-detail-view').style.display = 'block';
+            
+            document.getElementById('explore-title-text').textContent = title;
+            const detailContentDiv = document.getElementById('explore-detail-content');
+            
+            // Format teks markdown bawaan dari AI (sama dengan fungsi utama webmu)
+            let cleanText = resultRaw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            const lines = cleanText.split('\n');
+            
+            const formattedHtml = lines.map(line => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
+
+                if (trimmedLine.startsWith('===')) {
+                    const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
+                    return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
+                }
+
+                if (/^\d+\./.test(trimmedLine)) {
+                    return `<div class="analysis-point">${trimmedLine}</div>`;
+                }
+
+                return `<div class="normal-line">${trimmedLine}</div>`;
+            }).join('');
+
+            requestAnimationFrame(() => {
+                detailContentDiv.innerHTML = formattedHtml;
+                const contentArea = document.querySelector('#page-syarah .content-area');
+                if (contentArea) contentArea.scrollTop = 0;
+            });
+        }
+
+   // Ambil Data dari Firebase & Render ke Grid List (Urut Waktu Paling Baru di Atas!)
+        onValue(ref(db, 'syarah_cache'), (snapshot) => {
+            const cacheData = snapshot.val();
+            const badge = document.getElementById('cache-total-badge');
+            const gridContainer = document.getElementById('explore-grid');
+            
+            if (!gridContainer) return;
+            gridContainer.innerHTML = ''; 
+            
+            if (cacheData) {
+                const items = Object.entries(cacheData);
+                if (badge) badge.textContent = items.length;
+                
+                // --- LOGIKA SORTING AJABIB TERBARU DI SINI BRAY ---
+                // Kita urutkan manual berdasarkan property created_at dari yang paling besar (paling baru)
+                items.sort((a, b) => {
+                    const timeA = a[1].created_at || 0;
+                    const timeB = b[1].created_at || 0;
+                    return timeB - timeA; // Nilai waktu lebih besar/baru ditaruh di atas
+                });
+                // -------------------------------------------------
+                
+                // Sekarang tinggal kita render langsung tanpa perlu .reverse() lagi bray
+                items.forEach(([key, value]) => {
+                    const card = document.createElement('div');
+                    card.className = 'explore-item-card';
+                    
+                    let formattedDate = "Baru";
+                    if (value.created_at) {
+                        formattedDate = new Date(value.created_at).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short'
+                        });
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="explore-card-arabic">${value.original_input}</div>
+                        <div class="explore-card-meta"><i class="ph ph-calendar"></i> ${formattedDate}</div>
+                    `;
+                    
+                    card.onclick = () => {
+                        showExploreDetail(value.original_input, value.result);
+                    };
+                    
+                    gridContainer.appendChild(card);
+                });
+            } else {
+                if (badge) badge.textContent = '0';
+                gridContainer.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada riwayat lafadz bray.</p>';
+            }
+        });
+
+
+
         // Load data
         loadPublicDawuh();
         loadComments();
