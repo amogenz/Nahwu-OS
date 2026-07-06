@@ -277,12 +277,52 @@
             </div>
         </div>
 
-        <div id="page-rank" class="page-content">
-            <div class="content-area">
-                <div class="info-container">
-                    <h2 class="page-title">🏆 Papan Peringkat</h2>
-                    <p class="page-subtitle">Uji pemahaman I'rob, kumpulkan skor nasional tertinggi bray!</p>
-                    
+        <!-- PAGE RANK -->
+<div id="page-rank" class="page-content">
+    <div class="content-area">
+        <div class="info-container">
+            <h2 class="page-title">🏆 Top Global Rank</h2>
+            <p class="page-subtitle">Uji pemahaman I'rob, kumpulkan skor tertinggi bray!</p>
+            
+            <!-- TOMBOL INFO BRAY -->
+            <button id="btn-info-rank" class="btn-info-custom" style="width: 100%; margin-bottom: 15px; padding: 10px; border: 1px dashed rgba(255,255,255,0.3);">
+                <i class="ph ph-info"></i> Apa arti Lencana & Peringkat?
+            </button>
+
+            <div id="info-rank-box" class="community-banner" style="display: none; text-align: left; margin-bottom: 20px; font-size: 0.85rem;">
+    <h4 style="margin-bottom: 10px;">Sistem Ranking & Lencana:</h4>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; border-bottom: 1px dashed rgba(255,255,255,0.15); padding-bottom: 12px;">
+        <div>
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#FFD700; display:inline-block; vertical-align:middle; margin-right:6px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>
+            <b>Top 1</b>: Sang Juara Takhta Emas
+        </div>
+        <div>
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#34C759; display:inline-block; vertical-align:middle; margin-right:6px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>
+            <b>Top 2</b>: Hijau Santri Pilihan
+        </div>
+        <div>
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#007AFF; display:inline-block; vertical-align:middle; margin-right:6px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>
+            <b>Top 3</b>: Biru Premium Kompetisi
+        </div>
+        <div>
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#C0C0C0; display:inline-block; vertical-align:middle; margin-right:6px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>
+            <b>Veteran</b>: Penguasa Masa Lalu (Pernah Masuk Top 3)
+        </div>
+        
+    </div>
+    
+    <div style="line-height: 1.4; color: var(--text-muted);">
+        <h5 style="color: #ffffff; margin-bottom: 5px;"><i class="ph ph-sword"></i> Aturan Perebutan Takhta Top 17:</h5>
+        <ul style="margin: 0; padding-left: 15px; display: flex; flex-direction: column; gap: 4px;">
+            <li>Klasemen ini bersifat <b>Real-Time</b>. Jika skor user lain berhasil melewati poinmu, posisimu akan otomatis tergeser turun secara live.</li>
+            <li>Jika kamu sedang berada di <b>Top 3</b> lalu tersingkir keluar dari zona 3 besar oleh pesaing baru, warnamu akan kembali normal.</li>
+            <li>Namun, berkat sistem rekam jejak historis, akunmu otomatis dihadiahi lencana permanent <b>Veteran (Centang Perak)</b> sebagai tanda bukti sejarah bahwa kamu pernah menguasai podium tertinggi!</li>
+        </ul>
+    </div>
+</div>
+
+            <!-- Sisa kode login/klasemen tetap di sini... -->
+ 
                     <div id="rank-login-area" class="community-banner" style="text-align: center; display: none;">
                         <div class="banner-header" style="justify-content: center; color: var(--ios-red);">
                             <i class="ph-bold ph-lock-key"></i><span>Akses Mode Kompetisi Terkunci</span>
@@ -311,11 +351,11 @@
                                     <span id="user-rank-status" style="font-size: 0.75rem; color: var(--text-muted);">Tabungan: 0 Poin</span>
                                 </div>
                             </div>
-                            <button id="btn-google-logout" class="btn-reply" style="border-color: rgba(255,59,48,0.3); color: #FF3B30; padding: 5px 12px; font-weight:600;">Keluar</button>
+                            <button id="btn-google-logout" class="btn-google-logout-custom" style="border-color: rgba(255,59,48,0.3); color: #FF3B30; padding: 5px 12px; font-weight:600;">Keluar</button>
                         </div>
 
                         <div class="comments-section" style="margin-top: 10px;">
-                            <h3 class="section-title">Top 50 Musafir Nahwu Nasional</h3>
+                            <h3 class="section-title">Tahta:</h3>
                             <div id="leaderboard-list" class="comments-list"></div>
                         </div>
                     </div>

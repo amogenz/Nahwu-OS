@@ -129,9 +129,12 @@
 
     // --- LOGIKA UTAMA MONITORING AKUN & PAPAN PERINGKAT ---
     function initLeaderboardRealtimeSync() {
+      // --- 🚨 SAKLAR ANTI-DUPLIKASI LISTENER  ---
+    if (window.isLeaderboardSynced) return; // Jika sudah aktif, gagalkan pemicu kedua!
+    window.isLeaderboardSynced = true;      // Kunci saklar untuk pemicu pertama
+
     // 1. Pantau Status Login Secara Live di Latar Belakang
     onAuthStateChanged(auth, (user) => {
-        // Ambil elemen DOM
         const rankLoginArea = document.getElementById('rank-login-area');
         const rankSetupArea = document.getElementById('rank-setup-area');
         const rankMainArea = document.getElementById('rank-main-area');
@@ -154,7 +157,6 @@
                     if (userRankName) userRankName.innerText = data.nickname;
                     if (userRankStatus) userRankStatus.innerText = `Tabungan: ${(data.total_score || 0).toLocaleString('id-ID')} Poin`;
                     
-                    // Cek boks profil pribadi dengan pengecekan bertingkat agar tidak null
                     const settingRow = userRankName ? userRankName.closest('.setting-row') : null;
                     if (settingRow) settingRow.style.display = 'flex';
                 } else {
@@ -168,7 +170,6 @@
             currentUserData = null;
             isRankMode = false;
             
-            // PENGAMAN: Cek tombol sebelum tambah/hapus class
             if (btnBiasa) btnBiasa.classList.add('active');
             if (btnRank) btnRank.classList.remove('active');
             
@@ -176,18 +177,17 @@
             if (rankSetupArea) rankSetupArea.style.display = 'none';
             if (rankMainArea) rankMainArea.style.display = 'block'; 
             
-            // PENGAMAN: Sembunyikan boks profil pribadi
             const userRankContainer = document.getElementById('user-rank-name');
             const settingRow = userRankContainer ? userRankContainer.closest('.setting-row') : null;
             if (settingRow) settingRow.style.display = 'none';
         }
     });
 
-    // 2. Tarik Data Klasemen Top 50
-    const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(50));
+    // 2. Tarik Data Klasemen Top 50 (Siapapun Bisa Lihat)
+    const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(17));
     onValue(topRankQuery, (snapshot) => {
         const listContainer = document.getElementById('leaderboard-list');
-        if (!listContainer) return; // Keluar jika elemen tidak ada
+        if (!listContainer) return; 
         
         listContainer.innerHTML = '';
         const data = snapshot.val();
@@ -199,35 +199,54 @@
             usersArr.forEach((user, index) => {
                 const rankPosition = index + 1;
                 let inlineBadgeSvg = '';
+                
+                // --- 🎨 DEKLARASI WARNA OTOMATIS BERDASARKAN POSISI ---
+                let autoColor = '#ffffff'; // Warna default untuk ranking 4 ke bawah
+                let numClass = '';
 
-                // Logika Lencana
+                if (rankPosition === 1) {
+                    autoColor = '#FFD700'; // Emas murni
+                    numClass = 'top-1';
+                } else if (rankPosition === 2) {
+                    autoColor = '#34C759'; // Hijau iOS / Santri
+                    numClass = 'top-2';
+                } else if (rankPosition === 3) {
+                    autoColor = '#007AFF'; // Biru Premium
+                    numClass = 'top-3';
+                }
+
+                // --- 👑 LOGIKA PENENTUAN BADGE CENTANG ---
                 if (user.is_verified === true) {
+                    // Jika di database diset verified manual, utamakan warna kustom dari DB bray
                     const warnaKustom = user.verified_color || '#1DA1F2';
                     inlineBadgeSvg = generateTwitterBadgeSVG(warnaKustom);
                 } else if (rankPosition <= 3) {
-                    inlineBadgeSvg = generateTwitterBadgeSVG('#1DA1F2');
+                    // JIKA TIDAK ADA VERIFIED MANUAL, OTOMATIS WARNAI BADGE SESUAI CORAK JUARA!
+                    inlineBadgeSvg = generateTwitterBadgeSVG(autoColor);
                     if (!user.ever_top_3) set(ref(db, `users/${user.uid}/ever_top_3`), true);
                 } else if (user.ever_top_3) {
-                    inlineBadgeSvg = generateTwitterBadgeSVG('#C0C0C0');
+                    inlineBadgeSvg = generateTwitterBadgeSVG('#C0C0C0'); // Veteran historis perak kusam
                 }
 
                 const row = document.createElement('div');
                 row.className = 'rank-item';
                 if (auth.currentUser && user.uid === auth.currentUser.uid) {
-                    row.classList.add('my-rank');
+                    row.classList.add('my-rank'); // Highlight baris milik sendiri bray
                 }
 
-                let numClass = '';
-                if (rankPosition === 1) numClass = 'top-1';
-                else if (rankPosition === 2) numClass = 'top-2';
-                else if (rankPosition === 3) numClass = 'top-3';
+                // Tambahkan inline style warna teks dinamis pada nomor peringkatnya bray
+                let inlineNumStyle = rankPosition <= 3 ? `style="color: ${autoColor}; font-weight: 800; text-shadow: 0 0 10px ${autoColor}40;"` : '';
 
                 row.innerHTML = `
                     <div class="rank-item-left">
-                        <span class="rank-number ${numClass}">#${rankPosition}</span>
-                        <span class="rank-name-text">${user.nickname} ${inlineBadgeSvg}</span>
+                        <span class="rank-number ${numClass}" ${inlineNumStyle}>#${rankPosition}</span>
+                        <span class="rank-name-text" ${rankPosition <= 3 ? `style="color: #ffffff; font-weight: 600;"` : ''}>
+                            ${user.nickname} ${inlineBadgeSvg}
+                        </span>
                     </div>
-                    <span class="rank-points">${(user.total_score || 0).toLocaleString('id-ID')} Poin</span>
+                    <span class="rank-points" ${rankPosition === 1 ? `style="color: #FFD700; font-weight:700;"` : ''}>
+                        ${(user.total_score || 0).toLocaleString('id-ID')} Poin
+                    </span>
                 `;
                 listContainer.appendChild(row);
             });
@@ -236,7 +255,6 @@
         }
     });
 }
-
 
     // Visitor Counter
     function initVisitorCounter() {
@@ -1433,13 +1451,15 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
                 });
                 
                 // Add reply button listeners
-                document.querySelectorAll('.btn-reply').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const commentId = e.currentTarget.getAttribute('data-comment-id');
-                        showReplyForm(commentId);
-                    });
-                });
-            } else {
+               // 🚨 SEKARANG AMAN: Hanya mencari tombol balas yang berada di dalam KOTAK KOMENTAR SAJA 
+               document.querySelectorAll('#comments-list .btn-reply').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const commentId = e.currentTarget.getAttribute('data-comment-id');
+        showReplyForm(commentId);
+    });
+});
+
+               } else {
                 list.innerHTML = '<p style="text-align:center; font-size:14px; opacity:0.5;">Belum ada komentar.</p>';
             }
         });
@@ -1868,6 +1888,20 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
             }
         });
 
+      // SELIPKAN INI DI DALAM initApp() BRAY:
+const btnInfoRank = document.getElementById('btn-info-rank');
+const infoRankBox = document.getElementById('info-rank-box');
+
+if (btnInfoRank) {
+    btnInfoRank.addEventListener('click', (e) => {
+        e.stopPropagation(); // Kunci jalur biar gak memicu event lain bray
+        if (infoRankBox) {
+            infoRankBox.style.display = (infoRankBox.style.display === 'none' || infoRankBox.style.display === '') ? 'block' : 'none';
+        }
+    });
+}
+
+
 
 
         // Load data
@@ -1882,3 +1916,12 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
     } else { 
         initApp(); 
     }
+
+
+/// end 
+
+
+
+
+
+
