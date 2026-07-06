@@ -1739,8 +1739,9 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         // ==========================================
         // SUB-TAB NAVIGATION SETUP & EXPLORE LAFADZ
         // ==========================================
-        const subTabBtns = document.querySelectorAll('.sub-tab-btn');
-        const subPageContents = document.querySelectorAll('.sub-page-content');
+        // GANTI MENJADI SEPERTI INI AGAR BERIKATAN KHUSUS DI HALAMAN SYARAH SAJA:
+const subTabBtns = document.querySelectorAll('#page-syarah .sub-tab-btn');
+const subPageContents = document.querySelectorAll('#page-syarah .sub-page-content');
 
         subTabBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
