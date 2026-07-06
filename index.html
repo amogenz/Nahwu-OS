@@ -26,11 +26,13 @@
     
 </head>
 <body>
-   <div id="splash-screen">
+  
+<!--<div id="splash-screen">
   <img src="https://i.ibb.co.com/v6Lj03FK/20260428-132813.png" alt="Nahwu OS" />
-</div> 
+</div> -->
 
-   <div class="glass-container">
+  <div class="glass-container">
+    
 <!-- PULAU 1: LOGO + TITLE -->
 <div class="island-logo-pill">
     <div class="pill-dot"></div>
@@ -57,55 +59,61 @@
     </div>
 </div>
 
-        <!-- PAGE HOME -->
-        <div id="page-home" class="page-content active">
+<!-- PAGE HOME -->
+                <div id="page-home" class="page-content active">
             <div class="content-area">
+                
                 <div id="view-start" class="center-view">
                     <img src="https://i.ibb.co.com/VYv0QJVK/ammo-ai.webp" alt="Nahwu OS Logo" class="start-logo" id="secret-logo">
                     <h2 class="hero-title">Assalamualaikum</h2>
                     <p class="hero-desc">Saya <b>Ammo 🦉</b> model yang dilatih dengan database kalimat dan lafadz lafadz kitab, kolaborasi Amogenz dengan para Santri. Saya akan menemanimu belajar I'rob dengan rujukan kitab nahwu ala pesantren. <b>bot bisa membuat kesalahan</b> harap cek ulang !</p>
                     
-                    <!-- Pilihan Database -->
+                    <div class="database-selector" style="margin-bottom: 10px;">
+                        <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--text-muted);">Pilih Mode Belajar:</h3>
+                        <div class="sub-nav-tabs" style="margin-bottom: 5px; background: rgba(255,255,255,0.04);">
+                            <button class="sub-tab-btn active" id="btn-mode-biasa">Mode Biasa</button>
+                            <button class="sub-tab-btn" id="btn-mode-rank">Mode Rank</button>
+                        </div>
+                    </div>
+                  
                     <div class="database-selector">
                         <h3 style="font-size: 1rem; margin-bottom: 15px; color: var(--text-muted);">Pilih Level:</h3>
-<div class="db-options">
-    <button class="db-btn" data-db="lv1">
-        <i class="ph ph-book-open"></i>
-        <span>Jurumiyah</span>
-        <small>Pemula · Level 1</small>
-    </button>
-    <button class="db-btn" data-db="lv2">
-        <i class="ph ph-books"></i>
-        <span>Imrithi</span>
-        <small>Menengah · Level 2</small>
-    </button>
-    <button class="db-btn" data-db="alfiyah-isim">
-        <i class="ph ph-text-columns"></i>
-        <span>Alfiyah Isim</span>
-        <small>Lanjut · Nadhom Isim</small>
-    </button>
-    <button class="db-btn active" data-db="alfiyah-fiil">
-        <i class="ph ph-lightning"></i>
-        <span>Alfiyah Fi'il</span>
-        <small>Lanjut · Nadhom Fi'il</small>
-    </button>
-    <button class="db-btn" data-db="shorof">
-        <i class="ph ph-text-aa"></i>
-        <span>Shorof</span>
-        <small>Tashrif & I'lal</small>
-    </button>
-    <button class="db-btn" data-db="tajwid">
-        <i class="ph ph-chat-teardrop-dots"></i>
-        <span>Tajwid</span>
-        <small>Ilmu hukum bacaan Al Quran</small>
-    </button>
-</div>
+                        <div class="db-options">
+                            <button class="db-btn" data-db="lv1">
+                                <i class="ph ph-book-open"></i>
+                                <span>Jurumiyah</span>
+                                <small>Pemula · Level 1</small>
+                            </button>
+                            <button class="db-btn" data-db="lv2">
+                                <i class="ph ph-books"></i>
+                                <span>Imrithi</span>
+                                <small>Menengah · Level 2</small>
+                            </button>
+                            <button class="db-btn" data-db="alfiyah-isim">
+                                <i class="ph ph-text-columns"></i>
+                                <span>Alfiyah Isim</span>
+                                <small>Lanjut · Nadhom Isim</small>
+                            </button>
+                            <button class="db-btn active" data-db="alfiyah-fiil">
+                                <i class="ph ph-lightning"></i>
+                                <span>Alfiyah Fi'il</span>
+                                <small>Lanjut · Nadhom Fi'il</small>
+                            </button>
+                            <button class="db-btn" data-db="shorof">
+                                <i class="ph ph-text-aa"></i>
+                                <span>Shorof</span>
+                                <small>Tashrif & I'lal</small>
+                            </button>
+                            <button class="db-btn" data-db="tajwid">
+                                <i class="ph ph-chat-teardrop-dots"></i>
+                                <span>Tajwid</span>
+                                <small>Ilmu hukum bacaan Al Quran</small>
+                            </button>
+                        </div>
                     </div>
                     
                     <button class="btn-primary" id="btn-start">Mulai Belajar</button>
-                </div>
-
-                <div id="view-loading" class="center-view" style="display: none;">
+                </div> <div id="view-loading" class="center-view" style="display: none;">
                     <div class="loader"></div>
                     <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">Ammo sedang menyusun soal...</p>
                     <p style="font-size: 0.7rem; color: gray;">(Proses ini memakan waktu 5-10 detik)</p>
@@ -127,138 +135,105 @@
                     </div>
                     <div id="options-container" class="options-grid"></div>
                 </div>
+
             </div>
         </div>
 
-        <!-- PAGE SYARAH -->
         <div id="page-syarah" class="page-content">
-    <div class="content-area">
-        <div class="syarah-container">
-            <h2 class="page-title">Syarah AI</h2>
-            <p class="page-subtitle">Analisis kalimat dengan Ammo ai model Gemini Google</p>
-            
-            <!-- SUB NAVIGATION TABS BRAY -->
-            <div class="sub-nav-tabs">
-                <button class="sub-tab-btn active" data-sub="ai">
-                    <i class="ph ph-brain"></i> Analisis Baru
-                </button>
-                <button class="sub-tab-btn" data-sub="explore" id="btn-tab-explore">
-                    <i class="ph ph-compass"></i> Explore <span id="cache-total-badge" class="visitor-badge" style="margin-left: 5px; background: rgba(52,199,89,0.2); color: #34C759;">0</span>
-                </button>
-            </div>
-
-            <!-- SUB CONTROLLER 1: ANALISIS AI -->
-            <div id="sub-syarah-ai" class="sub-page-content active">
-                <div class="syarah-input-card">
-                    <label for="arabic-input" class="input-label">
-                        <i class="ph ph-pen-nib"></i> Masukkan Lafadz Arab
-                    </label>
-                    <textarea 
-                        id="arabic-input" 
-                        class="arabic-textarea" 
-                        placeholder="مثال: الطالب يذهب إلى المدرسة"
-                        maxlength="21"
-                        rows="3"
-                    ></textarea>
-                    <div class="char-counter">
-                        <span id="char-count">0</span> / 21 karakter
-                    </div>
-                    <button id="btn-syarah" class="btn-primary" disabled>
-                        <i class="ph ph-brain"></i> syarahi
-                    </button>
-                </div>
-
-                <div id="syarah-result" class="syarah-result" style="display: none;">
-                    <div class="result-header">
-                        <h3>Hasil Analisis</h3>
-                        <button id="btn-copy-syarah" class="btn-copy">
-                            <i class="ph ph-copy"></i> Salin
+            <div class="content-area">
+                <div class="syarah-container">
+                    <h2 class="page-title">Syarah AI</h2>
+                    <p class="page-subtitle">Analisis kalimat dengan Ammo ai model Gemini Google</p>
+                    
+                    <div class="sub-nav-tabs">
+                        <button class="sub-tab-btn active" data-sub="ai">
+                            <i class="ph ph-brain"></i> Analisis Baru
+                        </button>
+                        <button class="sub-tab-btn" data-sub="explore" id="btn-tab-explore">
+                            <i class="ph ph-compass"></i> Explore <span id="cache-total-badge" class="visitor-badge" style="margin-left: 5px; background: rgba(52,199,89,0.2); color: #34C759;">0</span>
                         </button>
                     </div>
-                    <div id="syarah-content" class="syarah-content"></div>
-                </div>
 
-                <div id="syarah-loading" class="center-view" style="display: none; min-height: 200px;">
-                    <div class="loader"></div>
-                    <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">Ammo AI sedang menganalisis...</p>
-                </div>
-            </div>
-
-            <!-- SUB CONTROLLER 2: EXPLORE LAFADZ CACHE -->
-            <div id="sub-syarah-explore" class="sub-page-content">
-                <!-- Tampilan Utama Grid List Cache -->
-                <div id="explore-main-view">
-                    <div id="explore-grid" class="explore-grid"></div>
-                </div>
-
-                <!-- Tampilan Detail Terpilih (Sengaja dipisah biar fokus belajarnya) -->
-                <div id="explore-detail-view" style="display: none; animation: fadeIn 0.4s ease;">
-                    <div class="back-to-home-wrapper">
-                        <button class="btn-back-home" id="btn-back-explore" style="background: rgba(0, 122, 255, 0.15); border-color: rgba(0, 122, 255, 0.3);">
-                            <i class="ph ph-arrow-left"></i> Kembali ke Jelajah
-                        </button>
-                    </div>
-                    <div class="syarah-result" style="margin-top: 10px;">
-                        <div class="result-header" style="border-bottom: 1px dashed rgba(255,255,255,0.15);">
-                            <div>
-                                <small style="color: var(--ios-blue); font-weight: bold; font-size: 0.75rem; display: block; margin-bottom: 2px;"></small>
-                                <h3 id="explore-title-text" class="arabic-text" style="font-size: 1.8rem; text-align: left; margin: 0; padding: 0;">Lafadz</h3>
-                            </div>
-                            <button id="btn-copy-explore" class="btn-copy">
-                                <i class="ph ph-copy"></i> Salin
-                            </button>
+                    <div id="sub-syarah-ai" class="sub-page-content active">
+                        <div class="syarah-input-card">
+                            <label for="arabic-input" class="input-label">
+                                <i class="ph ph-pen-nib"></i> Masukkan Lafadz Arab
+                            </label>
+                            <textarea id="arabic-input" class="arabic-textarea" placeholder="مثال: الطالب يذهب إلى المدرسة" maxlength="21" rows="3"></textarea>
+                            <div class="char-counter"><span id="char-count">0</span> / 21 karakter</div>
+                            <button id="btn-syarah" class="btn-primary" disabled><i class="ph ph-brain"></i> syarahi</button>
                         </div>
-                        <div id="explore-detail-content" class="syarah-content"></div>
+
+                        <div id="syarah-result" class="syarah-result" style="display: none;">
+                            <div class="result-header">
+                                <h3>Hasil Analisis</h3>
+                                <button id="btn-copy-syarah" class="btn-copy"><i class="ph ph-copy"></i> Salin</button>
+                            </div>
+                            <div id="syarah-content" class="syarah-content"></div>
+                        </div>
+
+                        <div id="syarah-loading" class="center-view" style="display: none; min-height: 200px;">
+                            <div class="loader"></div>
+                            <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">Ammo AI sedang menganalisis...</p>
+                        </div>
                     </div>
+
+                    <div id="sub-syarah-explore" class="sub-page-content">
+                        <div id="explore-main-view">
+                            <div id="explore-grid" class="explore-grid"></div>
+                        </div>
+                        <div id="explore-detail-view" style="display: none; animation: fadeIn 0.4s ease;">
+                            <div class="back-to-home-wrapper">
+                                <button class="btn-back-home" id="btn-back-explore" style="background: rgba(0, 122, 255, 0.15); border-color: rgba(0, 122, 255, 0.3);">
+                                    <i class="ph ph-arrow-left"></i> Kembali ke Jelajah
+                                </button>
+                            </div>
+                            <div class="syarah-result" style="margin-top: 10px;">
+                                <div class="result-header" style="border-bottom: 1px dashed rgba(255,255,255,0.15);">
+                                    <div>
+                                        <h3 id="explore-title-text" class="arabic-text" style="font-size: 1.8rem; text-align: left; margin: 0; padding: 0;">Lafadz</h3>
+                                    </div>
+                                    <button id="btn-copy-explore" class="btn-copy"><i class="ph ph-copy"></i> Salin</button>
+                                </div>
+                                <div id="explore-detail-content" class="syarah-content"></div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-
         </div>
-    </div>
-</div>
 
-        <!-- PAGE INFO -->
         <div id="page-info" class="page-content">
             <div class="content-area">
                 <div class="info-container">
                     <h2 class="page-title">💬 Info & Komentar</h2>
+                    
                     <div class="community-banner">
-    <div class="banner-header">
-        <i class="ph-fill ph-users-four"></i>
-        <span>Bergabung dengan Komunitas</span>
-    </div>
-    <p class="banner-desc">
-        Punya kendala, saran fitur, atau ingin diskusi soal I'rob? Mari ngobrol langsung dengan <b>Amogenz</b> dan santri lainnya di wadah diskusi resmi kami.
-    </p>
-    
-    <div class="social-links-wrapper">
-        <a href="https://www.instagram.com/amooogang" target="_blank" class="social-item">
-            <div class="social-info">
-                <img src="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp" alt="Amogenz" class="social-avatar">
-                <div class="social-text">
-                    <strong>Amogenz</strong>
-                    <small>Developer & Creator</small>
-                </div>
-            </div>
-            <i class="ph ph-caret-right"></i>
-        </a>
+                        <div class="banner-header">
+                            <i class="ph-fill ph-users-four"></i>
+                            <span>Bergabung dengan Komunitas</span>
+                        </div>
+                        <p class="banner-desc">Punya kendala, saran fitur, atau ingin diskusi soal I'rob? Mari ngobrol langsung dengan <b>Amogenz</b> dan santri lainnya.</p>
+                        
+                        <div class="social-links-wrapper">
+                            <a href="https://www.instagram.com/amooogang" target="_blank" class="social-item">
+                                <div class="social-info">
+                                    <img src="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp" alt="Amogenz" class="social-avatar">
+                                    <div class="social-text"><strong>Amogenz</strong><small>Developer & Creator</small></div>
+                                </div>
+                                <i class="ph ph-caret-right"></i>
+                            </a>
+                            <a href="https://ig.me/j/Aba3gOVvhUdnW2g1/" target="_blank" class="social-item">
+                                <div class="social-info">
+                                    <div class="social-icon-box group-bg"><i class="ph-bold ph-chat-teardrop-dots"></i></div>
+                                    <div class="social-text"><strong>Grup Masukan Nahwu OS</strong><small>Diskusi & Update Fitur</small></div>
+                                </div>
+                                <i class="ph ph-caret-right"></i>
+                            </a>
+                        </div>
+                    </div>
 
-        <a href="https://ig.me/j/Aba3gOVvhUdnW2g1/" target="_blank" class="social-item">
-            <div class="social-info">
-                <div class="social-icon-box group-bg">
-                    <i class="ph-bold ph-chat-teardrop-dots"></i>
-                </div>
-                <div class="social-text">
-                    <strong>Grup Masukan Nahwu OS</strong>
-                    <small>Diskusi & Update Fitur</small>
-                </div>
-            </div>
-            <i class="ph ph-caret-right"></i>
-        </a>
-    </div>
-</div>
-
-                    <!-- Sound Toggle -->
                     <div class="setting-row">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <i class="ph-fill ph-speaker-high" style="font-size: 20px;"></i>
@@ -270,7 +245,6 @@
                         </label>
                     </div>
 
-                    <!-- Form Komentar -->
                     <div class="comment-form">
                         <h3 class="section-title">Tambah Komentar</h3>
                         <div class="input-box">
@@ -289,26 +263,68 @@
                                     <button id="btn-remove-image" class="btn-remove">✕</button>
                                 </div>
                             </div>
-                            <button id="btn-send-comment" class="btn-primary" style="width: 100%; font-size: 0.9rem; padding: 10px;">
-                                Kirim Komentar
-                            </button>
+                            <button id="btn-send-comment" class="btn-primary" style="width: 100%; font-size: 0.9rem; padding: 10px;">Kirim Komentar</button>
                         </div>
                     </div>
 
-                    <!-- Daftar Komentar -->
                     <div class="comments-section">
                         <h3 class="section-title">Komentar Terbaru</h3>
                         <div id="comments-list" class="comments-list"></div>
                     </div>
 
-                    <div style="text-align: center; padding: 20px; font-size: 10px; color: gray;">
-                        Amogenz.Inc © 2026
-                    </div>
+                    <div style="text-align: center; padding: 20px; font-size: 10px; color: gray;">Amogenz.Inc © 2026</div>
                 </div>
             </div>
         </div>
 
-        <!-- Modal Feedback -->
+        <div id="page-rank" class="page-content">
+            <div class="content-area">
+                <div class="info-container">
+                    <h2 class="page-title">🏆 Papan Peringkat</h2>
+                    <p class="page-subtitle">Uji pemahaman I'rob, kumpulkan skor nasional tertinggi bray!</p>
+                    
+                    <div id="rank-login-area" class="community-banner" style="text-align: center; display: none;">
+                        <div class="banner-header" style="justify-content: center; color: var(--ios-red);">
+                            <i class="ph-bold ph-lock-key"></i><span>Akses Mode Kompetisi Terkunci</span>
+                        </div>
+                        <p class="banner-desc">Kamu wajib masuk menggunakan akun Google terlebih dahulu untuk mencatatkan poin kuis, mengamankan identitas, dan bersaing secara nasional.</p>
+                        <button id="btn-google-login" class="btn-primary" style="width: 90%; margin: 10px auto; background: #ffffff; color: #000000; box-shadow: 0 4px 15px rgba(255,255,255,0.1);">
+                            <img src="https://i.ibb.co.com/8LgR6Zby/google-icon.png" alt="G" style="width:18px; height:18px; margin-right:8px; vertical-align:middle;">Masuk dengan Google
+                        </button>
+                    </div>
+
+                    <div id="rank-setup-area" class="comment-form" style="display: none;">
+                        <h3 class="section-title">Kunci Nickname Santrimu</h3>
+                        <div class="input-box">
+                            <p class="banner-desc" style="margin-bottom:5px;">Pilih nama kustom unik kesukaanmu untuk ditampilkan ke publik pada papan klasemen nasional.</p>
+                            <input type="text" id="rank-custom-name" class="glass-field" placeholder="Masukkan Nama Kustom (Misal: KangMutholakah)" maxlength="16">
+                            <button id="btn-save-nickname" class="btn-primary" style="width: 100%; font-size: 0.9rem; padding: 12px; background: var(--ios-green); box-shadow: 0 4px 12px rgba(52,199,89,0.2);">Simpan Nickname & Buka Klasemen</button>
+                        </div>
+                    </div>
+
+                    <div id="rank-main-area" style="display: none;">
+                        <div class="setting-row" style="margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="ph-fill ph-user-circle" style="font-size: 32px; color: var(--ios-blue);"></i>
+                                <div style="display:flex; flex-direction:column; text-align:left;">
+                                    <span id="user-rank-name" style="font-weight: 700; font-size: 1rem; color:#ffffff; display:flex; align-items:center;">-</span>
+                                    <span id="user-rank-status" style="font-size: 0.75rem; color: var(--text-muted);">Tabungan: 0 Poin</span>
+                                </div>
+                            </div>
+                            <button id="btn-google-logout" class="btn-reply" style="border-color: rgba(255,59,48,0.3); color: #FF3B30; padding: 5px 12px; font-weight:600;">Keluar</button>
+                        </div>
+
+                        <div class="comments-section" style="margin-top: 10px;">
+                            <h3 class="section-title">Top 50 Musafir Nahwu Nasional</h3>
+                            <div id="leaderboard-list" class="comments-list"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+  <!-- Modal Feedback -->
         <div id="modal-feedback" class="modal-overlay">
             <div class="modal-card" id="modal-card">
                 <span id="fb-icon" class="modal-icon">✨</span>
@@ -356,14 +372,17 @@
         <i class="ph-fill ph-info"></i>
         <span>Info</span>
     </button>
-        <a href="https://game-nahwu.amogenz.xyz" class="nav-btn">
-        <i class="ph-fill ph-caret-right"></i>
-        <span>Kartu</span>
-    </a>
+
+    <button class="nav-btn" data-page="rank">
+        <i class="ph-fill ph-trophy"></i>
+        <span>Rank</span>
+    </button>
 </div>
+              
     </div>
 
 <script type="module" src="script.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
 </body>
 </html>

@@ -1,19 +1,28 @@
 
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-// loading 
+
+    import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment, orderByChild} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // loading 
     window.addEventListener('load', () => {
   setTimeout(() => {
-    document.getElementById('splash-screen').classList.add('hide');
-  }, 1700);
+    const splash = document.getElementById('splash-screen');
+    if (splash) splash.classList.add('hide');
+  }, 0);
 });
+
 
     // --- 1. CONFIG ---
     const firebaseConfig = { 
       apiKey: "AIzaSyBDyEfe83-_CzRchqcO_lLnuO6Rg9_AF_8", authDomain: "amogenz.firebaseapp.com", databaseURL: "https://amogenz-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "amogenz", storageBucket: "amogenz.firebasestorage.app", messagingSenderId: "864003468268", appId: "1:864003468268:web:7c861806529a0dacd66ec9" };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const auth = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+
 
     const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
     const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
@@ -68,12 +77,27 @@
     let tapCount = 0;
     let tapTimer;
     let quizScore = { correct: 0, wrong: 0, total: 0 }; // Track score per session
+    let isCurrentStepWrong = false; // <-- Tambahkan ini untuk mengunci skor salah per soal
+   
     const SECRET_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa";
     const ADMIN_PASSWORD_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa"; // Hash untuk
     let els = {};
     let currentDatabase = 'lv1'; // Default database
     let isAdminLoggedIn = false;
     let adminUploadImage = null;
+
+        // --- MULTIPLIER TINGKAT KESULITAN LEVEL KITAB ---
+    const LEVEL_MULTIPLIERS = {
+        'lv1': 1,            // Jurumiyah
+        'tajwid': 1.5,       // Tajwid
+        'shorof': 2,         // Shorof
+        'lv2': 3,            // Imrithi
+        'alfiyah-isim': 4,   // Alfiyah Isim
+        'alfiyah-fiil': 5    // Alfiyah Fi'il
+    };
+
+    let isRankMode = false;      // Menandai apakah user sedang main Mode Rank atau Biasa bray
+    let currentUserData = null;  // Tempat menyimpan data profil publik user aktif
 
     // --- 4. FUNGSI PENDUKUNG ---
     function loadPublicDawuh() {
@@ -97,6 +121,135 @@
             dawuhIndex = randomIdx;
         }
     }
+
+    // --- TWITTER VERIFIED BADGE GENERATOR (INLINE SVG) ---
+    function generateTwitterBadgeSVG(fillColor) {
+    return `<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:${fillColor}; display:inline-block; vertical-align:middle; margin-left:4px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>`;
+}
+
+    // --- LOGIKA UTAMA MONITORING AKUN & PAPAN PERINGKAT ---
+    function initLeaderboardRealtimeSync() {
+    // 1. Pantau Status Login Secara Live di Latar Belakang
+    onAuthStateChanged(auth, (user) => {
+        // Ambil referensi semua elemen DOM untuk gerbang login/setup
+        const rankLoginArea = document.getElementById('rank-login-area');
+        const rankSetupArea = document.getElementById('rank-setup-area');
+        const rankMainArea = document.getElementById('rank-main-area');
+        const userRankName = document.getElementById('user-rank-name');
+        const userRankStatus = document.getElementById('user-rank-status');
+        const btnBiasa = document.getElementById('btn-mode-biasa');
+        const btnRank = document.getElementById('btn-mode-rank');
+
+        if (user) {
+            // JIKA USER SUDAH LOGIN GOOGLE
+            onValue(ref(db, `users/${user.uid}`), (snapshot) => {
+                const data = snapshot.val();
+                
+                if (data && data.nickname) {
+                    currentUserData = data; // Ambil data profil publiknya bray
+                    
+                    // Eksekusi manipulasi DOM hanya jika elemennya eksis di HTML bray
+                    if (rankLoginArea) rankLoginArea.style.display = 'none';
+                    if (rankSetupArea) rankSetupArea.style.display = 'none';
+                    if (rankMainArea) rankMainArea.style.display = 'block';
+                    if (userRankName) userRankName.innerText = data.nickname;
+                    if (userRankStatus) userRankStatus.innerText = `Tabungan: ${(data.total_score || 0).toLocaleString('id-ID')} Poin`;
+                    
+                    // Pastikan boks profil pribadi di atas list menyala kembali
+                    if (userRankName && userRankName.closest('.setting-row')) {
+                        userRankName.closest('.setting-row').style.display = 'flex';
+                    }
+                } else {
+                    // Login sukses tapi belum bikin nama kustom publik bray
+                    if (rankLoginArea) rankLoginArea.style.display = 'none';
+                    if (rankSetupArea) rankSetupArea.style.display = 'block';
+                    if (rankMainArea) rankMainArea.style.display = 'none';
+                }
+            });
+        } else {
+            // JIKA USER BELUM LOGIN GOOGLE ATAU MASIH PENGUNJUNG BIASA
+            currentUserData = null;
+            isRankMode = false;
+            
+            // Pengaman penanda tombol aktif di beranda
+            if (btnBiasa) btnBiasa.classList.add('active');
+            if (btnRank) btnRank.classList.remove('active');
+            
+            // Sembunyikan form nama kustom, tampilkan banner tombol login Google
+            if (rankLoginArea) rankLoginArea.style.display = 'block';
+            if (rankSetupArea) rankSetupArea.style.display = 'none';
+            
+            // Klasemen tetap MENYALA (block) agar list Top 50 bisa dibaca pengunjung biasa
+            if (rankMainArea) rankMainArea.style.display = 'block'; 
+            
+            // Karena belum login, sembunyikan boks data akun pribadi di atas list klasemen bray
+            if (userRankName && userRankName.closest('.setting-row')) {
+                userRankName.closest('.setting-row').style.display = 'none';
+            }
+        }
+    });
+
+    // 2. Tarik Data Klasemen Top 50 (Siapapun Bisa Lihat)
+    const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(50));
+    onValue(topRankQuery, (snapshot) => {
+        const listContainer = document.getElementById('leaderboard-list');
+        
+        // PENGAMAN UTAMA: Jika elemen papan peringkat belum dibuat di HTML, langsung batalkan render bray!
+        if (!listContainer) return;
+        
+        listContainer.innerHTML = '';
+        const data = snapshot.val();
+
+        if (data) {
+            let usersArr = Object.entries(data).map(([uid, val]) => ({ uid, ...val }));
+            usersArr.sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+
+            usersArr.forEach((user, index) => {
+                const rankPosition = index + 1;
+                let inlineBadgeSvg = '';
+
+                // --- 👑 PRIORITY 1: LOGIKA CENTANG VERIFIED KUSTOM UNTUK UJI COBA ---
+                if (user.is_verified === true) {
+                    // Ambil warna kustom dari database, jika kosong otomatis pakai biru twitter (#1DA1F2)
+                    const warnaKustom = user.verified_color || '#1DA1F2';
+                    inlineBadgeSvg = generateTwitterBadgeSVG(warnaKustom);
+                } 
+                // --- PRIORITY 2: Sistem Bawaan Pangkat Juara Top 3 Aktif ---
+                else if (rankPosition <= 3) {
+                    inlineBadgeSvg = generateTwitterBadgeSVG('#1DA1F2'); // Biru Twitter untuk Top 3 aktif
+                    if (!user.ever_top_3) set(ref(db, `users/${user.uid}/ever_top_3`), true); // Kunci rekam jejak
+                } 
+                // --- PRIORITY 3: Sistem Bawaan Alumni Veteran Pernah Top 3 ---
+                else if (user.ever_top_3) {
+                    inlineBadgeSvg = generateTwitterBadgeSVG('#C0C0C0'); // Perak kusam untuk veteran historis
+                }
+
+                const row = document.createElement('div');
+                row.className = 'rank-item';
+                if (auth.currentUser && user.uid === auth.currentUser.uid) {
+                    row.classList.add('my-rank'); // Beri highlight border jika ini baris milik dia sendiri bray
+                }
+
+                let numClass = '';
+                if (rankPosition === 1) numClass = 'top-1';
+                else if (rankPosition === 2) numClass = 'top-2';
+                else if (rankPosition === 3) numClass = 'top-3';
+
+                row.innerHTML = `
+                    <div class="rank-item-left">
+                        <span class="rank-number ${numClass}">#${rankPosition}</span>
+                        <span class="rank-name-text">${user.nickname} ${inlineBadgeSvg}</span>
+                    </div>
+                    <span class="rank-points">${(user.total_score || 0).toLocaleString('id-ID')} Poin</span>
+                `;
+                listContainer.appendChild(row);
+            });
+        } else {
+            listContainer.innerHTML = '<p style="text-align:center; font-size:13px; opacity:0.5; padding:20px 0;">Papan skor masih kosong bray.</p>';
+        }
+    });
+}
+
 
     // Visitor Counter
     function initVisitorCounter() {
@@ -156,7 +309,6 @@
         return parsedData;
     }
 
-
     function getSeenSentences() { 
         const key = `nahwu_seen_indices_${currentDatabase}`;
         const seen = localStorage.getItem(key); 
@@ -174,7 +326,7 @@
         } 
     }
 
-        function playSound(isCorrect) { 
+    function playSound(isCorrect) { 
         if (!els.soundToggle || !els.soundToggle.checked) return; 
         if (isCorrect) { 
             sndCorrect.currentTime = 0; 
@@ -184,7 +336,6 @@
             mainkanSuaraSalah(); 
         } 
     }
-
 
     function handleSecretTap() { 
         tapCount++; 
@@ -235,79 +386,153 @@
     }
     
     function unlockAdminPanel() { 
-        els.adminLogin.style.display = 'none'; 
-        els.adminDash.style.display = 'block'; 
-        els.adminDash.innerHTML = `
-            <div class="admin-tabs">
-                <button class="tab-btn active" id="tab-url">Link URL</button>
-                <button class="tab-btn" id="tab-upl">Upload Galeri</button>
+    els.adminLogin.style.display = 'none'; 
+    els.adminDash.style.display = 'block'; 
+    els.adminDash.innerHTML = `
+        <div class="admin-tabs">
+            <button class="tab-btn active" id="tab-url">Link URL</button>
+            <button class="tab-btn" id="tab-upl">Upload Galeri</button>
+            <button class="tab-btn" id="tab-dev">Dev Sandbox</button>
+        </div>
+        
+        <div id="form-url">
+            <input type="text" id="dawuh-url" class="glass-field" placeholder="https://...">
+        </div>
+        
+        <div id="form-upl" style="display:none;">
+            <img id="img-preview" class="preview-img-box">
+            <div class="file-upload-area">
+                <i class="ph ph-upload-simple" style="font-size:24px;"></i><br>
+                Klik untuk Pilih Foto
+                <input type="file" id="file-inp" accept="image/*">
             </div>
-            <div id="form-url">
-                <input type="text" id="dawuh-url" class="glass-field" placeholder="https://...">
-            </div>
-            <div id="form-upl" style="display:none;">
-                <img id="img-preview" class="preview-img-box">
-                <div class="file-upload-area">
-                    <i class="ph ph-upload-simple" style="font-size:24px;"></i><br>
-                    Klik untuk Pilih Foto
-                    <input type="file" id="file-inp" accept="image/*">
+        </div>
+
+        <div id="form-dev" style="display:none; flex-direction:column; gap:12px;">
+            
+            <div class="dev-sector">
+                <div class="dev-sector-title"><i class="ph ph-eye"></i> Sektor 1: Visual Simulator</div>
+                <div class="dev-sector-grid">
+                    <button id="btn-sim-score" class="dev-btn-action">✨ Uji Instan Rapor</button>
+                    <button id="btn-sim-splash" class="dev-btn-action">🎬 Uji Animasi Splash</button>
                 </div>
             </div>
+            
+            <div class="dev-sector">
+                <div class="dev-sector-title"><i class="ph ph-book-open"></i> Sektor 2: Kitab Sandbox (Pilih Lafadz)</div>
+                <div style="font-size:11px; opacity:0.6; margin-bottom:6px;">Kitab Aktif: <span id="dev-active-kitab" style="color:var(--ios-blue); font-weight:700;">-</span></div>
+                <div id="dev-lafadz-list" class="dev-lafadz-scroll"></div>
+            </div>
+            
+            <div class="dev-sector future-dashed">
+                <div class="dev-sector-title" style="opacity:0.4;"><i class="ph ph-plus-circle"></i> Sektor 3: Future Tools</div>
+                <p style="font-size:11px; opacity:0.3; text-align:center; padding:5px 0;">Wadah kosong pengujian fitur AI Streaming & log telemetri selanjutnya bray...</p>
+            </div>
+            
+        </div>
+        
+        <div id="gallery-controls-area">
             <input type="text" id="dawuh-caption" class="glass-field" placeholder="Keterangan (Opsional)" style="margin-top:10px;">
             <button id="btn-save-img" class="btn-primary" style="margin-top: 10px; background: var(--ios-green);">Simpan Gambar</button>
             <h3 style="margin-top: 20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">Galeri Dawuh</h3>
             <div id="admin-list" class="suggestion-list" style="margin-top: 10px;"></div>
-        `; 
+        </div>
+    `; 
+    
+    const btnUrl = document.getElementById('tab-url'); 
+    const btnUpl = document.getElementById('tab-upl'); 
+    const btnDev = document.getElementById('tab-dev'); 
+    const boxUrl = document.getElementById('form-url'); 
+    const boxUpl = document.getElementById('form-upl'); 
+    const boxDev = document.getElementById('form-dev'); 
+    const galleryCtrls = document.getElementById('gallery-controls-area');
+    const inpUrl = document.getElementById('dawuh-url'); 
+    let mode = 'url'; 
+    
+    btnUrl.onclick = () => { 
+        mode = 'url'; 
+        btnUrl.classList.add('active'); btnUpl.classList.remove('active'); btnDev.classList.remove('active'); 
+        boxUrl.style.display = 'block'; boxUpl.style.display = 'none'; boxDev.style.display = 'none';
+        galleryCtrls.style.display = 'block';
+    }; 
+    
+    btnUpl.onclick = () => { 
+        mode = 'upl'; 
+        btnUpl.classList.add('active'); btnUrl.classList.remove('active'); btnDev.classList.remove('active'); 
+        boxUpl.style.display = 'block'; boxUrl.style.display = 'none'; boxDev.style.display = 'none';
+        galleryCtrls.style.display = 'block';
+    }; 
+
+    // EKSEKUSI KLIK TAB DEVELOPER SANDBOX
+    btnDev.onclick = async () => {
+        mode = 'dev';
+        btnDev.classList.add('active'); btnUrl.classList.remove('active'); btnUpl.classList.remove('active'); 
+        boxDev.style.display = 'flex'; boxUrl.style.display = 'none'; boxUpl.style.display = 'none';
+        galleryCtrls.style.display = 'none'; // Sembunyikan panel galeri dawuh biar fokus nguji kuis bray
+
+        document.getElementById('dev-active-kitab').innerText = currentDatabase.toUpperCase();
+        const listContainer = document.getElementById('dev-lafadz-list');
+        listContainer.innerHTML = '<p style="text-align:center; opacity:0.5; font-size:11px; padding:10px 0;">Menarik data materi dari GitHub...</p>';
         
-        const btnUrl = document.getElementById('tab-url'); 
-        const btnUpl = document.getElementById('tab-upl'); 
-        const boxUrl = document.getElementById('form-url'); 
-        const boxUpl = document.getElementById('form-upl'); 
-        const inpUrl = document.getElementById('dawuh-url'); 
-        let mode = 'url'; 
-        
-        btnUrl.onclick = () => { 
-            mode = 'url'; 
-            btnUrl.classList.add('active'); 
-            btnUpl.classList.remove('active'); 
-            boxUrl.style.display = 'block'; 
-            boxUpl.style.display = 'none'; 
-        }; 
-        
-        btnUpl.onclick = () => { 
-            mode = 'upl'; 
-            btnUpl.classList.add('active'); 
-            btnUrl.classList.remove('active'); 
-            boxUpl.style.display='block'; 
-            boxUrl.style.display='none'; 
-        }; 
-        
-        document.getElementById('file-inp').addEventListener('change', (e) => { 
-            if (e.target.files[0]) { 
-                compressImage(e.target.files[0], (base64) => { 
-                    uploadBase64 = base64; 
-                    const preview = document.getElementById('img-preview'); 
-                    preview.src = base64; 
-                    preview.style.display = 'block'; 
-                }); 
-            } 
-        }); 
-        
-        document.getElementById('btn-save-img').addEventListener('click', () => { 
-            const cap = document.getElementById('dawuh-caption').value.trim(); 
-            let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64; 
-            if (!finalUrl) return alert("Gambar belum dipilih/diisi!"); 
-            push(ref(db, 'dawuh_images'), { url: finalUrl, caption: cap }).then(() => { 
-                alert("Gambar Berhasil Disimpan!"); 
-                inpUrl.value = ''; 
-                document.getElementById('dawuh-caption').value = ''; 
-                uploadBase64 = null; 
-                document.getElementById('img-preview').style.display = 'none'; 
+        try {
+            const DATABASE = await loadDatabaseAsync(currentDatabase);
+            listContainer.innerHTML = '';
+            
+            DATABASE.forEach(quiz => {
+                const btnQuiz = document.createElement('div');
+                btnQuiz.className = 'suggest-item';
+                btnQuiz.style.cssText = "cursor:pointer; text-align:right; direction:rtl; font-family:'Amiri'; font-size:1.1rem; padding:10px; background:rgba(255,255,255,0.05); margin-bottom:2px;";
+                btnQuiz.innerText = quiz.teks_kalimat;
+                
+                btnQuiz.onclick = () => {
+                    closeAdmin();
+                    startLearningCycle(quiz); // Bypass langsung jalankan lafadz pilihan bray!
+                };
+                listContainer.appendChild(btnQuiz);
+            });
+        } catch(e) {
+            listContainer.innerHTML = '<p style="text-align:center; color:var(--ios-red); font-size:11px;">Gagal menarik database bray!</p>';
+        }
+    };
+    
+    // PEMASANGAN TRIGER BYPASS SEKTOR 1 (VISUAL SIMULATOR)
+    document.getElementById('btn-sim-score').onclick = () => {
+        closeAdmin();
+        tampilkanRaporPremium(7, 8, true); // Pemicu instan boks rapor baru dengan dummy score
+    };
+
+    document.getElementById('btn-sim-splash').onclick = () => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            closeAdmin();
+            splash.classList.remove('hide');
+            setTimeout(() => splash.classList.add('hide'), 1700); // Simulasi ulang splash screen
+        }
+    };
+    
+    document.getElementById('file-inp').addEventListener('change', (e) => { 
+        if (e.target.files[0]) { 
+            compressImage(e.target.files[0], (base64) => { 
+                uploadBase64 = base64; 
+                const preview = document.getElementById('img-preview'); 
+                preview.src = base64; preview.style.display = 'block'; 
             }); 
+        } 
+    }); 
+    
+    document.getElementById('btn-save-img').addEventListener('click', () => { 
+        const cap = document.getElementById('dawuh-caption').value.trim(); 
+        let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64; 
+        if (!finalUrl) return alert("Gambar belum dipilih!"); 
+        push(ref(db, 'dawuh_images'), { url: finalUrl, caption: cap }).then(() => { 
+            alert("Gambar Berhasil Disimpan!"); 
+            inpUrl.value = ''; document.getElementById('dawuh-caption').value = ''; 
+            uploadBase64 = null; document.getElementById('img-preview').style.display = 'none'; 
         }); 
-        
-        loadAdminList(); 
-    }
+    }); 
+    
+    loadAdminList(); 
+}
     
     function loadAdminList() { 
         onValue(ref(db, 'dawuh_images'), (snapshot) => { 
@@ -351,161 +576,390 @@
     }
 
     // --- 5. MAIN LOGIC (soal) ---
-    async function startLearningCycle() {
-        els.viewStart.style.display = 'none';
-        els.viewQuiz.style.display = 'none';
-        els.viewLoading.style.display = 'flex';
+    async function startLearningCycle(forcedQuiz = null) {
+    els.viewStart.style.display = 'none';
+    els.viewQuiz.style.display = 'none';
+    els.viewLoading.style.display = 'flex';
 
-        // Beri jeda sedikit untuk animasi loading yang mulus
-        await new Promise(resolve => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 400));
 
-        try {
-            // AMBIL DATA DARI GITHUB SCR ASYNC
-            const DATABASE = await loadDatabaseAsync(currentDatabase);
-            
+    try {
+        const DATABASE = await loadDatabaseAsync(currentDatabase);
+        let selectedQuiz;
+
+        if (forcedQuiz && !(forcedQuiz instanceof Event)) {
+            selectedQuiz = forcedQuiz; // Eksekusi jalur pintas mode dev bray
+        } else {
             const seenIds = getSeenSentences();
             let availableQuizzes = DATABASE.filter(q => !seenIds.includes(q.id_kalimat));
-            
-            if (availableQuizzes.length === 0) {
-                availableQuizzes = DATABASE;
-            }
-
-            const selectedQuiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
-
-            quizData = {
-                id: selectedQuiz.id_kalimat,
-                sentence: selectedQuiz.teks_kalimat,
-                analysis: selectedQuiz.analysis
-            };
-
-            markSentenceSeen(quizData.id);
-            setRandomMarquee();
-
-            wordIndex = 0; 
-            stepIndex = 1;
-            quizScore = { correct: 0, wrong: 0, total: 0 };
-            
-            els.viewLoading.style.display = 'none';
-            els.viewQuiz.style.display = 'block';
-            
-            renderQuestion();
-
-        } catch (error) {
-            console.error("Error loading quiz data from GitHub:", error);
-            alert("Gagal memuat database dari GitHub. Pastikan koneksi internet aman bray!");
-            els.viewLoading.style.display = 'none';
-            els.viewStart.style.display = 'flex';
+            if (availableQuizzes.length === 0) availableQuizzes = DATABASE;
+            selectedQuiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
         }
+
+        quizData = {
+            id: selectedQuiz.id_kalimat,
+            sentence: selectedQuiz.teks_kalimat,
+            analysis: selectedQuiz.analysis
+        };
+
+        markSentenceSeen(quizData.id);
+        setRandomMarquee();
+
+        wordIndex = 0; 
+        stepIndex = 1;
+        quizScore = { correct: 0, wrong: 0, total: 0 };
+        
+        els.viewLoading.style.display = 'none';
+        els.viewQuiz.style.display = 'block';
+        renderQuestion();
+
+    } catch (error) {
+        console.error(error);
+        alert("Gagal memuat database dari GitHub bray!");
+        els.viewLoading.style.display = 'none';
+        els.viewStart.style.display = 'flex';
     }
+}
+
 
     function renderQuestion() {
-        const curWord = quizData.analysis[wordIndex];
-        const curStep = curWord.steps[stepIndex.toString()];
-        const totalSteps = Object.keys(curWord.steps).length;
+    isCurrentStepWrong = false; // <-- Reset saklar setiap kali langkah/soal baru dimuat
 
-        els.ctxSent.innerText = quizData.sentence;
-        els.ctxWord.innerText = curWord.word;
-        els.badge.innerText = `LANGKAH ${stepIndex}/${totalSteps}`;
-        els.qText.innerHTML = curStep.question;
-        els.options.innerHTML = '';
-        
-        const shuffled = [...curStep.options].sort(() => Math.random() - 0.5);
-        shuffled.forEach(opt => {
-            const btn = document.createElement('div');
-            btn.className = 'btn-option';
-            btn.innerHTML = `<span>${opt}</span> <i class="ph ph-caret-right"></i>`;
-            btn.onclick = () => handleAnswer(opt, curStep);
-            els.options.appendChild(btn);
-        });
-    }
+    const curWord = quizData.analysis[wordIndex];
+    const curStep = curWord.steps[stepIndex.toString()];
+    const totalSteps = Object.keys(curWord.steps).length;
+
+    els.ctxSent.innerText = quizData.sentence;
+    els.ctxWord.innerText = curWord.word;
+    els.badge.innerText = `LANGKAH ${stepIndex}/${totalSteps}`;
+    els.qText.innerHTML = curStep.question;
+    els.options.innerHTML = '';
+    
+    const shuffled = [...curStep.options].sort(() => Math.random() - 0.5);
+    shuffled.forEach(opt => {
+        const btn = document.createElement('div');
+        btn.className = 'btn-option';
+        btn.innerHTML = `<span>${opt}</span> <i class="ph ph-caret-right"></i>`;
+        btn.onclick = () => handleAnswer(opt, curStep);
+        els.options.appendChild(btn);
+    });
+}
+
 
     function handleAnswer(ans, data) {
-        const cleanUser = ans.trim().toLowerCase();
-        const cleanCorrect = data.correct.trim().toLowerCase();
-        const isCorrect = cleanUser === cleanCorrect;
+    const cleanUser = ans.trim().toLowerCase();
+    const cleanCorrect = data.correct.trim().toLowerCase();
+    const isCorrect = cleanUser === cleanCorrect;
 
-        playSound(isCorrect);
-        els.mImgArea.style.display = 'none'; 
-        els.mMsg.style.display = 'block';
-        els.mIcon.style.display = 'block';
+    playSound(isCorrect);
+    els.mImgArea.style.display = 'none'; 
+    els.mMsg.style.display = 'block';
+    els.mIcon.style.display = 'block';
 
-        // Track score
+    const currentWordData = quizData.analysis[wordIndex];
+    const totalSteps = Object.keys(currentWordData.steps).length;
+
+    if (isCorrect) {
+        // Jika benar, langsung akumulasikan ke nilai kuis
         quizScore.total++;
-        if (isCorrect) quizScore.correct++;
-        else quizScore.wrong++;
+        quizScore.correct++;
 
-        const currentWordData = quizData.analysis[wordIndex];
-        const totalSteps = Object.keys(currentWordData.steps).length;
-
-        if (isCorrect) {
-            els.mTitle.innerText = "Benar!"; 
-            els.mTitle.style.color = "#34C759"; 
-            els.mIcon.innerText = "✨";
-            els.mMsg.innerText = data.explanation; 
-            els.modal.style.display = 'flex';
-            setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
-            
-            els.fbBtn.onclick = () => {
-                if (stepIndex < totalSteps) {
-                    els.mCard.style.transform = 'scale(0.9)'; 
-                    setTimeout(() => { els.modal.style.display = 'none'; }, 200);
-                    stepIndex++; 
-                    renderQuestion();
-                } else {
-                    showRewardPhase(); 
-                }
-            };
-
-        } else {
-            els.mTitle.innerText = "Kurang Tepat"; 
-            els.mTitle.style.color = "#FF3B30"; 
-            els.mIcon.innerText = "❌";
-            els.mMsg.innerHTML = `Jawaban Benar: <b>${data.correct}</b><br><br>${data.explanation}`;
-            els.modal.style.display = 'flex';
-            setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
-            els.fbBtn.onclick = () => { 
-                els.mCard.style.transform = 'scale(0.9)'; 
-                setTimeout(() => els.modal.style.display = 'none', 200); 
-            };
-        }
-    }
-
-    function showRewardPhase() {
-        els.mTitle.innerText = "Lafadz Selesai"; 
-        els.mTitle.style.color = "#FFD700"; 
-        els.mIcon.style.display = 'none';
+        els.mTitle.innerText = "Benar!"; 
+        els.mTitle.style.color = "#34C759"; 
+        els.mIcon.innerText = "✨";
+        els.mMsg.innerText = data.explanation; 
+        els.modal.style.display = 'flex';
+        setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
         
-        if (dawuhImagesCache.length > 0) {
-            const randomIdx = Math.floor(Math.random() * dawuhImagesCache.length);
-            const randImg = dawuhImagesCache[randomIdx];
-            els.mImgArea.style.display = 'flex'; 
-            els.mSpinner.style.display = 'block'; 
-            els.mImgSrc.style.display = 'none';
-            els.mImgSrc.src = randImg.url; 
-            els.mMsg.innerText = randImg.caption || "Tetap Semangat!";
-        } else { 
-            els.mMsg.innerText = "Alhamdulillah. Lanjut?"; 
+        els.fbBtn.onclick = () => {
+            if (stepIndex < totalSteps) {
+                els.mCard.style.transform = 'scale(0.9)'; 
+                setTimeout(() => { els.modal.style.display = 'none'; }, 200);
+                stepIndex++; 
+                renderQuestion();
+            } else {
+                showRewardPhase(); 
+            }
+        };
+
+    } else {
+        // Jika salah, cek dulu apakah ini kesalahan pertama pada soal ini
+        if (!isCurrentStepWrong) {
+            isCurrentStepWrong = true; // Kunci saklar agar salah berikutnya diabaikan nilainya
+            quizScore.total++;
+            quizScore.wrong++;
         }
 
-        els.fbBtn.onclick = () => {
-            els.mCard.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                els.modal.style.display = 'none'; 
-                setTimeout(() => {
-                    if (wordIndex < quizData.analysis.length - 1) {
-                        wordIndex++; 
-                        stepIndex = 1; 
-                        renderQuestion();
-                    } else {
-                        wordIndex = 0; 
-                        stepIndex = 1; 
-                        quizData = null;
-                        showTransition("Kalimat Selesai", "من تبحر فى علم النحو اهتدى الى كل العلوم\n\nSiap lanjut kalimat baru?", true);
-                    }
-                }, 100);
-            }, 200);
+        els.mTitle.innerText = "Kurang Tepat"; 
+        els.mTitle.style.color = "#FF3B30"; 
+        els.mIcon.innerText = "❌";
+        els.mMsg.innerHTML = `Jawaban Benar: <b>${data.correct}</b><br><br>${data.explanation}`;
+        els.modal.style.display = 'flex';
+        setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+        els.fbBtn.onclick = () => { 
+            els.mCard.style.transform = 'scale(0.9)'; 
+            setTimeout(() => els.modal.style.display = 'none', 200); 
         };
     }
+}
+
+
+    function showRewardPhase() {
+    els.mTitle.innerText = "Lafadz Selesai"; 
+    els.mTitle.style.color = "#FFD700"; 
+    els.mIcon.style.display = 'none';
+    
+    // Memunculkan gambar motivasi santri dari galeri dawuh jika ada
+    if (dawuhImagesCache.length > 0) {
+        const randomIdx = Math.floor(Math.random() * dawuhImagesCache.length);
+        const randImg = dawuhImagesCache[randomIdx];
+        els.mImgArea.style.display = 'flex'; 
+        els.mSpinner.style.display = 'block'; 
+        els.mImgSrc.style.display = 'none';
+        els.mImgSrc.src = randImg.url; 
+        els.mMsg.innerText = randImg.caption || "Tetap Semangat!";
+    } else { 
+        els.mMsg.innerText = "Alhamdulillah. Lanjut ke kata berikutnya?"; 
+    }
+
+    els.modal.style.display = 'flex';
+    setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+
+    // LOGIKA PERBAIKAN ALUR ALIRAN KUIS BRAY
+    els.fbBtn.onclick = () => {
+        els.mCard.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            els.modal.style.display = 'none'; 
+            setTimeout(() => {
+                
+                // 1. CEK: Apakah masih ada LAFADZ berikutnya di dalam KALIMAT yang sama?
+                if (wordIndex < quizData.analysis.length - 1) {
+                    wordIndex++;     // Maju ke kata berikutnya
+                    stepIndex = 1;   // Reset langkah balik ke STEP 1
+                    renderQuestion(); // Muat pertanyaan baru
+                } 
+                // 2. JIKA TIDAK: Berarti seluruh KALIMAT baru benar-benar selesai tuntas!
+                else {
+                    wordIndex = 0; 
+                    stepIndex = 1; 
+                    quizData = null;
+                    
+                    // BARU DI SINI RAPOR PREMIUM EMAS & SILVER BOLEH DIKELUARKAN!
+                    tampilkanRaporPremium(quizScore.correct, quizScore.total, false);
+                }
+                
+            }, 100);
+        }, 200);
+    };
+}
+
+
+    function tampilkanRaporPremium(correct, total, isSimulation = false) {
+    const rank = getRankData(correct, total);
+    const wrongCount = total - correct;
+        
+    // --- LOGIKA PERHITUNGAN & SUNTIK POIN MODE RANK BRAY ---
+    let modeRankBadgeHtml = '';
+    if (isRankMode && !isSimulation && auth.currentUser) {
+        const multiplier = LEVEL_MULTIPLIERS[currentDatabase] || 1;
+        const kalkulasiPoin = Math.round(correct * multiplier);
+        
+        // Buat teks tampilan bonus poin di dalam modal rapor
+        modeRankBadgeHtml = `<div style="font-size:0.85rem; color:#FFD700; font-weight:700; margin-top:-8px; margin-bottom:12px;"><i class="ph ph-sparkles"></i> Mode Rank: +${kalkulasiPoin} Poin Klasemen!</div>`;
+        
+        // Kirim penambahan skor secara mutlak ke awan Firebase menggunakan perintah increment
+        set(ref(db, `users/${auth.currentUser.uid}/total_score`), increment(kalkulasiPoin));
+    }
+
+    els.mIcon.innerText = rank.icon;
+    els.mIcon.style.display = 'block';
+    els.mTitle.innerText = isSimulation ? "Simulasi Rapor Dev" : "Alhamdulillah! 🎉";
+    els.mTitle.style.color = "#FFD700";
+    
+    els.mMsg.innerHTML = `
+        <div style="text-align:center;">
+            <div style="font-size: 1.3rem; font-weight: 800; color: ${rank.color}; letter-spacing: 0.5px; margin-bottom: 2px;">${rank.rank}</div>
+            
+            ${modeRankBadgeHtml}
+            
+            <div class="score-board-wrapper" id="score-card-element">
+                <div class="score-box-card correct">
+                    <div class="score-box-num">${correct}</div>
+                    <div class="score-box-label">BENAR</div>
+                </div>
+                <div class="score-box-card wrong">
+                    <div class="score-box-num">${wrongCount}</div>
+                    <div class="score-box-label">SALAH</div>
+                </div>
+                <div class="score-box-card total">
+                    <div class="score-box-num">${total}</div>
+                    <div class="score-box-label">TOTAL CLICK</div>
+                </div>
+            </div>
+            
+            <div style="font-size:0.82rem; color: var(--text-muted); line-height:1.5; margin-bottom: 20px; font-style: italic;">${rank.msg}</div>
+            
+            <button id="btn-share-score" class="btn-share-premium">
+                <i class="ph ph-share-network" style="font-size: 18px;"></i>
+                <span id="share-btn-text">Bagikan Gambar Rapor</span>
+            </button>
+        </div>
+    `;
+
+
+    els.modal.style.display = 'flex';
+    setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
+    
+    // --- LOGIKA UTAMA KONVERSI HTML TO PNG VIA CANVAS ---
+    const btnShare = document.getElementById('btn-share-score');
+    const txtShare = document.getElementById('share-btn-text');
+
+    if (btnShare) {
+        btnShare.onclick = () => {
+            txtShare.innerText = "Memproses Gambar...";
+            btnShare.disabled = true;
+
+            // 1. Inisialisasi Kanvas Bayangan Ukuran Resolusi Tinggi (600x520)
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 520;
+            const ctx = canvas.getContext('2d');
+
+            // 2. Desain Latar Belakang Kartu (Tema Premium Dark Glass)
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#1c1c1e');
+            gradient.addColorStop(1, '#0d0d0f');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Frame Perak Halus (Silver Border Line)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(15, 15, canvas.width - 30, canvas.height - 30);
+
+            // 3. Gambar Emoji Pangkat (Sistem Font Mobile Otomatis)
+            ctx.font = '75px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(rank.icon, canvas.width / 2, 85);
+
+            // 4. Teks Judul & Gelar Pangkat
+            ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText(isSimulation ? "SIMULASI RAPOR DEV" : "ALHAMDULILLAH!", canvas.width / 2, 160);
+
+            ctx.font = 'bold 26px "Plus Jakarta Sans", sans-serif';
+            ctx.fillStyle = rank.color || '#ffffff';
+            ctx.fillText(rank.rank, canvas.width / 2, 205);
+
+            // 5. Gambar Tiga Boks Nilai (Benar, Salah, Total) Secara Presisi
+            const bW = 160; // Lebar boks
+            const bH = 95;  // Tinggi boks
+            const bY = 260; // Posisi vertikal boks
+            const gap = 16; // Jarak antar boks
+            const startX = (canvas.width - (bW * 3 + gap * 2)) / 2;
+
+            // Fungsi Pembantu internal untuk melukis boks skor per kategori
+            const lukisBoks = (x, value, label, valueColor, labelColor) => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+                ctx.fillRect(x, bY, bW, bH);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(x, bY, bW, bH);
+
+                // Angka Skor
+                ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
+                ctx.fillStyle = valueColor;
+                ctx.fillText(value, x + bW / 2, bY + bH / 2 - 10);
+
+                // Label Keterangan
+                ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+                ctx.fillStyle = labelColor;
+                ctx.fillText(label, x + bW / 2, bY + bH / 2 + 25);
+            };
+
+            // Jalankan pelukisan 3 boks skor bernuansa perak-putih kustom
+            lukisBoks(startX, correct, 'BENAR', '#34C759', 'rgba(52, 199, 89, 0.8)');
+            lukisBoks(startX + bW + gap, wrongCount, 'SALAH', '#FF3B30', 'rgba(255, 59, 48, 0.8)');
+            lukisBoks(startX + (bW + gap) * 2, total, 'TOTAL CLICK', '#ffffff', 'rgba(255, 255, 255, 0.5)');
+
+            // 6. Tanda Tangan Branding & Tautan Web Resmi di Kerak Bawah Kartu
+            ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.fillText('Nahwu OS — Cara Seru Belajar I\'rob', canvas.width / 2, 410);
+
+            ctx.font = 'bold 14px "Plus Jakarta Sans", sans-serif';
+            ctx.fillStyle = '#007AFF'; // iOS Blue Link Accent
+            ctx.fillText('https://nahwu.amogenz.xyz', canvas.width / 2, 440);
+
+            ctx.font = '11px "Plus Jakarta Sans", sans-serif';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillText('Powered by Amogenz.Inc', canvas.width / 2, 470);
+
+            // 7. Proses Output Kanvas Menjadi Berkas Riil PNG Blob
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    alert("Gagal memproses gambar bray!");
+                    txtShare.innerText = "Bagikan Gambar Rapor";
+                    btnShare.disabled = false;
+                    return;
+                }
+
+                // Bungkus blob menjadi objek File biner siap kirim
+                const filePNG = new File([blob], 'rapor-nahwu-os.png', { type: 'image/png' });
+                
+                // Susun teks caption promosi syiar nahwu beserta URL tujuan
+                const captionTeks = `Alhamdulillah! Saya meraih pangkat ${rank.icon} *${rank.rank}* saat belajar kaidah I'rob di Nahwu OS dengan efisiensi klik ${correct}/${total}. Ayo uji pemahaman nahwu shorof pesantrenmu di sini bray! 🦉✨\n\nMain langsung di: https://nahwu.amogenz.xyz`;
+
+                // Cek apakah browser HP mendukung fitur pengiriman berkas gambar langsung
+                if (navigator.canShare && navigator.canShare({ files: [filePNG] })) {
+                    try {
+                        await navigator.share({
+                            files: [filePNG],
+                            title: 'Pencapaian Rapor Nahwu OS',
+                            text: captionTeks
+                        });
+                    } catch (err) {
+                        console.log("Aktivitas share dibatalkan user.");
+                    } finally {
+                        txtShare.innerText = "Bagikan Gambar Rapor";
+                        btnShare.disabled = false;
+                    }
+                } else {
+                    // JALUR CADANGAN (FALLBACK): Unduh Gambar + Salin Teks Otomatis jika sistem operasi lama
+                    try {
+                        await navigator.clipboard.writeText(captionTeks);
+                        
+                        const linkDownload = document.createElement('a');
+                        linkDownload.href = URL.createObjectURL(blob);
+                        linkDownload.download = `rapor_nahwu_os_${correct}_dari_${total}.png`;
+                        linkDownload.click();
+                        
+                        alert("Browser HP-mu belum mendukung share file langsung bray. Tapi tenang, gambar PNG rapor sudah otomatis diunduh ke galeri HP dan teks caption + tautan web sudah disalin ke memori! Kamu tinggal tempel langsung di WA.");
+                    } catch (err) {
+                        alert("Gagal mengeksekusi sistem pembagian cadangan.");
+                    } finally {
+                        txtShare.innerText = "Bagikan Gambar Rapor";
+                        btnShare.disabled = false;
+                    }
+                }
+            }, 'image/png');
+        };
+    }
+
+    // Penutup jendela modal kuis
+    els.fbBtn.onclick = () => {
+        els.mCard.style.transform = 'scale(0.9)'; 
+        setTimeout(() => { 
+            els.modal.style.display = 'none'; 
+            if (!isSimulation) {
+                els.viewQuiz.style.display = 'none';
+                els.viewStart.style.display = 'flex';
+            }
+        }, 200);
+    };
+}
+
 
     function getRankData(correct, total) {
         const wrong = total - correct;
@@ -598,20 +1052,28 @@
 
     // --- 6. PAGE NAVIGATION ---
     function switchPage(pageName) {
-        // Hide all pages
-        document.querySelectorAll('.page-content').forEach(page => {
-            page.classList.remove('active');
-        });
-        
-        // Show selected page
-        document.getElementById(`page-${pageName}`).classList.add('active');
-        
-        // Update nav buttons
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
+    // Hide all pages
+    document.querySelectorAll('.page-content').forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    // Show selected page (Diberi pengaman bray)
+    const targetPage = document.getElementById(`page-${pageName}`);
+    if (targetPage) {
+        targetPage.classList.add('active');
     }
+    
+    // Update nav buttons
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const navBtn = document.querySelector(`[data-page="${pageName}"]`);
+    if (navBtn) {
+        navBtn.classList.add('active');
+    }
+}
+
 
     // --- 7. SYARAH AI FUNCTIONS ---
 
@@ -631,7 +1093,7 @@
     return btoa(unescape(encodeURIComponent(cleanText))).replace(/[/+=]/g, ""); 
 }
 
-async function analyzeSyarah() {
+    async function analyzeSyarah() {
     const input = document.getElementById('arabic-input').value.trim();
     const resultArea = document.getElementById('syarah-result');
     const loadingArea = document.getElementById('syarah-loading');
@@ -804,8 +1266,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     }
 }
 
-
-// Fungsi Display agar TIDAK "Kotak dalam Kotak"
+    // Fungsi Display agar TIDAK "Kotak dalam Kotak"
 
     function displaySyarahResult(result) {
     const resultDiv = document.getElementById('syarah-content');
@@ -1131,13 +1592,80 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
             visitorCounter: document.getElementById('visitor-counter')
         };
 
+        // 1. Tangkap kembalian redirect login Google setelah layar memantul kembali bray
+        // getRedirectResult(auth).catch(err => console.error("Redirect Login Error:", err));
+
+        // 2. Trigger Otentikasi Tombol Google Login & Logout di Halaman Peringkat
+        document.getElementById('btn-google-login').onclick = () => {
+    signInWithPopup(auth, googleProvider)
+        .then((result) => {
+            console.log("Login sukses bray!", result.user);
+        })
+        .catch((error) => {
+            console.error("Gagal login popup bray:", error);
+            alert("Gagal masuk: " + error.message);
+        });
+};
+
+        document.getElementById('btn-google-logout').onclick = () => { 
+            if(confirm("Keluar dari papan kompetisi rank bray?")) signOut(auth); 
+        };
+        
+        // 3. Logika Pendaftaran & Validasi Nickname Unik Publik Pengguna Baru
+        document.getElementById('btn-save-nickname').onclick = () => {
+            const nickInput = document.getElementById('rank-custom-name').value.trim();
+            if (!nickInput || nickInput.length < 3) return alert("Nickname kustom minimal harus 3 karakter bray!");
+            
+            get(ref(db, 'users')).then((snap) => {
+                let isUnique = true;
+                if (snap.exists()) {
+                    Object.values(snap.val()).forEach(u => {
+                        if (u.nickname && u.nickname.toLowerCase() === nickInput.toLowerCase()) isUnique = false;
+                    });
+                }
+                if (!isUnique) {
+                    alert("Nama kustom tersebut sudah diambil santri lain bray, silakan cari nama kustom lainnya!");
+                } else {
+                    // Nama terbukti murni unik, daftarkan koordinat entitas akun baru ke database bray
+                    set(ref(db, `users/${auth.currentUser.uid}`), {
+                        nickname: nickInput,
+                        total_score: 0,
+                        ever_top_3: false,
+                        created_at: Date.now()
+                    });
+                }
+            });
+        };
+
+        // 4. Logika Pengoper Saklar Tombol Pilihan Mode Belajar di Halaman Beranda
+        document.getElementById('btn-mode-biasa').onclick = () => {
+            isRankMode = false;
+            document.getElementById('btn-mode-biasa').classList.add('active');
+            document.getElementById('btn-mode-rank').classList.remove('active');
+        };
+        document.getElementById('btn-mode-rank').onclick = () => {
+            if (!auth.currentUser) {
+                alert("Kamu wajib login Google dan mengunci nickname kustom terlebih dahulu di Halaman Rank bray!");
+                switchPage('rank');
+            } else if (!currentUserData || !currentUserData.nickname) {
+                alert("Selesaikan setup pembuatan nickname kustom kamu dulu bray agar poin bisa tercatat!");
+                switchPage('rank');
+            } else {
+                isRankMode = true;
+                document.getElementById('btn-mode-rank').classList.add('active');
+                document.getElementById('btn-mode-biasa').classList.remove('active');
+            }
+        };
+
+
         // Secret admin access
         document.getElementById('secret-logo').addEventListener('click', handleSecretTap);
         document.getElementById('btn-admin-login').addEventListener('click', handleAdminLogin);
         document.getElementById('btn-close-admin').addEventListener('click', closeAdmin);
         
-        // Start button
-        document.getElementById('btn-start').addEventListener('click', startLearningCycle);
+        // Start button - Dibungkus aman agar tidak bocor MouseEvent bray!
+        document.getElementById('btn-start').addEventListener('click', () => startLearningCycle());
+
         
         // Back to home button (from quiz)
         document.getElementById('btn-back-home').addEventListener('click', () => {
@@ -1358,6 +1886,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         loadPublicDawuh();
         loadComments();
         initVisitorCounter();
+        initLeaderboardRealtimeSync();
     }
 
     if (document.readyState === 'loading') { 
