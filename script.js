@@ -131,7 +131,7 @@
     function initLeaderboardRealtimeSync() {
     // 1. Pantau Status Login Secara Live di Latar Belakang
     onAuthStateChanged(auth, (user) => {
-        // Ambil referensi semua elemen DOM untuk gerbang login/setup
+        // Ambil elemen DOM
         const rankLoginArea = document.getElementById('rank-login-area');
         const rankSetupArea = document.getElementById('rank-setup-area');
         const rankMainArea = document.getElementById('rank-main-area');
@@ -146,56 +146,48 @@
                 const data = snapshot.val();
                 
                 if (data && data.nickname) {
-                    currentUserData = data; // Ambil data profil publiknya bray
+                    currentUserData = data;
                     
-                    // Eksekusi manipulasi DOM hanya jika elemennya eksis di HTML bray
                     if (rankLoginArea) rankLoginArea.style.display = 'none';
                     if (rankSetupArea) rankSetupArea.style.display = 'none';
                     if (rankMainArea) rankMainArea.style.display = 'block';
                     if (userRankName) userRankName.innerText = data.nickname;
                     if (userRankStatus) userRankStatus.innerText = `Tabungan: ${(data.total_score || 0).toLocaleString('id-ID')} Poin`;
                     
-                    // Pastikan boks profil pribadi di atas list menyala kembali
-                    if (userRankName && userRankName.closest('.setting-row')) {
-                        userRankName.closest('.setting-row').style.display = 'flex';
-                    }
+                    // Cek boks profil pribadi dengan pengecekan bertingkat agar tidak null
+                    const settingRow = userRankName ? userRankName.closest('.setting-row') : null;
+                    if (settingRow) settingRow.style.display = 'flex';
                 } else {
-                    // Login sukses tapi belum bikin nama kustom publik bray
                     if (rankLoginArea) rankLoginArea.style.display = 'none';
                     if (rankSetupArea) rankSetupArea.style.display = 'block';
                     if (rankMainArea) rankMainArea.style.display = 'none';
                 }
             });
         } else {
-            // JIKA USER BELUM LOGIN GOOGLE ATAU MASIH PENGUNJUNG BIASA
+            // JIKA USER BELUM LOGIN
             currentUserData = null;
             isRankMode = false;
             
-            // Pengaman penanda tombol aktif di beranda
+            // PENGAMAN: Cek tombol sebelum tambah/hapus class
             if (btnBiasa) btnBiasa.classList.add('active');
             if (btnRank) btnRank.classList.remove('active');
             
-            // Sembunyikan form nama kustom, tampilkan banner tombol login Google
             if (rankLoginArea) rankLoginArea.style.display = 'block';
             if (rankSetupArea) rankSetupArea.style.display = 'none';
-            
-            // Klasemen tetap MENYALA (block) agar list Top 50 bisa dibaca pengunjung biasa
             if (rankMainArea) rankMainArea.style.display = 'block'; 
             
-            // Karena belum login, sembunyikan boks data akun pribadi di atas list klasemen bray
-            if (userRankName && userRankName.closest('.setting-row')) {
-                userRankName.closest('.setting-row').style.display = 'none';
-            }
+            // PENGAMAN: Sembunyikan boks profil pribadi
+            const userRankContainer = document.getElementById('user-rank-name');
+            const settingRow = userRankContainer ? userRankContainer.closest('.setting-row') : null;
+            if (settingRow) settingRow.style.display = 'none';
         }
     });
 
-    // 2. Tarik Data Klasemen Top 50 (Siapapun Bisa Lihat)
+    // 2. Tarik Data Klasemen Top 50
     const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(50));
     onValue(topRankQuery, (snapshot) => {
         const listContainer = document.getElementById('leaderboard-list');
-        
-        // PENGAMAN UTAMA: Jika elemen papan peringkat belum dibuat di HTML, langsung batalkan render bray!
-        if (!listContainer) return;
+        if (!listContainer) return; // Keluar jika elemen tidak ada
         
         listContainer.innerHTML = '';
         const data = snapshot.val();
@@ -208,26 +200,21 @@
                 const rankPosition = index + 1;
                 let inlineBadgeSvg = '';
 
-                // --- 👑 PRIORITY 1: LOGIKA CENTANG VERIFIED KUSTOM UNTUK UJI COBA ---
+                // Logika Lencana
                 if (user.is_verified === true) {
-                    // Ambil warna kustom dari database, jika kosong otomatis pakai biru twitter (#1DA1F2)
                     const warnaKustom = user.verified_color || '#1DA1F2';
                     inlineBadgeSvg = generateTwitterBadgeSVG(warnaKustom);
-                } 
-                // --- PRIORITY 2: Sistem Bawaan Pangkat Juara Top 3 Aktif ---
-                else if (rankPosition <= 3) {
-                    inlineBadgeSvg = generateTwitterBadgeSVG('#1DA1F2'); // Biru Twitter untuk Top 3 aktif
-                    if (!user.ever_top_3) set(ref(db, `users/${user.uid}/ever_top_3`), true); // Kunci rekam jejak
-                } 
-                // --- PRIORITY 3: Sistem Bawaan Alumni Veteran Pernah Top 3 ---
-                else if (user.ever_top_3) {
-                    inlineBadgeSvg = generateTwitterBadgeSVG('#C0C0C0'); // Perak kusam untuk veteran historis
+                } else if (rankPosition <= 3) {
+                    inlineBadgeSvg = generateTwitterBadgeSVG('#1DA1F2');
+                    if (!user.ever_top_3) set(ref(db, `users/${user.uid}/ever_top_3`), true);
+                } else if (user.ever_top_3) {
+                    inlineBadgeSvg = generateTwitterBadgeSVG('#C0C0C0');
                 }
 
                 const row = document.createElement('div');
                 row.className = 'rank-item';
                 if (auth.currentUser && user.uid === auth.currentUser.uid) {
-                    row.classList.add('my-rank'); // Beri highlight border jika ini baris milik dia sendiri bray
+                    row.classList.add('my-rank');
                 }
 
                 let numClass = '';
