@@ -182,11 +182,15 @@
             }
         });
 
-        // 2. Tarik Data Klasemen Top 17 (DIKUNCI SAKLAR UTAMA AGAR AMAN DARI DUPLIKASI LISTENER)
+// 2. Tarik Data Klasemen Top 17
+
         const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(17));
-        onValue(topRankQuery, (snapshot) => {
-            const listContainer = document.getElementById('leaderboard-list');
-            const statusContainer = document.getElementById('status-tahta-container');
+        
+    onValue(topRankQuery, (snapshot) => {
+    const listContainer = document.getElementById('leaderboard-list');
+    const inputPesan = document.getElementById('input-pesan-tahta');
+    const btnSave = document.getElementById('btn-save-pesan');
+    const infoText = document.getElementById('status-info-text');
             if (!listContainer) return; 
             
             // 🚨 BERSIHKAN CONTAINER SETIAP KALI EVENT SINKRONISASI DATANG BRAY!
@@ -197,23 +201,37 @@
             let usersArr = Object.entries(data).map(([uid, val]) => ({ uid, ...val }));
             usersArr.sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
 
-            // Cek apakah user login ada di Top 2
-            const myRankIndex = auth.currentUser ? usersArr.findIndex(u => u.uid === auth.currentUser.uid) : -1;
-            if (statusContainer) {
-                if (myRankIndex !== -1 && myRankIndex <= 1) {
-                    statusContainer.style.display = 'block';
-                    if (document.getElementById('input-pesan-tahta').value === "") {
-                        document.getElementById('input-pesan-tahta').value = usersArr[myRankIndex].status_message || "";
-                    }
-                } else {
-                    statusContainer.style.display = 'none';
-                }
+        // --- LOGIKA KUNCI/BUKA KOLOM PESAN ---
+        const myRankIndex = auth.currentUser ? usersArr.findIndex(u => u.uid === auth.currentUser.uid) : -1;
+        
+        if (myRankIndex !== -1 && myRankIndex <= 1) {
+            // USER ADALAH TOP 2 - BUKA KUNCI
+            inputPesan.disabled = false;
+            inputPesan.style.background = "rgba(0,0,0,0.5)";
+            inputPesan.style.color = "white";
+            btnSave.disabled = false;
+            btnSave.style.background = "var(--ios-green)";
+            btnSave.style.color = "white";
+            btnSave.style.cursor = "pointer";
+            infoText.innerText = "👑 KAMU ADALAH PENGAWAS TAHTA (SILAKAN ISI PESAN)";
+            
+            // Isi otomatis hanya jika belum ada isi
+            if (inputPesan.value === "") {
+                inputPesan.value = usersArr[myRankIndex].status_message || "";
             }
+        } else {
+            // USER BUKAN TOP 2 - KUNCI
+            inputPesan.disabled = true;
+            inputPesan.style.background = "rgba(0,0,0,0.3)";
+            inputPesan.style.color = "#888";
+            btnSave.disabled = true;
+            btnSave.style.background = "#444";
+            btnSave.style.color = "#999";
+            btnSave.style.cursor = "not-allowed";
+            infoText.innerText = "👑 FITUR PESAN KHUSUS RANK 1 & 2";
+        }
                 
                 usersArr.forEach((user, index) => {
-                  // TAMBAHKAN INI DI DALAM FOR-EACH LU
-               // console.log(`Proses rank ${index + 1}:`, user.nickname, "Pesan:", user.status_message); 
-
                     const rankPosition = index + 1;
                     let inlineBadgeSvg = '';
                     let autoColor = '#ffffff'; 
@@ -254,9 +272,12 @@
                         inlineBadgeSvg = generateTwitterBadgeSVG('#C0C0C0');
                     }
                     
-                    const pesanTahtaHtml = (rankPosition <= 2 && user.status_message) 
-                    ? `<div style="font-family: 'BerlinSansFB'; font-size:0.75rem; color:#fff; opacity:0.7; margin-top:4px; font-style:italic;">"${user.status_message}"</div>` 
-                    : '';
+                    // Ganti bagian pesanTahtaHtml lu jadi ini, lebih aman:
+const statusMsg = user.status_message || ""; // Default ke string kosong jika null/undefined
+const pesanTahtaHtml = (rankPosition <= 2 && statusMsg.length > 0) 
+    ? `<div style="font-family: 'BerlinSansFB'; font-size:0.75rem; color:#fff; opacity:0.7; margin-top:4px; font-style:italic;">"${statusMsg}"</div>` 
+    : '';
+
 
                     const row = document.createElement('div');
                     row.className = 'rank-item';
