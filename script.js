@@ -186,6 +186,7 @@
         const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(17));
         onValue(topRankQuery, (snapshot) => {
             const listContainer = document.getElementById('leaderboard-list');
+            const statusContainer = document.getElementById('status-tahta-container');
             if (!listContainer) return; 
             
             // 🚨 BERSIHKAN CONTAINER SETIAP KALI EVENT SINKRONISASI DATANG BRAY!
@@ -193,16 +194,33 @@
             const data = snapshot.val();
 
             if (data) {
-                let usersArr = Object.entries(data).map(([uid, val]) => ({ uid, ...val }));
-                usersArr.sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+            let usersArr = Object.entries(data).map(([uid, val]) => ({ uid, ...val }));
+            usersArr.sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+
+            // Cek apakah user login ada di Top 2
+            const myRankIndex = auth.currentUser ? usersArr.findIndex(u => u.uid === auth.currentUser.uid) : -1;
+            if (statusContainer) {
+                if (myRankIndex !== -1 && myRankIndex <= 1) {
+                    statusContainer.style.display = 'block';
+                    if (document.getElementById('input-pesan-tahta').value === "") {
+                        document.getElementById('input-pesan-tahta').value = usersArr[myRankIndex].status_message || "";
+                    }
+                } else {
+                    statusContainer.style.display = 'none';
+                }
+            }
                 
                 usersArr.forEach((user, index) => {
+                  // TAMBAHKAN INI DI DALAM FOR-EACH LU
+               // console.log(`Proses rank ${index + 1}:`, user.nickname, "Pesan:", user.status_message); 
+
                     const rankPosition = index + 1;
                     let inlineBadgeSvg = '';
                     let autoColor = '#ffffff'; 
 
                     let rankText = '';
                     let rankIconSvg = '';
+                    
 
                     if (rankPosition === 1) {
                         autoColor = '#FFD700'; // Emas
@@ -235,6 +253,10 @@
                     else if (user.ever_top_3) {
                         inlineBadgeSvg = generateTwitterBadgeSVG('#C0C0C0');
                     }
+                    
+                    const pesanTahtaHtml = (rankPosition <= 2 && user.status_message) 
+                    ? `<div style="font-family: 'BerlinSansFB'; font-size:0.75rem; color:#fff; opacity:0.7; margin-top:4px; font-style:italic;">"${user.status_message}"</div>` 
+                    : '';
 
                     const row = document.createElement('div');
                     row.className = 'rank-item';
@@ -252,6 +274,7 @@
                                 <span class="rank-name-text" style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; color: #ffffff; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
                                     ${rankIconSvg} ${user.nickname} ${inlineBadgeSvg}
                                 </span>
+                                ${pesanTahtaHtml} 
                             </div>
                             <span class="rank-points" style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; color: ${autoColor}; font-weight: 700; font-size: 0.95rem;">
                                 ${(user.total_score || 0).toLocaleString('id-ID')} Poin
@@ -275,6 +298,15 @@
                 listContainer.innerHTML = '<p style="text-align:center; font-size:13px; opacity:0.5; padding:20px 0;">Papan skor masih kosong bray.</p>';
             }
         });
+            // 3. Trigger Simpan Pesan Tahta
+    document.getElementById('btn-save-pesan').onclick = () => {
+        const msg = document.getElementById('input-pesan-tahta').value;
+        if (auth.currentUser) {
+            set(ref(db, `users/${auth.currentUser.uid}/status_message`), msg)
+                .then(() => alert("Pesan Tahta diperbarui bray!"))
+                .catch(err => alert("Gagal: " + err.message));
+        }
+    };
     }
 
 
