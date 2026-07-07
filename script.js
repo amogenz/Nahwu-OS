@@ -213,7 +213,7 @@
             btnSave.style.background = "var(--ios-green)";
             btnSave.style.color = "white";
             btnSave.style.cursor = "pointer";
-            infoText.innerText = "👑 KAMU ADALAH PENGAWAS TAHTA (SILAKAN ISI PESAN)";
+            infoText.innerText = " KAMU ADALAH PENGAWAS TAHTA ";
             
             // Isi otomatis hanya jika belum ada isi
             if (inputPesan.value === "") {
@@ -228,7 +228,7 @@
             btnSave.style.background = "#444";
             btnSave.style.color = "#999";
             btnSave.style.cursor = "not-allowed";
-            infoText.innerText = "👑 FITUR PESAN KHUSUS RANK 1 & 2";
+            infoText.innerText = " PESAN KHUSUS RANK 1 & 2";
         }
                 
                 usersArr.forEach((user, index) => {
