@@ -217,7 +217,7 @@
                         <p class="banner-desc">Punya kendala, saran fitur, atau ingin diskusi soal I'rob? Mari ngobrol langsung dengan <b>Amogenz</b> dan santri lainnya.</p>
                         
                         <div class="social-links-wrapper">
-                            <a href="https://www.instagram.com/amooogang" target="_blank" class="social-item">
+                            <a href="https://www.instagram.com/nahwuos" target="_blank" class="social-item">
                                 <div class="social-info">
                                     <img src="https://i.ibb.co.com/n8KZM3qm/Nahwu.webp" alt="Amogenz" class="social-avatar">
                                     <div class="social-text"><strong>Amogenz</strong><small>Developer & Creator</small></div>
@@ -464,6 +464,36 @@
 </div>
               
     </div>
+
+<script>
+(async function () {
+    let version = Date.now(); // fallback kalau endpoint gagal, tetap force-fresh
+    try {
+        const res = await fetch('/api/version', { cache: 'no-store' });
+        const data = await res.json();
+        version = data.version;
+    } catch (e) {
+        console.warn('Gagal ambil versi deploy, pakai fallback timestamp bray:', e);
+    }
+
+    // Cek versi tersimpan di HP user vs versi server sekarang
+    const lastVersion = localStorage.getItem('nahwu_os_version');
+    if (lastVersion && lastVersion !== String(version)) {
+        console.log('🔄 Update terdeteksi! Membersihkan cache lama...');
+        if (window.caches) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+        }
+    }
+    localStorage.setItem('nahwu_os_version', String(version));
+
+    // Muat script.js dengan query version — ini yang bikin browser WAJIB ambil file baru
+    const s = document.createElement('script');
+    s.type = 'module';
+    s.src = `script.js?v=${version}`;
+    document.body.appendChild(s);
+})();
+</script>
 
 <script type="module" src="script.js"></script>
 
