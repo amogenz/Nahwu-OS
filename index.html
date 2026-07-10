@@ -392,7 +392,7 @@
     <div id="status-info-text" style="font-size:0.7rem; color:#FFD700; margin-bottom:8px; text-align:center; font-weight:600;">
          FITUR KHUSUS RANK 1 & 2
     </div>
-    <input type="text" id="input-pesan-tahta" placeholder="Hanya Rank 1 & 2 yang bisa pakai ini 😎 ..." maxlength="40" disabled style="width:100%; padding:10px; border-radius:6px; border:none; background:rgba(0,0,0,0.3); color:#888; font-size:0.9rem; margin-bottom:8px;">
+    <input type="text" id="input-pesan-tahta" placeholder="Hanya Rank 1 & 2 yang bisa isi..." maxlength="40" disabled style="width:100%; padding:10px; border-radius:6px; border:none; background:rgba(0,0,0,0.3); color:#888; font-size:0.9rem; margin-bottom:8px;">
     <button id="btn-save-pesan" disabled style="width:100%; padding:10px; background:#07d250; color:#ffffff; border:none; border-radius:6px; font-weight:600; cursor:not-allowed;">Simpan Pesan</button>
 </div>
 
@@ -467,35 +467,48 @@
 
 <script>
 (async function () {
-    let version = Date.now(); // fallback kalau endpoint gagal, tetap force-fresh
+    const STORAGE_KEY = 'nahwu_os_version';
+    // 1. Ambil versi yang ada di HP user saat ini (kalau baru pertama, set 1.0.0)
+    const lastVersion = localStorage.getItem(STORAGE_KEY) || '1.0.0';
+    let serverVersion = lastVersion; // Default awal: anggap sama dulu bray
+
+    // 2. SCAN AWAL: Cek apakah ada deploy/pembaharuan baru di server
     try {
         const res = await fetch('/api/version', { cache: 'no-store' });
-        const data = await res.json();
-        version = data.version;
+        if (res.ok) {
+            const data = await res.json();
+            serverVersion = data.version; // Dapatkan sidik jari commit teranyar dari Vercel[span_0](start_span)[span_0](end_span)
+        }
     } catch (e) {
-        console.warn('Gagal ambil versi deploy, pakai fallback timestamp bray:', e);
+        console.log('Gagal scan server (mungkin di lokal/404), skip bersihin cache bray.');
     }
 
-    // Cek versi tersimpan di HP user vs versi server sekarang
-    const lastVersion = localStorage.getItem('nahwu_os_version');
-    if (lastVersion && lastVersion !== String(version)) {
+    // 3. EKSEKUSI KONDISI: Jika versi server beda dengan di HP (Artinya ada update resmi)
+    if (serverVersion !== lastVersion) {
         console.log('🔄 Update terdeteksi! Membersihkan cache lama...');
+        
+        // Hapus cache storage di browser sampai bersih
         if (window.caches) {
             const keys = await caches.keys();
             await Promise.all(keys.map(k => caches.delete(k)));
         }
+        
+        // Simpan tanda versi baru ke HP santri bray[span_1](start_span)[span_1](end_span)
+        localStorage.setItem(STORAGE_KEY, serverVersion);
+    } else {
+        console.log('✅ Tidak ada update deploy baru. Cache aman dipertahankan.');
     }
-    localStorage.setItem('nahwu_os_version', String(version));
 
-    // Muat script.js dengan query version — ini yang bikin browser WAJIB ambil file baru
+    // 4. LOAD SCRIPT UTAMA: Inject script.js dengan flag versi terverifikasi
     const s = document.createElement('script');
     s.type = 'module';
-    s.src = `script.js?v=${version}`;
+    s.src = `script.js?v=${serverVersion}`;
     document.body.appendChild(s);
 })();
 </script>
 
 <script type="module" src="script.js"></script>
-
+ <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+   <script>eruda.init();</script> -->
 </body>
 </html>
