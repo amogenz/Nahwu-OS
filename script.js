@@ -1,5 +1,3 @@
-
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
     import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment, orderByChild} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
