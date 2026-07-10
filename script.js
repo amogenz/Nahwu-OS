@@ -125,15 +125,10 @@
     return `<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:${fillColor}; display:inline-block; vertical-align:middle; margin-left:4px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>`;
 }
 
-    // --- LOGIKA UTAMA MONITORING AKUN & PAPAN PERINGKAT ---
 
-    function initLeaderboardRealtimeSync() {
-        // --- 🚨 SAKLAR ANTI-DUPLIKASI MUTLAK SECARA GLOBAL ---
-        if (window.isLeaderboardSynced) return; 
-        window.isLeaderboardSynced = true;      
-
-        // 1. Pantau Status Login Secara Live di Latar Belakang
-        onAuthStateChanged(auth, (user) => {
+     // 1. Pantau Status Login Secara Live di Latar Belakang
+     
+    onAuthStateChanged(auth, (user) => {
             const rankLoginArea = document.getElementById('rank-login-area');
             const rankSetupArea = document.getElementById('rank-setup-area');
             const rankMainArea = document.getElementById('rank-main-area');
@@ -180,56 +175,32 @@
                 const settingRow = userRankContainer ? userRankContainer.closest('.setting-row') : null;
                 if (settingRow) settingRow.style.display = 'none';
             }
+            updateUIAfterLogin(user);
         });
+      
+      function updateUIAfterLogin(user) {
 
-// 2. Tarik Data Klasemen Top 17
+      console.log("Status  user:", user ? "Login" : "Logout");
+}
 
-        const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(17));
-        
+const listContainer = document.getElementById('leaderboard-list');
+
+function initLeaderboardRealtimeSync() {
+    if (window.isLeaderboardSynced) return;
+    window.isLeaderboardSynced = true;
+
+    const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(17));
+
     onValue(topRankQuery, (snapshot) => {
-    const listContainer = document.getElementById('leaderboard-list');
-    const inputPesan = document.getElementById('input-pesan-tahta');
-    const btnSave = document.getElementById('btn-save-pesan');
-    const infoText = document.getElementById('status-info-text');
-            if (!listContainer) return; 
-            
-            // 🚨 BERSIHKAN CONTAINER SETIAP KALI EVENT SINKRONISASI DATANG BRAY!
-            listContainer.innerHTML = '';
-            const data = snapshot.val();
-
-            if (data) {
+        const data = snapshot.val();
+        if (!listContainer) return; 
+        
+        listContainer.innerHTML = ''; // Bersihkan container
+        
+        if (data) {
+            // Deklarasi usersArr di sini agar bisa diakses oleh fungsi render di bawahnya
             let usersArr = Object.entries(data).map(([uid, val]) => ({ uid, ...val }));
             usersArr.sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
-
-        // --- LOGIKA KUNCI/BUKA KOLOM PESAN ---
-        const myRankIndex = auth.currentUser ? usersArr.findIndex(u => u.uid === auth.currentUser.uid) : -1;
-        
-        if (myRankIndex !== -1 && myRankIndex <= 1) {
-            // USER ADALAH TOP 2 - BUKA KUNCI
-            inputPesan.disabled = false;
-            inputPesan.style.background = "rgba(0,0,0,0.5)";
-            inputPesan.style.color = "white";
-            btnSave.disabled = false;
-            btnSave.style.background = "var(--ios-green)";
-            btnSave.style.color = "white";
-            btnSave.style.cursor = "pointer";
-            infoText.innerText = " KAMU ADALAH PENGAWAS TAHTA ";
-            
-            // Isi otomatis hanya jika belum ada isi
-            if (inputPesan.value === "") {
-                inputPesan.value = usersArr[myRankIndex].status_message || "";
-            }
-        } else {
-            // USER BUKAN TOP 2 - KUNCI
-            inputPesan.disabled = true;
-            inputPesan.style.background = "rgba(0,0,0,0.3)";
-            inputPesan.style.color = "#888";
-            btnSave.disabled = true;
-            btnSave.style.background = "#444";
-            btnSave.style.color = "#999";
-            btnSave.style.cursor = "not-allowed";
-            infoText.innerText = " PESAN KHUSUS RANK 1 & 2";
-        }
                 
                 usersArr.forEach((user, index) => {
                     const rankPosition = index + 1;
@@ -314,10 +285,11 @@ const pesanTahtaHtml = (rankPosition <= 2 && statusMsg.length > 0)
                     }
                     listContainer.appendChild(row);
                 });
-
+updatePesanTahtaUI(usersArr);
             } else {
                 listContainer.innerHTML = '<p style="text-align:center; font-size:13px; opacity:0.5; padding:20px 0;">Papan skor masih kosong bray.</p>';
             }
+         
         });
             // 3. Trigger Simpan Pesan Tahta
     document.getElementById('btn-save-pesan').onclick = () => {
@@ -329,7 +301,36 @@ const pesanTahtaHtml = (rankPosition <= 2 && statusMsg.length > 0)
         }
     };
     }
+  
+    function updatePesanTahtaUI(usersArr) {
+    const inputPesan = document.getElementById('input-pesan-tahta');
+    const btnSave = document.getElementById('btn-save-pesan');
+    const infoText = document.getElementById('status-info-text');
 
+    if (!auth.currentUser) {
+        inputPesan.disabled = true;
+        btnSave.disabled = true;
+        return;
+    }
+
+    const myRankIndex = usersArr.findIndex(u => u.uid === auth.currentUser.uid);
+
+    if (myRankIndex !== -1 && myRankIndex <= 1) {
+        // AKTIFKAN
+        inputPesan.disabled = false;
+        btnSave.disabled = false;
+        infoText.innerText = " KAMU ADALAH PENGAWAS TAHTA";
+        // Hanya isi jika kosong agar tidak menimpa ketikan user
+        if (inputPesan.value === "") {
+             inputPesan.value = usersArr[myRankIndex].status_message || "";
+        }
+    } else {
+        // KUNCI
+        inputPesan.disabled = true;
+        btnSave.disabled = true;
+        infoText.innerText = " PESAN KHUSUS RANK 1 & 2";
+    }
+}
 
     // Visitor Counter
     function initVisitorCounter() {
