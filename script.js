@@ -861,17 +861,37 @@ updatePesanTahtaUI(usersArr);
     const wrongCount = total - correct;
         
     // --- LOGIKA PERHITUNGAN & SUNTIK POIN MODE RANK BRAY ---
-    let modeRankBadgeHtml = '';
+    let modeRankBadgeHtml = ''; 
+    // ==== KODE PERBAIKAN JS SISI KLIEN (ANTI-SYNTAX ERROR) ====
     if (isRankMode && !isSimulation && auth.currentUser) {
-        const multiplier = LEVEL_MULTIPLIERS[currentDatabase] || 1;
-        const kalkulasiPoin = Math.round(correct * multiplier);
+    const multiplier = LEVEL_MULTIPLIERS[currentDatabase] || 1;
+    let kalkulasiPoin = Math.round(correct * multiplier);
+    
+    // 🔒 PANGKAS PAKSA: Jika skor lebih dari 3, batasi mentok di 3 
+    // supaya tidak ditendang oleh Firebase Rules yang baru (+3 maks)
+    const skorAmanYangDikirim = Math.min(kalkulasiPoin, 3);
+    
+    modeRankBadgeHtml = `<div style="font-size:0.85rem; color:#FFD700; font-weight:700; margin-top:-8px; margin-bottom:12px;"><i class="ph ph-sparkles"></i> Mode Rank: +${skorAmanYangDikirim} Poin Klasemen!</div>`;
+    
+    // 🛠️ SOLUSI: Menggunakan .then() untuk import dinamis agar aman tanpa keyword 'await'
+    import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js")
+    .then(({ update, increment }) => {
+        const userRef = ref(db, `users/${auth.currentUser.uid}`);
         
-        // Buat teks tampilan bonus poin di dalam modal rapor
-        modeRankBadgeHtml = `<div style="font-size:0.85rem; color:#FFD700; font-weight:700; margin-top:-8px; margin-bottom:12px;"><i class="ph ph-sparkles"></i> Mode Rank: +${kalkulasiPoin} Poin Klasemen!</div>`;
-        
-        // Kirim penambahan skor secara mutlak ke awan Firebase menggunakan perintah increment
-        set(ref(db, `users/${auth.currentUser.uid}/total_score`), increment(kalkulasiPoin));
-    }
+        // Eksekusi update atomik serentak ke server Firebase
+        return update(userRef, {
+            "total_score": increment(skorAmanYangDikirim),
+            "last_played": Date.now() // Mengirim stempel waktu milidetik saat ini
+        });
+    })
+    .then(() => {
+        console.log("⚡ Skor +3 poin berhasil diverifikasi oleh durasi waktu manusia!");
+    })
+    .catch(err => {
+        console.error("🚨 DIBLOKIR SATPAM FIREBASE:", err.message);
+        alert("Gagal menyimpan skor! Server mendeteksi kamu mengirim skor terlalu cepat (wajib jeda 3 menit) atau kelebihan batas poin.");
+    });
+}
 
     els.mIcon.innerText = rank.icon;
     els.mIcon.style.display = 'block';
