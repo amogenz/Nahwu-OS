@@ -11,7 +11,7 @@
    setTimeout(() => {
    const splash = document.getElementById('splash-screen');
    if (splash) splash.classList.add('hide');
-   }, 1700); });
+   }, 1000); });
 
     // --- 1. CONFIG ---
     const firebaseConfig = { 
@@ -125,77 +125,91 @@
     return `<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:${fillColor}; display:inline-block; vertical-align:middle; margin-left:4px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>`;
 }
 
-    // --- LOGIKA UTAMA MONITORING AKUN & PAPAN PERINGKAT ---
 
-    function initLeaderboardRealtimeSync() {
-        // --- 🚨 SAKLAR ANTI-DUPLIKASI MUTLAK SECARA GLOBAL ---
-        if (window.isLeaderboardSynced) return; 
-        window.isLeaderboardSynced = true;      
+     // 1. Pantau Status Login Secara Live di Latar Belakang
+     
+    // --- Pantau Status Login Secara Live di Latar Belakang ---
+onAuthStateChanged(auth, (user) => {
+    const rankLoginArea = document.getElementById('rank-login-area');
+    const rankSetupArea = document.getElementById('rank-setup-area');
+    const rankMainArea = document.getElementById('rank-main-area');
+    const userRankName = document.getElementById('user-rank-name');
+    const userRankStatus = document.getElementById('user-rank-status');
+    const btnBiasa = document.getElementById('btn-mode-biasa');
+    const btnRank = document.getElementById('btn-mode-rank');
 
-        // 1. Pantau Status Login Secara Live di Latar Belakang
-        onAuthStateChanged(auth, (user) => {
-            const rankLoginArea = document.getElementById('rank-login-area');
-            const rankSetupArea = document.getElementById('rank-setup-area');
-            const rankMainArea = document.getElementById('rank-main-area');
-            const userRankName = document.getElementById('user-rank-name');
-            const userRankStatus = document.getElementById('user-rank-status');
-            const btnBiasa = document.getElementById('btn-mode-biasa');
-            const btnRank = document.getElementById('btn-mode-rank');
-
-            if (user) {
-                // JIKA USER SUDAH LOGIN GOOGLE
-                onValue(ref(db, `users/${user.uid}`), (snapshot) => {
-                    const data = snapshot.val();
-                    
-                    if (data && data.nickname) {
-                        currentUserData = data;
-                        
-                        if (rankLoginArea) rankLoginArea.style.display = 'none';
-                        if (rankSetupArea) rankSetupArea.style.display = 'none';
-                        if (rankMainArea) rankMainArea.style.display = 'block';
-                        if (userRankName) userRankName.innerText = data.nickname;
-                        if (userRankStatus) userRankStatus.innerText = `Tabungan: ${(data.total_score || 0).toLocaleString('id-ID')} Poin`;
-                        
-                        const settingRow = userRankName ? userRankName.closest('.setting-row') : null;
-                        if (settingRow) settingRow.style.display = 'flex';
-                    } else {
-                        if (rankLoginArea) rankLoginArea.style.display = 'none';
-                        if (rankSetupArea) rankSetupArea.style.display = 'block';
-                        if (rankMainArea) rankMainArea.style.display = 'none';
-                    }
-                });
-            } else {
-                // JIKA USER BELUM LOGIN
-                currentUserData = null;
-                isRankMode = false;
+    if (user) {
+        // JIKA USER SUDAH LOGIN GOOGLE
+        onValue(ref(db, `users/${user.uid}`), (snapshot) => {
+            const data = snapshot.val();
+            
+            if (data && data.nickname) {
+                currentUserData = data;
                 
-                if (btnBiasa) btnBiasa.classList.add('active');
-                if (btnRank) btnRank.classList.remove('active');
-                
-                if (rankLoginArea) rankLoginArea.style.display = 'block';
+                if (rankLoginArea) rankLoginArea.style.display = 'none';
                 if (rankSetupArea) rankSetupArea.style.display = 'none';
-                if (rankMainArea) rankMainArea.style.display = 'block'; 
+                if (rankMainArea) rankMainArea.style.display = 'block';
+                if (userRankName) userRankName.innerText = data.nickname;
+                if (userRankStatus) userRankStatus.innerText = `Tabungan: ${(data.total_score || 0).toLocaleString('id-ID')} Poin`;
                 
-                const userRankContainer = document.getElementById('user-rank-name');
-                const settingRow = userRankContainer ? userRankContainer.closest('.setting-row') : null;
-                if (settingRow) settingRow.style.display = 'none';
+                const settingRow = userRankName ? userRankName.closest('.setting-row') : null;
+                if (settingRow) settingRow.style.display = 'flex';
+            } else {
+                if (rankLoginArea) rankLoginArea.style.display = 'none';
+                if (rankSetupArea) rankSetupArea.style.display = 'block';
+                if (rankMainArea) rankMainArea.style.display = 'none';
             }
         });
+    } else {
+        // JIKA USER BELUM LOGIN / LOGOUT
+        currentUserData = null;
+        isRankMode = false;
+        
+        if (btnBiasa) btnBiasa.classList.add('active');
+        if (btnRank) btnRank.classList.remove('active');
+        
+        if (rankLoginArea) rankLoginArea.style.display = 'block';
+        if (rankSetupArea) rankSetupArea.style.display = 'none';
+        if (rankMainArea) rankMainArea.style.display = 'block'; 
+        
+        const userRankContainer = document.getElementById('user-rank-name');
+        const settingRow = userRankContainer ? userRankContainer.closest('.setting-row') : null;
+        if (settingRow) settingRow.style.display = 'none';
+    }
 
-        // 2. Tarik Data Klasemen Top 17 (DIKUNCI SAKLAR UTAMA AGAR AMAN DARI DUPLIKASI LISTENER)
-        const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(17));
-        onValue(topRankQuery, (snapshot) => {
-            const listContainer = document.getElementById('leaderboard-list');
-            if (!listContainer) return; 
-            
-            // 🚨 BERSIHKAN CONTAINER SETIAP KALI EVENT SINKRONISASI DATANG BRAY!
-            listContainer.innerHTML = '';
-            const data = snapshot.val();
+    // 🚨 COK REAKSI INSTAN DI SINI BRAY! JANGAN SALAH TEMPAT LAGI
+    if (typeof updatePesanTahtaUI === 'function') {
+        updatePesanTahtaUI(window.latestUsersArr || []);
+    }
 
-            if (data) {
-                let usersArr = Object.entries(data).map(([uid, val]) => ({ uid, ...val }));
-                usersArr.sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
-                
+    updateUIAfterLogin(user);
+});
+
+      
+      function updateUIAfterLogin(user) {
+
+      console.log("Status  user:", user ? "Login" : "Logout");
+}
+
+const listContainer = document.getElementById('leaderboard-list');
+
+    function initLeaderboardRealtimeSync() {
+    if (window.isLeaderboardSynced) return;
+    window.isLeaderboardSynced = true;
+
+    const topRankQuery = query(ref(db, 'users'), orderByChild('total_score'), limitToLast(17));
+
+    onValue(topRankQuery, (snapshot) => {
+        const data = snapshot.val();
+        if (!listContainer) return; 
+        
+        listContainer.innerHTML = ''; // Bersihkan container
+        
+        if (data) {
+            let usersArr = Object.entries(data).map(([uid, val]) => ({ uid, ...val }));
+            usersArr.sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+                    // 🚨 SUNTIKKAN INI BRAY: Biar data klasemen terakhir bisa diintip dari fungsi auth
+    window.latestUsersArr = usersArr; 
                 usersArr.forEach((user, index) => {
                     const rankPosition = index + 1;
                     let inlineBadgeSvg = '';
@@ -203,6 +217,7 @@
 
                     let rankText = '';
                     let rankIconSvg = '';
+                    
 
                     if (rankPosition === 1) {
                         autoColor = '#FFD700'; // Emas
@@ -235,6 +250,13 @@
                     else if (user.ever_top_3) {
                         inlineBadgeSvg = generateTwitterBadgeSVG('#C0C0C0');
                     }
+                    
+                    // Ganti bagian pesanTahtaHtml lu jadi ini, lebih aman:
+const statusMsg = user.status_message || ""; // Default ke string kosong jika null/undefined
+const pesanTahtaHtml = (rankPosition <= 2 && statusMsg.length > 0) 
+    ? `<div style="font-family: 'BerlinSansFB'; font-size:0.75rem; color:#fff; opacity:0.7; margin-top:4px; font-style:italic;">"${statusMsg}"</div>` 
+    : '';
+
 
                     const row = document.createElement('div');
                     row.className = 'rank-item';
@@ -252,6 +274,7 @@
                                 <span class="rank-name-text" style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; color: #ffffff; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
                                     ${rankIconSvg} ${user.nickname} ${inlineBadgeSvg}
                                 </span>
+                                ${pesanTahtaHtml} 
                             </div>
                             <span class="rank-points" style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; color: ${autoColor}; font-weight: 700; font-size: 0.95rem;">
                                 ${(user.total_score || 0).toLocaleString('id-ID')} Poin
@@ -270,12 +293,64 @@
                     }
                     listContainer.appendChild(row);
                 });
-
+updatePesanTahtaUI(usersArr);
             } else {
                 listContainer.innerHTML = '<p style="text-align:center; font-size:13px; opacity:0.5; padding:20px 0;">Papan skor masih kosong bray.</p>';
             }
+
+        
+        
         });
+            // 3. Trigger Simpan Pesan Tahta
+    document.getElementById('btn-save-pesan').onclick = () => {
+        const msg = document.getElementById('input-pesan-tahta').value;
+        if (auth.currentUser) {
+            set(ref(db, `users/${auth.currentUser.uid}/status_message`), msg)
+                .then(() => alert("Pesan Tahta diperbarui bray!"))
+                .catch(err => alert("Gagal: " + err.message));
+        }
+    };
     }
+  
+    function updatePesanTahtaUI(usersArr) {
+    const inputPesan = document.getElementById('input-pesan-tahta');
+    const btnSave = document.getElementById('btn-save-pesan');
+    const infoText = document.getElementById('status-info-text');
+
+    if (!inputPesan || !btnSave || !infoText) return;
+
+    // 🔒 JIKA USER LOGOUT / BELUM LOGIN (Langsung Kunci Total)
+    if (!auth.currentUser) {
+        inputPesan.disabled = true;
+        btnSave.disabled = true;
+        inputPesan.value = ""; // Bersihkan sisa ketikan mantan user sebelumnya bray
+        infoText.innerText = " PESAN KHUSUS RANK 1 & 2";
+        return;
+    }
+
+    // Jika data klasemen dari Firebase belum siap, biarkan terkunci dulu sementara
+    if (!usersArr || usersArr.length === 0) return;
+
+    const myRankIndex = usersArr.findIndex(u => u.uid === auth.currentUser.uid);
+
+    // 🔓 JIKA USER MASUK CATEGORY TOP 2 (Rank 1 indeks 0, Rank 2 indeks 1)
+    if (myRankIndex !== -1 && myRankIndex <= 1) {
+        inputPesan.disabled = false;
+        btnSave.disabled = false;
+        infoText.innerText = " KAMU ADALAH PENGAWAS TAHTA";
+        
+        // Hanya isi jika kolom kosong agar tidak merusak ketikan baru yang sedang ditulis user
+        if (inputPesan.value === "") {
+             inputPesan.value = usersArr[myRankIndex].status_message || "";
+        }
+    } else {
+        // 🔒 JIKA LOGGED IN TAPI BUKAN TOP 2 (Kunci & Tendang)
+        inputPesan.disabled = true;
+        btnSave.disabled = true;
+        inputPesan.value = ""; // Bersihkan kolom
+        infoText.innerText = " PESAN KHUSUS RANK 1 & 2";
+    }
+}
 
 
     // Visitor Counter
