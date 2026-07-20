@@ -1,6 +1,5 @@
 import admin from 'firebase-admin';
 
-// Inisialisasi Firebase Admin SDK
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
@@ -25,14 +24,12 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { uid, authorName, title, category, questionData } = req.body;
+        const { uid, authorName, title, category, questions } = req.body;
 
-        // 1. Validasi Login
         if (!uid || !authorName) {
             return res.status(401).json({ success: false, message: 'Kamu wajib login Google terlebih dahulu!' });
         }
 
-        // 2. Sterilkan Input Utama
         const safeTitle = cleanInput(title);
         const safeAuthor = cleanInput(authorName);
         const safeCategory = cleanInput(category);
@@ -41,28 +38,47 @@ export default async function handler(req, res) {
             return res.status(400).json({ success: false, message: 'Judul kuis minimal 5 karakter!' });
         }
 
-        // 3. Validasi & Sterilkan Isi Soal
-        if (!questionData || !questionData.sentence || !questionData.question) {
-            return res.status(400).json({ success: false, message: 'Data soal tidak lengkap!' });
+        if (!Array.isArray(questions) || questions.length === 0) {
+            return res.status(400).json({ success: false, message: 'Kuis minimal harus memiliki 1 soal!' });
         }
 
-        const safeSentence = cleanInput(questionData.sentence);
-        const safeWord = cleanInput(questionData.word);
-        const safeQuestionText = cleanInput(questionData.question);
-        const safeExplanation = cleanInput(questionData.explanation || '');
-
-        // Sterilkan 4 pilihan jawaban
-        const rawOptions = questionData.options || [];
-        const safeOptions = rawOptions.map(opt => cleanInput(opt)).filter(opt => opt !== '');
-
-        if (safeOptions.length < 2) {
-            return res.status(400).json({ success: false, message: 'Minimal sediakan 2 pilihan jawaban!' });
+        if (questions.length > 14) {
+            return res.status(400).json({ success: false, message: 'Maksimal 14 soal per kuis!' });
         }
 
-        const correctIndex = parseInt(questionData.correctIndex) || 0;
-        const safeCorrectText = safeOptions[correctIndex] || safeOptions[0];
+        // Validasi & Sterilkan Setiap Soal (1 s/d 14 Soal)
+        const sanitizedQuestions = [];
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            const safeSentence = cleanInput(q.sentence || '');
+            const safeWord = cleanInput(q.word || '');
+            const safeQuestionText = cleanInput(q.question || '');
+            const safeExplanation = cleanInput(q.explanation || '');
 
-        // 4. Susun Format Data Rapi untuk Database
+            const rawOptions = q.options || [];
+            const safeOptions = rawOptions.map(opt => cleanInput(opt)).filter(opt => opt !== '');
+
+            if (!safeSentence || !safeQuestionText || safeOptions.length < 2) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Soal #${i + 1} belum lengkap! Mohon isi kalimat, pertanyaan, dan minimal 2 pilihan jawaban.` 
+                });
+            }
+
+            const correctIndex = parseInt(q.correctIndex) || 0;
+            const safeCorrectText = safeOptions[correctIndex] || safeOptions[0];
+
+            sanitizedQuestions.push({
+                context: safeSentence,
+                word: safeWord,
+                question: safeQuestionText,
+                options: safeOptions,
+                correct: safeCorrectText,
+                explanation: safeExplanation
+            });
+        }
+
+        // Simpan ke Realtime Database
         const quizId = `quiz_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
         const dbData = {
             id: quizId,
@@ -73,25 +89,15 @@ export default async function handler(req, res) {
             created_at: Date.now(),
             plays_count: 0,
             likes_count: 0,
-            questions: [
-                {
-                    context: safeSentence,
-                    word: safeWord,
-                    question: safeQuestionText,
-                    options: safeOptions,
-                    correct: safeCorrectText,
-                    explanation: safeExplanation
-                }
-            ]
+            questions: sanitizedQuestions
         };
 
-        // 5. Simpan ke Firebase via Admin SDK (Sangat Aman)
         const db = admin.database();
         await db.ref(`community_quizzes/${quizId}`).set(dbData);
 
         return res.status(200).json({
             success: true,
-            message: 'Kuis berhasil diterbitkan ke Arena Komunitas!',
+            message: `Berhasil menerbitkan kuis dengan ${sanitizedQuestions.length} soal!`,
             quizId: quizId
         });
 
