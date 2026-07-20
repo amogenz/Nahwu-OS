@@ -78,7 +78,7 @@
     let currentDatabase = 'lv1'; 
     let isAdminLoggedIn = false;
     let adminUploadImage = null;
-
+    let currentUserNickname = "";
         // --- MULTIPLIER TINGKAT KESULITAN LEVEL KITAB ---
     const LEVEL_MULTIPLIERS = {
         'lv1': 1,            // Jurumiyah
@@ -2090,6 +2090,7 @@ if (btnInfoRank) {
         loadComments();
         initVisitorCounter();
         initLeaderboardRealtimeSync();
+        initCommunityQuizzesSync();
     }
 
     if (document.readyState === 'loading') { 
@@ -2097,7 +2098,184 @@ if (btnInfoRank) {
     } else { 
         initApp(); 
     }
+// ==========================================
+// 🏟️ LOGIKA ARENA SANTRI & KUIS KOMUNITAS
+// ==========================================
 
+// 1. PINDAH SUB-TAB ARENA (Jelajah Kuis VS Studio)
+document.querySelectorAll('[data-sub-arena]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const targetSub = e.currentTarget.getAttribute('data-sub-arena');
+        
+        // Ubah status tombol active
+        document.querySelectorAll('[data-sub-arena]').forEach(b => b.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+
+        // Sembunyikan semua sub-page arena lalu tampilkan yang dipilih
+        document.querySelectorAll('.sub-page-arena').forEach(sp => sp.style.display = 'none');
+        const targetElem = document.getElementById(`sub-arena-${targetSub}`);
+        if (targetElem) targetElem.style.display = 'block';
+    });
+});
+
+// 2. TARIK DATA KUIS KOMUNITAS SECARA REALTIME DARI FIREBASE
+function initCommunityQuizzesSync() {
+    const quizGrid = document.getElementById('community-quiz-grid');
+    if (!quizGrid) return;
+
+    onValue(ref(db, 'community_quizzes'), (snapshot) => {
+        const data = snapshot.val();
+        quizGrid.innerHTML = '';
+
+        if (data) {
+            const quizzes = Object.values(data);
+            
+            // Urutkan dari kuis yang paling baru diterbitkan
+            quizzes.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+            quizzes.forEach(quiz => {
+                const card = document.createElement('div');
+                card.className = 'explore-item-card';
+                card.style.position = 'relative';
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; width:100%; margin-bottom: 6px;">
+                        <span style="font-size: 0.7rem; color: var(--ios-green); font-weight: 700;">● ${(quiz.category || 'UMUM').toUpperCase()}</span>
+                        <span style="font-size: 0.7rem; opacity: 0.6;"><i class="ph ph-play-circle"></i> ${quiz.plays_count || 0}x dimainkan</span>
+                    </div>
+                    <div class="explore-card-arabic" style="font-size: 1.2rem;">${quiz.questions?.[0]?.word || quiz.title}</div>
+                    <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-top: 4px;">${quiz.title}</div>
+                    <div class="explore-card-meta" style="margin-top: 8px;">
+                        <span><i class="ph ph-user"></i> ${quiz.author_name || 'Santri Anonim'}</span>
+                    </div>
+                `;
+
+                // Event Klik untuk Memainkan Kuis Komunitas
+                card.onclick = () => startCommunityQuiz(quiz);
+
+                quizGrid.appendChild(card);
+            });
+        } else {
+            quizGrid.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada kuis komunitas bray. Yuk buat yang pertama di menu Studio!</p>';
+        }
+    });
+}
+
+// 3. FUNGSI UNTUK MEMAINKAN KUIS KOMUNITAS
+function startCommunityQuiz(quiz) {
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        return alert("Soal kuis ini tidak valid!");
+    }
+
+    // Pindah Tampilan Utama ke Halaman Home & Buka Quiz View
+    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-home').classList.add('active');
+    
+    // Update Active State di Bottom Nav
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.nav-btn[data-page="home"]')?.classList.add('active');
+
+    // Tampilkan Layar Kuis
+    document.getElementById('view-start').style.display = 'none';
+    document.getElementById('view-quiz').style.display = 'block';
+
+    // Masukkan data soal kuis komunitas ke variabel mesin kuis web lu
+    if (typeof currentQuestions !== 'undefined') {
+        currentQuestions = quiz.questions;
+        currentQuestionIndex = 0;
+        if (typeof renderQuestion === 'function') {
+            renderQuestion();
+        }
+    }
+
+    // Tambah statistik plays_count di database secara realtime
+    if (quiz.id) {
+        const playRef = ref(db, `community_quizzes/${quiz.id}/plays_count`);
+        runTransaction(playRef, (current) => (current || 0) + 1);
+    }
+}
+
+// --- EVENT HANDLER PUBLISH KUIS MANUAL ---
+document.getElementById('btn-publish-quiz')?.addEventListener('click', async () => {
+    // 1. Cek User Logged In
+    if (!auth.currentUser) {
+        return alert("Kamu wajib login Google di menu Rank terlebih dahulu untuk menerbitkan kuis!");
+    }
+
+    // 2. Ambil Value dari Form
+    const title = document.getElementById('studio-quiz-title').value.trim();
+    const category = document.getElementById('studio-quiz-category').value;
+    const sentence = document.getElementById('q1-sentence').value.trim();
+    const word = document.getElementById('q1-word').value.trim();
+    const question = document.getElementById('q1-question').value.trim();
+    const opt1 = document.getElementById('q1-opt1').value.trim();
+    const opt2 = document.getElementById('q1-opt2').value.trim();
+    const opt3 = document.getElementById('q1-opt3').value.trim();
+    const opt4 = document.getElementById('q1-opt4').value.trim();
+    const correctIdx = document.getElementById('q1-correct').value;
+    const explanation = document.getElementById('q1-explanation').value.trim();
+
+    // 3. Validasi Sederhana di Client
+    if (!title || !sentence || !question || !opt1 || !opt2) {
+        return alert("Mohon lengkapi judul, kalimat Arab, pertanyaan, dan minimal Opsi A & B!");
+    }
+
+    const optionsArray = [opt1, opt2, opt3, opt4].filter(o => o !== '');
+
+    // Safely dapatkan nama penulis (Anti-ReferenceError)
+    const authorNameValue = (typeof currentUserNickname !== 'undefined' && currentUserNickname) 
+        ? currentUserNickname 
+        : (auth.currentUser.displayName || "Santri Anonim");
+
+    // 4. Kirim ke Serverless API
+    try {
+        const btn = document.getElementById('btn-publish-quiz');
+        btn.disabled = true;
+        btn.innerText = "Menerbitkan...";
+
+        const response = await fetch('/api/quiz-create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                uid: auth.currentUser.uid,
+                authorName: authorNameValue,
+                title: title,
+                category: category,
+                questionData: {
+                    sentence: sentence,
+                    word: word,
+                    question: question,
+                    options: optionsArray,
+                    correctIndex: correctIdx,
+                    explanation: explanation
+                }
+            })
+        });
+
+        const data = await response.json();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> Terbitkan Kuis ke Arena';
+
+        if (data.success) {
+            alert(data.message);
+            // Reset Form
+            document.getElementById('studio-quiz-title').value = '';
+            document.getElementById('q1-sentence').value = '';
+            document.getElementById('q1-word').value = '';
+            document.getElementById('q1-question').value = '';
+            document.getElementById('q1-opt1').value = '';
+            document.getElementById('q1-opt2').value = '';
+            document.getElementById('q1-opt3').value = '';
+            document.getElementById('q1-opt4').value = '';
+            document.getElementById('q1-explanation').value = '';
+        } else {
+            alert("Gagal menerbitkan: " + data.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Terjadi kesalahan koneksi server!");
+    }
+});
 
 /// end 
 

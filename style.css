@@ -1884,3 +1884,84 @@ a.nav-btn.active {
     color: var(--ios-blue);
     font-family: 'Plus Jakarta Sans', sans-serif;
 }
+/* ==========================================
+   OPTIMASI ARENA SANTRI & 5-ITEM BOTTOM NAV (PROPORSIONAL)
+   ========================================== */
+
+/* Logika Tampilan Sub-Page Arena */
+.sub-page-arena {
+    display: none;
+}
+.sub-page-arena.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+/* Bottom Nav 5 Item - Pas & Nyaman di Jempol */
+.bottom-nav {
+    padding: 8px 12px !important;
+    gap: 4px !important;
+    max-width: 95% !important;
+    width: 100% !important;
+}
+
+.nav-btn, a.nav-btn {
+    padding: 6px 4px !important;
+    font-size: 10px !important;
+    min-width: unset !important;
+    flex: 1;
+}
+
+/* Ukuran Ikon Dinaikkan Biar Jelas & Mantap */
+.nav-btn i, a.nav-btn i {
+    font-size: 26px !important; 
+    margin-bottom: 2px;
+}
+
+/* Khusus Layar HP Sangat Kecil (< 360px) */
+@media (max-width: 360px) {
+    .bottom-nav {
+        padding: 6px 8px !important;
+    }
+    .nav-btn, a.nav-btn {
+        font-size: 9px !important;
+    }
+    .nav-btn i, a.nav-btn i {
+        font-size: 22px !important; /* Tetap jelas & tidak kerdil */
+    }
+}
+
+/* Styling Khusus Studio Preview Soal Kuis */
+.studio-question-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 10px;
+    text-align: left;
+}
+
+.studio-question-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ios-blue);
+    margin-bottom: 6px;
+}
+
+.studio-option-pill {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.studio-option-pill.correct-option {
+    border-color: var(--ios-green);
+    background: rgba(52, 199, 89, 0.15);
+    color: #ffffff;
+}
