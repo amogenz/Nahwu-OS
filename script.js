@@ -1849,18 +1849,29 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         document.getElementById('btn-start').addEventListener('click', () => startLearningCycle());
 
         // Back to home button (from quiz)
-      document.getElementById('btn-back-home')?.addEventListener('click', () => {
-    if (confirm('Yakin ingin kembali ke home? Progress quiz akan hilang.')) {
-        els.viewQuiz.style.display = 'none';
-        els.viewStart.style.display = 'flex';
+        document.getElementById('btn-back-home')?.addEventListener('click', () => {
+    const isCommunity = Boolean(currentCommunityQuiz);
+    const confirmMsg = isCommunity 
+        ? 'Yakin ingin kembali ke Arena Komunitas? Progress kuis akan hilang.' 
+        : 'Yakin ingin kembali ke Beranda? Progress kuis akan hilang.';
+
+    if (confirm(confirmMsg)) {
+        // Reset tampilan
+        if (els.viewQuiz) els.viewQuiz.style.display = 'none';
+        if (els.viewStart) els.viewStart.style.display = 'flex';
         
-        // Reset state kuis biasa & kuis komunitas
+        // Reset state kuis biasa
         quizData = null;
-        currentCommunityQuiz = null;
-        currentCommunityIdx = 0;
         wordIndex = 0;
         stepIndex = 1;
         quizScore = { correct: 0, wrong: 0, total: 0 };
+
+        // Jika kuis dari Komunitas -> Tendang balik ke Tab Arena!
+        if (isCommunity) {
+            currentCommunityQuiz = null;
+            currentCommunityIdx = 0;
+            if (typeof switchPage === 'function') switchPage('arena');
+        }
     }
 });
 
@@ -2067,27 +2078,25 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
         });
 
       // SELIPKAN INI DI DALAM initApp() BRAY:
-const btnInfoRank = document.getElementById('btn-info-rank');
-const infoRankBox = document.getElementById('info-rank-box');
+              // Pemicu Pop-up Info Rank
+        const btnInfoRank = document.getElementById('btn-info-rank');
+        const infoRankBox = document.getElementById('info-rank-box');
 
-if (btnInfoRank) {
-    btnInfoRank.addEventListener('click', (e) => {
-        e.stopPropagation(); // Kunci jalur biar gak memicu event lain bray
-        if (infoRankBox) {
-            infoRankBox.style.display = (infoRankBox.style.display === 'none' || infoRankBox.style.display === '') ? 'block' : 'none';
+        if (btnInfoRank) {
+            btnInfoRank.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (infoRankBox) {
+                    infoRankBox.style.display = (infoRankBox.style.display === 'none' || infoRankBox.style.display === '') ? 'block' : 'none';
+                }
+            });
         }
-    });
-}
-
-
-
 
         // Load data
         loadPublicDawuh();
         loadComments();
         initVisitorCounter();
         initLeaderboardRealtimeSync();
-        initCommunityQuizzesSync();
+        initCommunityQuizzesSync(); // <-- Dipanggil aman di sini
     }
 
     if (document.readyState === 'loading') { 
@@ -2095,40 +2104,24 @@ if (btnInfoRank) {
     } else { 
         initApp(); 
     }
+
 // ==========================================
-// 🏟️ LOGIKA ARENA SANTRI & KUIS KOMUNITAS
+// 🏟️ STATE & FUNGSI KUIS KOMUNITAS (GLOBAL)
 // ==========================================
+let currentCommunityQuiz = null;
+let currentCommunityIdx = 0;
 
-// 1. PINDAH SUB-TAB ARENA (Jelajah Kuis VS Studio)
-document.querySelectorAll('[data-sub-arena]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const targetSub = e.currentTarget.getAttribute('data-sub-arena');
-        
-        // Ubah status tombol active
-        document.querySelectorAll('[data-sub-arena]').forEach(b => b.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-
-        // Sembunyikan semua sub-page arena lalu tampilkan yang dipilih
-        document.querySelectorAll('.sub-page-arena').forEach(sp => sp.style.display = 'none');
-        const targetElem = document.getElementById(`sub-arena-${targetSub}`);
-        if (targetElem) targetElem.style.display = 'block';
-    });
-});
-
-// 2. TARIK DATA KUIS KOMUNITAS SECARA REALTIME DARI FIREBASE
-
+// 1. FUNGSI PENARIK DATA KUIS DARI FIREBASE
 function initCommunityQuizzesSync() {
     const quizGrid = document.getElementById('community-quiz-grid');
     if (!quizGrid) return;
 
     onValue(ref(db, 'community_quizzes'), (snapshot) => {
         const data = snapshot.val();
-        quizGrid.innerHTML = ''; // Bersihkan grid sebelum render ulang
+        quizGrid.innerHTML = '';
 
         if (data) {
             const quizzes = Object.values(data);
-            
-            // Urutkan kuis dari yang terbaru
             quizzes.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
             quizzes.forEach(quiz => {
@@ -2148,7 +2141,6 @@ function initCommunityQuizzesSync() {
                     </div>
                 `;
 
-                // 🛡️ Cegah klik ganda (stop propagation)
                 card.onclick = (e) => {
                     e.stopPropagation();
                     startCommunityQuiz(quiz);
@@ -2162,14 +2154,151 @@ function initCommunityQuizzesSync() {
     });
 }
 
+// 2. FUNGSI UNTUK MEMAINKAN KUIS KOMUNITAS
+function startCommunityQuiz(quiz) {
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        return alert("Soal kuis ini tidak valid atau kosong!");
+    }
+
+    currentCommunityQuiz = quiz;
+    currentCommunityIdx = 0;
+
+    // 🚨 FIX UTAMA: Pindahkan layar utama & tombol nav ke HOME secara instan!
+    if (typeof switchPage === 'function') {
+        switchPage('home');
+    } else {
+        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-home')?.classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-page="home"]')?.classList.add('active');
+    }
+
+    // Tampilkan View Kuis & Sembunyikan Start/Loading
+    if (els.viewStart) els.viewStart.style.display = 'none';
+    if (els.viewLoading) els.viewLoading.style.display = 'none';
+    if (els.viewQuiz) els.viewQuiz.style.display = 'block';
+
+    // Render Soal Pertama
+    renderCommunityQuestion();
+
+    // Tambah Statistik Dimainkan
+    if (quiz.id) {
+        try {
+            const playRef = ref(db, `community_quizzes/${quiz.id}/plays_count`);
+            runTransaction(playRef, (current) => (current || 0) + 1).catch(() => {});
+        } catch (e) {
+            console.log("Skip update play count");
+        }
+    }
+}
+
+// 3. FUNGSI RENDER SOAL KUIS KOMUNITAS
+function renderCommunityQuestion() {
+    if (!currentCommunityQuiz || !currentCommunityQuiz.questions) return;
+
+    const q = currentCommunityQuiz.questions[currentCommunityIdx];
+    
+    // 🚨 JIKA KUIS SELESAI: BALIKKAN KE TAB ARENA / KOMUNITAS!
+    if (!q) {
+        alert("🎉 Selamat! Kamu telah menyelesaikan kuis komunitas ini!");
+        
+        // Reset state
+        currentCommunityQuiz = null;
+        currentCommunityIdx = 0;
+
+        // Sembunyikan view kuis, siapkan view start home untuk nanti
+        if (els.viewStart) els.viewStart.style.display = 'flex';
+        if (els.viewQuiz) els.viewQuiz.style.display = 'none';
+        
+        // 🚀 KEMBALIKAN KE TAB ARENA
+        if (typeof switchPage === 'function') {
+            switchPage('arena');
+        }
+        return;
+    }
+
+    if (els.badge) els.badge.textContent = `SOAL ${currentCommunityIdx + 1} / ${currentCommunityQuiz.questions.length}`;
+    if (els.ctxSent) els.ctxSent.textContent = q.sentence || q.context || '-';
+    if (els.ctxWord) els.ctxWord.textContent = q.word || '-';
+    if (els.qText) els.qText.textContent = q.question || 'Pilih jawaban yang benar:';
+
+    if (els.options) {
+        els.options.innerHTML = '';
+        const options = q.options || [];
+        
+        options.forEach((optText) => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-option';
+            btn.innerHTML = `<span>${optText}</span> <i class="ph ph-caret-right"></i>`;
+
+            btn.onclick = () => {
+                const correctOptText = q.options[q.correctIndex] || q.correct;
+                checkCommunityAnswer(optText, correctOptText, q.explanation);
+            };
+
+            els.options.appendChild(btn);
+        });
+    }
+}
+
+// 4. FUNGSI CEK JAWABAN KUIS KOMUNITAS
+function checkCommunityAnswer(selected, correct, explanation) {
+    const isCorrect = (selected === correct);
+
+    if (typeof playSound === 'function') playSound(isCorrect);
+    if (els.mImgArea) els.mImgArea.style.display = 'none';
+    if (els.mMsg) els.mMsg.style.display = 'block';
+    if (els.mIcon) els.mIcon.style.display = 'block';
+
+    if (isCorrect) {
+        if (els.mTitle) { els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; }
+        if (els.mIcon) els.mIcon.innerText = "✨";
+        if (els.mMsg) els.mMsg.innerText = explanation || "Jawabanmu tepat sekali!";
+    } else {
+        if (els.mTitle) { els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; }
+        if (els.mIcon) els.mIcon.innerText = "❌";
+        if (els.mMsg) els.mMsg.innerHTML = `Jawaban Benar: <b>${correct}</b><br><br>${explanation || ''}`;
+    }
+
+    if (els.modal) els.modal.style.display = 'flex';
+    setTimeout(() => { if (els.mCard) els.mCard.style.transform = 'scale(1)'; }, 10);
+
+    if (els.fbBtn) {
+        els.fbBtn.onclick = () => {
+            if (els.mCard) els.mCard.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                if (els.modal) els.modal.style.display = 'none';
+                if (isCorrect) {
+                    currentCommunityIdx++;
+                    renderCommunityQuestion();
+                }
+            }, 200);
+        };
+    }
+}
+
+// ==========================================
+// 🏟️ LOGIKA ARENA SANTRI & SUB-TAB SWITCHING
+// ==========================================
+document.querySelectorAll('[data-sub-arena]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const targetSub = e.currentTarget.getAttribute('data-sub-arena');
+        
+        document.querySelectorAll('[data-sub-arena]').forEach(b => b.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+
+        document.querySelectorAll('.sub-page-arena').forEach(sp => sp.style.display = 'none');
+        const targetElem = document.getElementById(`sub-arena-${targetSub}`);
+        if (targetElem) targetElem.style.display = 'block';
+    });
+});
+
 // ==========================================
 // 🛠️ MANAJER STUDIO KUIS DINAMIS (1 - 14 SOAL)
 // ==========================================
-
 let studioQuestionCount = 0;
 const MAX_QUESTIONS = 14;
 
-// 1. Fungsi Render Templat Blok Soal
 function createQuestionBlockHTML(index) {
     const isFirst = (index === 1);
     return `
@@ -2208,7 +2337,6 @@ function createQuestionBlockHTML(index) {
     `;
 }
 
-// 2. Tambah Blok Soal Baru
 function addStudioQuestionBlock() {
     if (studioQuestionCount >= MAX_QUESTIONS) {
         return alert(`Batas maksimal adalah ${MAX_QUESTIONS} soal per kuis!`);
@@ -2221,7 +2349,6 @@ function addStudioQuestionBlock() {
     updateStudioQuestionBadge();
 }
 
-// 3. Hapus Blok Soal Spresifik
 window.removeStudioQuestionBlock = function(index) {
     const block = document.querySelector(`.q-block-item[data-q-index="${index}"]`);
     if (block) {
@@ -2230,7 +2357,6 @@ window.removeStudioQuestionBlock = function(index) {
     }
 };
 
-// 4. Urutkan Ulang Nomor Soal Setelah Dihapus
 function reindexStudioQuestionBlocks() {
     const blocks = document.querySelectorAll('.q-block-item');
     studioQuestionCount = blocks.length;
@@ -2255,7 +2381,6 @@ function updateStudioQuestionBadge() {
     }
 }
 
-// Inisialisasi Soal #1 Otomatis
 function initStudioForm() {
     const container = document.getElementById('quiz-questions-list');
     if (container && container.children.length === 0) {
@@ -2264,15 +2389,13 @@ function initStudioForm() {
     }
 }
 
-// Event Klik Tombol Tambah Soal
+// Jalankan form studio secara otomatis
+initStudioForm();
+
 document.getElementById('btn-add-question-block')?.addEventListener('click', () => {
     addStudioQuestionBlock();
 });
 
-// Jalankan Inisialisasi Awal Form
-initStudioForm();
-
-// 5. EVENT HANDLER PUBLISH KUIS MULTI-SOAL
 document.getElementById('btn-publish-quiz')?.addEventListener('click', async () => {
     if (!auth.currentUser) {
         return alert("Kamu wajib login Google di menu Rank terlebih dahulu untuk menerbitkan kuis!");
@@ -2285,7 +2408,6 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
         return alert("Judul kuis tidak boleh kosong!");
     }
 
-    // Ambil Data Dari Semua Blok Soal yang Ada
     const questionBlocks = document.querySelectorAll('.q-block-item');
     const questionsArray = [];
 
@@ -2351,7 +2473,6 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
 
         if (data.success) {
             alert(data.message);
-            // Reset Form kembali ke Soal #1
             document.getElementById('studio-quiz-title').value = '';
             document.getElementById('quiz-questions-list').innerHTML = '';
             initStudioForm();
@@ -2366,9 +2487,4 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
 
 
 /// end 
-
-
-
-
-
 
