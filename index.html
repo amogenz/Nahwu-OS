@@ -27,9 +27,6 @@
 </head>
 <body>
   
-<div id="splash-screen">
-  <img src="https://i.ibb.co.com/C55rRGKx/nos-1.png" alt="Nahwu OS" />
-</div> 
 
   <div class="glass-container">
     
@@ -437,65 +434,44 @@
                     <div id="community-quiz-grid" class="explore-grid"></div>
                 </div>
 
-                <!-- SUB-PAGE 2: STUDIO PEMBUAT SOAL (MURNI MANUAL) -->
-                <div id="sub-arena-studio" class="sub-page-arena" style="display: none;">
-                    <div class="comment-form">
-                        <h3 class="section-title"><i class="ph ph-pen-nib"></i> Studio Buat Soal Manual</h3>
-                        <p class="banner-desc" style="margin-bottom: 12px;">Isi form di bawah untuk menerbitkan kuis karya santrimu ke Arena Komunitas.</p>
+                <!-- SUB-PAGE 2: STUDIO PEMBUAT SOAL (DINAMIS 1 S/D 14 SOAL) -->
+<div id="sub-arena-studio" class="sub-page-arena" style="display: none;">
+    <div class="comment-form">
+        <h3 class="section-title"><i class="ph ph-pen-nib"></i> Studio Buat Soal Manual</h3>
+        <p class="banner-desc" style="margin-bottom: 12px;">Buat kuis karya santrimu (Minimal 1 soal, maksimal hingga 14 soal opsional).</p>
 
-                        <div class="input-box">
-                            <!-- 1. Informasi Kuis -->
-                            <label style="font-size: 0.8rem; font-weight: 600; color: #fff;">Judul Kuis</label>
-                            <input type="text" id="studio-quiz-title" class="glass-field" placeholder="Misal: I'rob Fi'il Amar Surat Al-Ikhlas" maxlength="50">
+        <div class="input-box">
+            <!-- 1. Informasi Utama Kuis -->
+            <label style="font-size: 0.8rem; font-weight: 600; color: #fff;">Judul Kuis</label>
+            <input type="text" id="studio-quiz-title" class="glass-field" placeholder="Misal: Tantangan I'rob Surat Al-Ikhlas" maxlength="50">
 
-                            <label style="font-size: 0.8rem; font-weight: 600; color: #fff; margin-top: 10px; display: block;">Kategori Level Kitab</label>
-                            <select id="studio-quiz-category" class="glass-field" style="color: #fff; background: rgba(0,0,0,0.5);">
-                                <option value="lv1">Jurumiyah (Pemula)</option>
-                                <option value="lv2">Imrithi (Menengah)</option>
-                                <option value="shorof">Shorof (Tashrif & I'lal)</option>
-                                <option value="tajwid">Tajwid (Hukum Bacaan)</option>
-                                <option value="alfiyah-isim">Alfiyah Isim</option>
-                                <option value="alfiyah-fiil">Alfiyah Fi'il</option>
-                            </select>
+            <label style="font-size: 0.8rem; font-weight: 600; color: #fff; margin-top: 10px; display: block;">Kategori Level Kitab</label>
+            <select id="studio-quiz-category" class="glass-field" style="color: #fff; background: rgba(0,0,0,0.5);">
+                <option value="lv1">Jurumiyah (Pemula)</option>
+                <option value="lv2">Imrithi (Menengah)</option>
+                <option value="shorof">Shorof (Tashrif & I'lal)</option>
+                <option value="tajwid">Tajwid (Hukum Bacaan)</option>
+                <option value="alfiyah-isim">Alfiyah Isim</option>
+                <option value="alfiyah-fiil">Alfiyah Fi'il</option>
+            </select>
 
-                            <hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.15); margin: 15px 0;">
+            <hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.15); margin: 15px 0;">
 
-                            <!-- 2. Detail Soal Pertama -->
-                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--ios-blue); margin-bottom: 8px;">📌 Soal #1</div>
+            <!-- 2. Container Tempat Soal-Soal Dinamis Ditampung -->
+            <div id="quiz-questions-list"></div>
 
-                            <label style="font-size: 0.78rem; color: var(--text-muted);">Kalimat Arab Lengkap (Konteks)</label>
-                            <input type="text" id="q1-sentence" class="glass-field" placeholder="قُلْ هُوَ اللَّهُ أَحَدٌ" maxlength="100" style="font-family: 'Amiri', serif; font-size: 1.1rem; direction: rtl;">
+            <!-- 3. Tombol Tambah Soal & Publish -->
+            <button id="btn-add-question-block" type="button" class="btn-primary" style="width: 100%; margin-top: 10px; background: rgba(255,255,255,0.08); border: 1px dashed rgba(255,255,255,0.25); color: #fff;">
+                <i class="ph ph-plus-circle"></i> Tambah Soal Berikutnya (<span id="q-count-badge">1</span>/14)
+            </button>
 
-                            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Lafadz / Kata yang Ditanyakan</label>
-                            <input type="text" id="q1-word" class="glass-field" placeholder="قُلْ" maxlength="30" style="font-family: 'Amiri', serif; font-size: 1.1rem; direction: rtl;">
+            <button id="btn-publish-quiz" class="btn-primary" style="width: 100%; margin-top: 20px; background: var(--ios-green);">
+                <i class="ph ph-paper-plane-tilt"></i> Terbitkan Kuis ke Arena
+            </button>
+        </div>
+    </div>
+</div>
 
-                            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Pertanyaan Soal</label>
-                            <input type="text" id="q1-question" class="glass-field" placeholder="Apa kedudukan / jenis kata dari lafadz ini?" maxlength="120">
-
-                            <!-- Pilihan Jawaban -->
-                            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Pilihan Jawaban (A, B, C, D)</label>
-                            <input type="text" id="q1-opt1" class="glass-field" placeholder="Opsi A (Misal: Fi'il Amar)" maxlength="40" style="margin-bottom: 5px;">
-                            <input type="text" id="q1-opt2" class="glass-field" placeholder="Opsi B (Misal: Isim Mufrad)" maxlength="40" style="margin-bottom: 5px;">
-                            <input type="text" id="q1-opt3" class="glass-field" placeholder="Opsi C (Misal: Huruf Jar)" maxlength="40" style="margin-bottom: 5px;">
-                            <input type="text" id="q1-opt4" class="glass-field" placeholder="Opsi D (Misal: Fi'il Madhi)" maxlength="40" style="margin-bottom: 5px;">
-
-                            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Kunci Jawaban Benar</label>
-                            <select id="q1-correct" class="glass-field" style="color: #fff; background: rgba(0,0,0,0.5);">
-                                <option value="0">Opsi A</option>
-                                <option value="1">Opsi B</option>
-                                <option value="2">Opsi C</option>
-                                <option value="3">Opsi D</option>
-                            </select>
-
-                            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Syarah / Penjelasan Singkat (Opsional)</label>
-                            <input type="text" id="q1-explanation" class="glass-field" placeholder="Misal: Termasuk Fi'il Amar mabni atas sukun." maxlength="150">
-
-                            <button id="btn-publish-quiz" class="btn-primary" style="width: 100%; margin-top: 20px; background: var(--ios-green);">
-                                <i class="ph ph-paper-plane-tilt"></i> Terbitkan Kuis ke Arena
-                            </button>
-                        </div>
-                    </div>
-                </div>
 
             </div>
         </div>
@@ -563,6 +539,7 @@
 
   </div> <!-- End .glass-container -->
 
+<!-- Cukup pakai 1 loader ini saja bray -->
 <script>
 (async function () {
     const STORAGE_KEY = 'nahwu_os_version';
@@ -576,18 +553,15 @@
             serverVersion = data.version;
         }
     } catch (e) {
-        console.log('Gagal scan server (mungkin di lokal/404), skip bersihin cache bray.');
+        console.log('Skip bersihin cache.');
     }
 
     if (serverVersion !== lastVersion) {
-        console.log('🔄 Update terdeteksi! Membersihkan cache lama...');
         if (window.caches) {
             const keys = await caches.keys();
             await Promise.all(keys.map(k => caches.delete(k)));
         }
         localStorage.setItem(STORAGE_KEY, serverVersion);
-    } else {
-        console.log('✅ Tidak ada update deploy baru. Cache aman dipertahankan.');
     }
 
     const s = document.createElement('script');
@@ -597,7 +571,6 @@
 })();
 </script>
 
-<script type="module" src="script.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script> 
    

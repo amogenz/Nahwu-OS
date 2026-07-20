@@ -4,12 +4,6 @@
 
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-  //  loading 
-   window.addEventListener('load', () => {
-   setTimeout(() => {
-   const splash = document.getElementById('splash-screen');
-   if (splash) splash.classList.add('hide');
-   }, 1000); });
 
     // --- 1. CONFIG ---
     const firebaseConfig = { 
@@ -1854,19 +1848,22 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         // Start button - Dibungkus aman agar tidak bocor MouseEvent bray!
         document.getElementById('btn-start').addEventListener('click', () => startLearningCycle());
 
-        
         // Back to home button (from quiz)
-        document.getElementById('btn-back-home').addEventListener('click', () => {
-            if (confirm('Yakin ingin kembali ke home? Progress quiz akan hilang.')) {
-                els.viewQuiz.style.display = 'none';
-                els.viewStart.style.display = 'flex';
-                quizData = null;
-                wordIndex = 0;
-                stepIndex = 1;
-                quizScore = { correct: 0, wrong: 0, total: 0 };
-            }
-        });
+      document.getElementById('btn-back-home')?.addEventListener('click', () => {
+    if (confirm('Yakin ingin kembali ke home? Progress quiz akan hilang.')) {
+        els.viewQuiz.style.display = 'none';
+        els.viewStart.style.display = 'flex';
         
+        // Reset state kuis biasa & kuis komunitas
+        quizData = null;
+        currentCommunityQuiz = null;
+        currentCommunityIdx = 0;
+        wordIndex = 0;
+        stepIndex = 1;
+        quizScore = { correct: 0, wrong: 0, total: 0 };
+    }
+});
+
         // Database selection
         document.querySelectorAll('.db-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -2119,6 +2116,7 @@ document.querySelectorAll('[data-sub-arena]').forEach(btn => {
 });
 
 // 2. TARIK DATA KUIS KOMUNITAS SECARA REALTIME DARI FIREBASE
+
 function initCommunityQuizzesSync() {
     const quizGrid = document.getElementById('community-quiz-grid');
     if (!quizGrid) return;
@@ -2164,82 +2162,165 @@ function initCommunityQuizzesSync() {
     });
 }
 
-// 3. FUNGSI UNTUK MEMAINKAN KUIS KOMUNITAS
-function startCommunityQuiz(quiz) {
-    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
-        return alert("Soal kuis ini tidak valid!");
+// ==========================================
+// 🛠️ MANAJER STUDIO KUIS DINAMIS (1 - 14 SOAL)
+// ==========================================
+
+let studioQuestionCount = 0;
+const MAX_QUESTIONS = 14;
+
+// 1. Fungsi Render Templat Blok Soal
+function createQuestionBlockHTML(index) {
+    const isFirst = (index === 1);
+    return `
+        <div class="q-block-item" data-q-index="${index}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--ios-blue);">📌 Soal #${index}</span>
+                ${!isFirst ? `<button type="button" class="btn-remove-q" onclick="removeStudioQuestionBlock(${index})" style="background: rgba(255,59,48,0.2); border: 1px solid rgba(255,59,48,0.4); color: #FF3B30; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;"><i class="ph ph-trash"></i> Hapus</button>` : ''}
+            </div>
+
+            <label style="font-size: 0.78rem; color: var(--text-muted);">Kalimat Arab Lengkap (Konteks)</label>
+            <input type="text" class="glass-field q-sentence" placeholder="قُلْ هُوَ اللَّهُ أَحَدٌ" maxlength="100" style="font-family: 'Amiri', serif; font-size: 1.1rem; direction: rtl;">
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Lafadz / Kata yang Ditanyakan</label>
+            <input type="text" class="glass-field q-word" placeholder="قُلْ" maxlength="30" style="font-family: 'Amiri', serif; font-size: 1.1rem; direction: rtl;">
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Pertanyaan Soal</label>
+            <input type="text" class="glass-field q-question" placeholder="Apa kedudukan / jenis kata dari lafadz ini?" maxlength="120">
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Pilihan Jawaban (A, B, C, D)</label>
+            <input type="text" class="glass-field q-opt1" placeholder="Opsi A (Misal: Fi'il Amar)" maxlength="40" style="margin-bottom: 5px;">
+            <input type="text" class="glass-field q-opt2" placeholder="Opsi B (Misal: Isim Mufrad)" maxlength="40" style="margin-bottom: 5px;">
+            <input type="text" class="glass-field q-opt3" placeholder="Opsi C (Misal: Huruf Jar)" maxlength="40" style="margin-bottom: 5px;">
+            <input type="text" class="glass-field q-opt4" placeholder="Opsi D (Misal: Fi'il Madhi)" maxlength="40" style="margin-bottom: 5px;">
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Kunci Jawaban Benar</label>
+            <select class="glass-field q-correct" style="color: #fff; background: rgba(0,0,0,0.5);">
+                <option value="0">Opsi A</option>
+                <option value="1">Opsi B</option>
+                <option value="2">Opsi C</option>
+                <option value="3">Opsi D</option>
+            </select>
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Syarah / Penjelasan Singkat (Opsional)</label>
+            <input type="text" class="glass-field q-explanation" placeholder="Misal: Termasuk Fi'il Amar mabni atas sukun." maxlength="150">
+        </div>
+    `;
+}
+
+// 2. Tambah Blok Soal Baru
+function addStudioQuestionBlock() {
+    if (studioQuestionCount >= MAX_QUESTIONS) {
+        return alert(`Batas maksimal adalah ${MAX_QUESTIONS} soal per kuis!`);
     }
-
-    // Pindah Tampilan Utama ke Halaman Home & Buka Quiz View
-    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-home').classList.add('active');
-    
-    // Update Active State di Bottom Nav
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.nav-btn[data-page="home"]')?.classList.add('active');
-
-    // Tampilkan Layar Kuis & Sembunyikan Home View
-    document.getElementById('view-start').style.display = 'none';
-    document.getElementById('view-quiz').style.display = 'block';
-
-    // 🧹 Bersihkan Pilihan Jawaban Lama dari Layar (Mencegah Soal/Opsi Dobel)
-    const optionsContainer = document.getElementById('options-container');
-    if (optionsContainer) optionsContainer.innerHTML = '';
-
-    // Set Data Soal Baru
-    if (typeof currentQuestions !== 'undefined') {
-        currentQuestions = [...quiz.questions]; // Deep copy array agar tidak menumpuk
-        currentQuestionIndex = 0;
-        
-        if (typeof renderQuestion === 'function') {
-            renderQuestion();
-        }
+    studioQuestionCount++;
+    const container = document.getElementById('quiz-questions-list');
+    if (container) {
+        container.insertAdjacentHTML('beforeend', createQuestionBlockHTML(studioQuestionCount));
     }
+    updateStudioQuestionBadge();
+}
 
-    // 🛡️ Tambahkan Statistik Dimainkan (Dengan Proteksi Safe Transaction)
-    if (quiz.id && typeof runTransaction === 'function') {
-        try {
-            const playRef = ref(db, `community_quizzes/${quiz.id}/plays_count`);
-            runTransaction(playRef, (current) => (current || 0) + 1).catch(() => {});
-        } catch (e) {
-            console.log("Skip update play count");
-        }
+// 3. Hapus Blok Soal Spresifik
+window.removeStudioQuestionBlock = function(index) {
+    const block = document.querySelector(`.q-block-item[data-q-index="${index}"]`);
+    if (block) {
+        block.remove();
+        reindexStudioQuestionBlocks();
+    }
+};
+
+// 4. Urutkan Ulang Nomor Soal Setelah Dihapus
+function reindexStudioQuestionBlocks() {
+    const blocks = document.querySelectorAll('.q-block-item');
+    studioQuestionCount = blocks.length;
+    blocks.forEach((b, idx) => {
+        const newNum = idx + 1;
+        b.setAttribute('data-q-index', newNum);
+        const titleSpan = b.querySelector('span');
+        if (titleSpan) titleSpan.textContent = `📌 Soal #${newNum}`;
+        const delBtn = b.querySelector('.btn-remove-q');
+        if (delBtn) delBtn.setAttribute('onclick', `removeStudioQuestionBlock(${newNum})`);
+    });
+    updateStudioQuestionBadge();
+}
+
+function updateStudioQuestionBadge() {
+    const badge = document.getElementById('q-count-badge');
+    if (badge) badge.textContent = studioQuestionCount;
+
+    const btnAdd = document.getElementById('btn-add-question-block');
+    if (btnAdd) {
+        btnAdd.style.display = (studioQuestionCount >= MAX_QUESTIONS) ? 'none' : 'block';
     }
 }
 
-// --- EVENT HANDLER PUBLISH KUIS MANUAL ---
+// Inisialisasi Soal #1 Otomatis
+function initStudioForm() {
+    const container = document.getElementById('quiz-questions-list');
+    if (container && container.children.length === 0) {
+        studioQuestionCount = 0;
+        addStudioQuestionBlock();
+    }
+}
+
+// Event Klik Tombol Tambah Soal
+document.getElementById('btn-add-question-block')?.addEventListener('click', () => {
+    addStudioQuestionBlock();
+});
+
+// Jalankan Inisialisasi Awal Form
+initStudioForm();
+
+// 5. EVENT HANDLER PUBLISH KUIS MULTI-SOAL
 document.getElementById('btn-publish-quiz')?.addEventListener('click', async () => {
-    // 1. Cek User Logged In
     if (!auth.currentUser) {
         return alert("Kamu wajib login Google di menu Rank terlebih dahulu untuk menerbitkan kuis!");
     }
 
-    // 2. Ambil Value dari Form
     const title = document.getElementById('studio-quiz-title').value.trim();
     const category = document.getElementById('studio-quiz-category').value;
-    const sentence = document.getElementById('q1-sentence').value.trim();
-    const word = document.getElementById('q1-word').value.trim();
-    const question = document.getElementById('q1-question').value.trim();
-    const opt1 = document.getElementById('q1-opt1').value.trim();
-    const opt2 = document.getElementById('q1-opt2').value.trim();
-    const opt3 = document.getElementById('q1-opt3').value.trim();
-    const opt4 = document.getElementById('q1-opt4').value.trim();
-    const correctIdx = document.getElementById('q1-correct').value;
-    const explanation = document.getElementById('q1-explanation').value.trim();
 
-    // 3. Validasi Sederhana di Client
-    if (!title || !sentence || !question || !opt1 || !opt2) {
-        return alert("Mohon lengkapi judul, kalimat Arab, pertanyaan, dan minimal Opsi A & B!");
+    if (!title) {
+        return alert("Judul kuis tidak boleh kosong!");
     }
 
-    const optionsArray = [opt1, opt2, opt3, opt4].filter(o => o !== '');
+    // Ambil Data Dari Semua Blok Soal yang Ada
+    const questionBlocks = document.querySelectorAll('.q-block-item');
+    const questionsArray = [];
 
-    // Safely dapatkan nama penulis (Anti-ReferenceError)
+    for (let i = 0; i < questionBlocks.length; i++) {
+        const b = questionBlocks[i];
+        const sentence = b.querySelector('.q-sentence')?.value.trim();
+        const word = b.querySelector('.q-word')?.value.trim();
+        const question = b.querySelector('.q-question')?.value.trim();
+        const opt1 = b.querySelector('.q-opt1')?.value.trim();
+        const opt2 = b.querySelector('.q-opt2')?.value.trim();
+        const opt3 = b.querySelector('.q-opt3')?.value.trim();
+        const opt4 = b.querySelector('.q-opt4')?.value.trim();
+        const correctIdx = b.querySelector('.q-correct')?.value;
+        const explanation = b.querySelector('.q-explanation')?.value.trim();
+
+        if (!sentence || !question || !opt1 || !opt2) {
+            return alert(`Soal #${i + 1} belum lengkap! Lengkapi kalimat Arab, pertanyaan, dan minimal Opsi A & B.`);
+        }
+
+        const optionsArray = [opt1, opt2, opt3, opt4].filter(o => o !== '');
+
+        questionsArray.push({
+            sentence: sentence,
+            word: word,
+            question: question,
+            options: optionsArray,
+            correctIndex: correctIdx,
+            explanation: explanation
+        });
+    }
+
     const authorNameValue = (typeof currentUserNickname !== 'undefined' && currentUserNickname) 
         ? currentUserNickname 
         : (auth.currentUser.displayName || "Santri Anonim");
 
-    // 4. Kirim ke Serverless API
     try {
         const btn = document.getElementById('btn-publish-quiz');
         btn.disabled = true;
@@ -2253,16 +2334,16 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
                 authorName: authorNameValue,
                 title: title,
                 category: category,
-                questionData: {
-                    sentence: sentence,
-                    word: word,
-                    question: question,
-                    options: optionsArray,
-                    correctIndex: correctIdx,
-                    explanation: explanation
-                }
+                questions: questionsArray
             })
         });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> Terbitkan Kuis ke Arena';
+            return alert(`Gagal terhubung (${response.status}): ${errText}`);
+        }
 
         const data = await response.json();
         btn.disabled = false;
@@ -2270,16 +2351,10 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
 
         if (data.success) {
             alert(data.message);
-            // Reset Form
+            // Reset Form kembali ke Soal #1
             document.getElementById('studio-quiz-title').value = '';
-            document.getElementById('q1-sentence').value = '';
-            document.getElementById('q1-word').value = '';
-            document.getElementById('q1-question').value = '';
-            document.getElementById('q1-opt1').value = '';
-            document.getElementById('q1-opt2').value = '';
-            document.getElementById('q1-opt3').value = '';
-            document.getElementById('q1-opt4').value = '';
-            document.getElementById('q1-explanation').value = '';
+            document.getElementById('quiz-questions-list').innerHTML = '';
+            initStudioForm();
         } else {
             alert("Gagal menerbitkan: " + data.message);
         }
@@ -2288,6 +2363,7 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
         alert("Terjadi kesalahan koneksi server!");
     }
 });
+
 
 /// end 
 
