@@ -1,8 +1,9 @@
 {
   "name": "nahwu-os",
   "version": "1.0.0",
-  "type": "module", 
+  "type": "module",
   "dependencies": {
-    "@google/generative-ai": "^0.1.3"
+    "@google/generative-ai": "^0.1.3",
+    "firebase-admin": "^12.0.0"
   }
 }

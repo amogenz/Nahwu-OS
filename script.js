@@ -1,5 +1,3 @@
-
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
     import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment, orderByChild} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -74,13 +72,10 @@
     let uploadBase64 = null;
     let tapCount = 0;
     let tapTimer;
-    let quizScore = { correct: 0, wrong: 0, total: 0 }; // Track score per session
-    let isCurrentStepWrong = false; // <-- Tambahkan ini untuk mengunci skor salah per soal
-   
-    const SECRET_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa";
-    const ADMIN_PASSWORD_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa"; // Hash untuk
+    let quizScore = { correct: 0, wrong: 0, total: 0 }; 
+    let isCurrentStepWrong = false; 
     let els = {};
-    let currentDatabase = 'lv1'; // Default database
+    let currentDatabase = 'lv1'; 
     let isAdminLoggedIn = false;
     let adminUploadImage = null;
 
@@ -449,11 +444,33 @@ updatePesanTahtaUI(usersArr);
         } 
     }
     
+    // --- CARI & GANTI FUNGSI handleAdminLogin DI script.js ---
     async function handleAdminLogin() { 
-        const hash = await sha256(els.adminPass.value); 
-        if (hash === SECRET_HASH) unlockAdminPanel(); 
-        else alert("Sandi Salah!"); 
+    const inputPass = els.adminPass.value.trim();
+    
+    if (!inputPass) {
+        return alert("Sandi tidak boleh kosong bray!");
     }
+
+    try {
+        const res = await fetch('/api/admin-verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: inputPass })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            unlockAdminPanel(); // Buka panel admin jika sukses
+        } else {
+            alert(data.message || "Sandi Salah!");
+        }
+    } catch (err) {
+        console.error("Gagal terhubung ke verifikasi admin:", err);
+        alert("Gagal melakukan verifikasi admin.");
+    }
+}
     
     function closeAdmin() { 
         els.adminPanel.style.display = 'none'; 
@@ -622,16 +639,40 @@ updatePesanTahtaUI(usersArr);
         } 
     }); 
     
-    document.getElementById('btn-save-img').addEventListener('click', () => { 
-        const cap = document.getElementById('dawuh-caption').value.trim(); 
-        let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64; 
-        if (!finalUrl) return alert("Gambar belum dipilih!"); 
-        push(ref(db, 'dawuh_images'), { url: finalUrl, caption: cap }).then(() => { 
-            alert("Gambar Berhasil Disimpan!"); 
-            inpUrl.value = ''; document.getElementById('dawuh-caption').value = ''; 
-            uploadBase64 = null; document.getElementById('img-preview').style.display = 'none'; 
-        }); 
-    }); 
+    document.getElementById('btn-save-img').addEventListener('click', async () => { 
+    const cap = document.getElementById('dawuh-caption').value.trim(); 
+    let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64; 
+    
+    if (!finalUrl) return alert("Gambar belum dipilih!"); 
+
+    try {
+        const response = await fetch('/api/dawuh-manage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'add',
+                password: els.adminPass.value,
+                url: finalUrl,
+                caption: cap
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message); 
+            inpUrl.value = ''; 
+            document.getElementById('dawuh-caption').value = ''; 
+            uploadBase64 = null; 
+            document.getElementById('img-preview').style.display = 'none'; 
+        } else {
+            alert("Gagal: " + data.message);
+        }
+    } catch (err) {
+        console.error("Gagal simpan gambar:", err);
+        alert("Terjadi kesalahan koneksi server!");
+    }
+});
     
     loadAdminList(); 
 }
@@ -663,10 +704,32 @@ updatePesanTahtaUI(usersArr);
                     const delBtn = document.createElement('button'); 
                     delBtn.innerText = "Hapus"; 
                     delBtn.style.cssText = "background:var(--ios-red); border:none; color:white; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; flex-shrink:0;"; 
-                    delBtn.onclick = () => { 
-                        if (confirm("Yakin mau hapus gambar ini?")) remove(ref(db, `dawuh_images/${key}`)); 
-                    }; 
-                    
+                    delBtn.onclick = async () => { 
+    if (confirm("Yakin mau hapus gambar ini?")) {
+        try {
+            const response = await fetch('/api/dawuh-manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete',
+                    password: els.adminPass.value,
+                    key: key
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+            } else {
+                alert("Gagal menghapus: " + data.message);
+            }
+        } catch (err) {
+            console.error("Gagal hapus gambar:", err);
+            alert("Terjadi kesalahan koneksi server!");
+        }
+    }
+};
                     div.appendChild(leftDiv); 
                     div.appendChild(delBtn); 
                     list.appendChild(div); 
@@ -862,36 +925,37 @@ updatePesanTahtaUI(usersArr);
         
     // --- LOGIKA PERHITUNGAN & SUNTIK POIN MODE RANK BRAY ---
     let modeRankBadgeHtml = ''; 
-    // ==== KODE PERBAIKAN JS SISI KLIEN (ANTI-SYNTAX ERROR) ====
-    if (isRankMode && !isSimulation && auth.currentUser) {
+    // --- CARI & GANTI BAGIAN INI DI script.js ---
+if (isRankMode && !isSimulation && auth.currentUser) {
     const multiplier = LEVEL_MULTIPLIERS[currentDatabase] || 1;
     let kalkulasiPoin = Math.round(correct * multiplier);
-    
-    // 🔒 PANGKAS PAKSA: Jika skor lebih dari 3, batasi mentok di 3 
-    // supaya tidak ditendang oleh Firebase Rules yang baru (+3 maks)
     const skorAmanYangDikirim = Math.min(kalkulasiPoin, 3);
     
     modeRankBadgeHtml = `<div style="font-size:0.85rem; color:#FFD700; font-weight:700; margin-top:-8px; margin-bottom:12px;"><i class="ph ph-sparkles"></i> Mode Rank: +${skorAmanYangDikirim} Poin Klasemen!</div>`;
     
-    // 🛠️ SOLUSI: Menggunakan .then() untuk import dinamis agar aman tanpa keyword 'await'
-    import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js")
-    .then(({ update, increment }) => {
-        const userRef = ref(db, `users/${auth.currentUser.uid}`);
-        
-        // Eksekusi update atomik serentak ke server Firebase
-        return update(userRef, {
-            "total_score": increment(skorAmanYangDikirim),
-            "last_played": Date.now() // Mengirim stempel waktu milidetik saat ini
-        });
+    // 🚨 PEMANGGILAN API SERVERLESS VERCEL
+    fetch('/api/submit-score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            uid: auth.currentUser.uid,
+            correct: correct,
+            dbName: currentDatabase
+        })
     })
-    .then(() => {
-        console.log("⚡ Skor +3 poin berhasil diverifikasi oleh durasi waktu manusia!");
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log("⚡ Skor diverifikasi & disimpan oleh Vercel Serverless:", data.message);
+        } else {
+            console.error("🚨 Gagal simpan skor:", data.message);
+        }
     })
     .catch(err => {
-        console.error("🚨 DIBLOKIR SATPAM FIREBASE:", err.message);
-        alert("Gagal menyimpan skor! Server mendeteksi kamu mengirim skor terlalu cepat (wajib jeda 3 menit) atau kelebihan batas poin.");
+        console.error("🚨 Network error serverless:", err);
     });
 }
+
 
     els.mIcon.innerText = rank.icon;
     els.mIcon.style.display = 'block';
