@@ -1,6 +1,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
-    import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment, orderByChild} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment, orderByChild, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -2125,12 +2125,12 @@ function initCommunityQuizzesSync() {
 
     onValue(ref(db, 'community_quizzes'), (snapshot) => {
         const data = snapshot.val();
-        quizGrid.innerHTML = '';
+        quizGrid.innerHTML = ''; // Bersihkan grid sebelum render ulang
 
         if (data) {
             const quizzes = Object.values(data);
             
-            // Urutkan dari kuis yang paling baru diterbitkan
+            // Urutkan kuis dari yang terbaru
             quizzes.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
             quizzes.forEach(quiz => {
@@ -2150,8 +2150,11 @@ function initCommunityQuizzesSync() {
                     </div>
                 `;
 
-                // Event Klik untuk Memainkan Kuis Komunitas
-                card.onclick = () => startCommunityQuiz(quiz);
+                // 🛡️ Cegah klik ganda (stop propagation)
+                card.onclick = (e) => {
+                    e.stopPropagation();
+                    startCommunityQuiz(quiz);
+                };
 
                 quizGrid.appendChild(card);
             });
@@ -2175,23 +2178,32 @@ function startCommunityQuiz(quiz) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.nav-btn[data-page="home"]')?.classList.add('active');
 
-    // Tampilkan Layar Kuis
+    // Tampilkan Layar Kuis & Sembunyikan Home View
     document.getElementById('view-start').style.display = 'none';
     document.getElementById('view-quiz').style.display = 'block';
 
-    // Masukkan data soal kuis komunitas ke variabel mesin kuis web lu
+    // 🧹 Bersihkan Pilihan Jawaban Lama dari Layar (Mencegah Soal/Opsi Dobel)
+    const optionsContainer = document.getElementById('options-container');
+    if (optionsContainer) optionsContainer.innerHTML = '';
+
+    // Set Data Soal Baru
     if (typeof currentQuestions !== 'undefined') {
-        currentQuestions = quiz.questions;
+        currentQuestions = [...quiz.questions]; // Deep copy array agar tidak menumpuk
         currentQuestionIndex = 0;
+        
         if (typeof renderQuestion === 'function') {
             renderQuestion();
         }
     }
 
-    // Tambah statistik plays_count di database secara realtime
-    if (quiz.id) {
-        const playRef = ref(db, `community_quizzes/${quiz.id}/plays_count`);
-        runTransaction(playRef, (current) => (current || 0) + 1);
+    // 🛡️ Tambahkan Statistik Dimainkan (Dengan Proteksi Safe Transaction)
+    if (quiz.id && typeof runTransaction === 'function') {
+        try {
+            const playRef = ref(db, `community_quizzes/${quiz.id}/plays_count`);
+            runTransaction(playRef, (current) => (current || 0) + 1).catch(() => {});
+        } catch (e) {
+            console.log("Skip update play count");
+        }
     }
 }
 
