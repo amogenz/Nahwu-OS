@@ -1,15 +1,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
-    import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment, orderByChild} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, query, limitToLast, set, get, increment, orderByChild, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-  //  loading 
-   window.addEventListener('load', () => {
-   setTimeout(() => {
-   const splash = document.getElementById('splash-screen');
-   if (splash) splash.classList.add('hide');
-   }, 1000); });
 
     // --- 1. CONFIG ---
     const firebaseConfig = { 
@@ -72,16 +66,13 @@
     let uploadBase64 = null;
     let tapCount = 0;
     let tapTimer;
-    let quizScore = { correct: 0, wrong: 0, total: 0 }; // Track score per session
-    let isCurrentStepWrong = false; // <-- Tambahkan ini untuk mengunci skor salah per soal
-   
-    const SECRET_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa";
-    const ADMIN_PASSWORD_HASH = "f7c9e33170483039dc0613eb865591a36222932780928c5a1b03487276265ffa"; // Hash untuk
+    let quizScore = { correct: 0, wrong: 0, total: 0 }; 
+    let isCurrentStepWrong = false; 
     let els = {};
-    let currentDatabase = 'lv1'; // Default database
+    let currentDatabase = 'lv1'; 
     let isAdminLoggedIn = false;
     let adminUploadImage = null;
-
+    let currentUserNickname = "";
         // --- MULTIPLIER TINGKAT KESULITAN LEVEL KITAB ---
     const LEVEL_MULTIPLIERS = {
         'lv1': 1,            // Jurumiyah
@@ -447,11 +438,33 @@ updatePesanTahtaUI(usersArr);
         } 
     }
     
+    // --- CARI & GANTI FUNGSI handleAdminLogin DI script.js ---
     async function handleAdminLogin() { 
-        const hash = await sha256(els.adminPass.value); 
-        if (hash === SECRET_HASH) unlockAdminPanel(); 
-        else alert("Sandi Salah!"); 
+    const inputPass = els.adminPass.value.trim();
+    
+    if (!inputPass) {
+        return alert("Sandi tidak boleh kosong bray!");
     }
+
+    try {
+        const res = await fetch('/api/admin-verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: inputPass })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            unlockAdminPanel(); // Buka panel admin jika sukses
+        } else {
+            alert(data.message || "Sandi Salah!");
+        }
+    } catch (err) {
+        console.error("Gagal terhubung ke verifikasi admin:", err);
+        alert("Gagal melakukan verifikasi admin.");
+    }
+}
     
     function closeAdmin() { 
         els.adminPanel.style.display = 'none'; 
@@ -620,16 +633,40 @@ updatePesanTahtaUI(usersArr);
         } 
     }); 
     
-    document.getElementById('btn-save-img').addEventListener('click', () => { 
-        const cap = document.getElementById('dawuh-caption').value.trim(); 
-        let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64; 
-        if (!finalUrl) return alert("Gambar belum dipilih!"); 
-        push(ref(db, 'dawuh_images'), { url: finalUrl, caption: cap }).then(() => { 
-            alert("Gambar Berhasil Disimpan!"); 
-            inpUrl.value = ''; document.getElementById('dawuh-caption').value = ''; 
-            uploadBase64 = null; document.getElementById('img-preview').style.display = 'none'; 
-        }); 
-    }); 
+    document.getElementById('btn-save-img').addEventListener('click', async () => { 
+    const cap = document.getElementById('dawuh-caption').value.trim(); 
+    let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64; 
+    
+    if (!finalUrl) return alert("Gambar belum dipilih!"); 
+
+    try {
+        const response = await fetch('/api/dawuh-manage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'add',
+                password: els.adminPass.value,
+                url: finalUrl,
+                caption: cap
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message); 
+            inpUrl.value = ''; 
+            document.getElementById('dawuh-caption').value = ''; 
+            uploadBase64 = null; 
+            document.getElementById('img-preview').style.display = 'none'; 
+        } else {
+            alert("Gagal: " + data.message);
+        }
+    } catch (err) {
+        console.error("Gagal simpan gambar:", err);
+        alert("Terjadi kesalahan koneksi server!");
+    }
+});
     
     loadAdminList(); 
 }
@@ -661,10 +698,32 @@ updatePesanTahtaUI(usersArr);
                     const delBtn = document.createElement('button'); 
                     delBtn.innerText = "Hapus"; 
                     delBtn.style.cssText = "background:var(--ios-red); border:none; color:white; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; flex-shrink:0;"; 
-                    delBtn.onclick = () => { 
-                        if (confirm("Yakin mau hapus gambar ini?")) remove(ref(db, `dawuh_images/${key}`)); 
-                    }; 
-                    
+                    delBtn.onclick = async () => { 
+    if (confirm("Yakin mau hapus gambar ini?")) {
+        try {
+            const response = await fetch('/api/dawuh-manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete',
+                    password: els.adminPass.value,
+                    key: key
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+            } else {
+                alert("Gagal menghapus: " + data.message);
+            }
+        } catch (err) {
+            console.error("Gagal hapus gambar:", err);
+            alert("Terjadi kesalahan koneksi server!");
+        }
+    }
+};
                     div.appendChild(leftDiv); 
                     div.appendChild(delBtn); 
                     list.appendChild(div); 
@@ -860,36 +919,37 @@ updatePesanTahtaUI(usersArr);
         
     // --- LOGIKA PERHITUNGAN & SUNTIK POIN MODE RANK BRAY ---
     let modeRankBadgeHtml = ''; 
-    // ==== KODE PERBAIKAN JS SISI KLIEN (ANTI-SYNTAX ERROR) ====
-    if (isRankMode && !isSimulation && auth.currentUser) {
+    // --- CARI & GANTI BAGIAN INI DI script.js ---
+if (isRankMode && !isSimulation && auth.currentUser) {
     const multiplier = LEVEL_MULTIPLIERS[currentDatabase] || 1;
     let kalkulasiPoin = Math.round(correct * multiplier);
-    
-    // 🔒 PANGKAS PAKSA: Jika skor lebih dari 3, batasi mentok di 3 
-    // supaya tidak ditendang oleh Firebase Rules yang baru (+3 maks)
     const skorAmanYangDikirim = Math.min(kalkulasiPoin, 3);
     
     modeRankBadgeHtml = `<div style="font-size:0.85rem; color:#FFD700; font-weight:700; margin-top:-8px; margin-bottom:12px;"><i class="ph ph-sparkles"></i> Mode Rank: +${skorAmanYangDikirim} Poin Klasemen!</div>`;
     
-    // 🛠️ SOLUSI: Menggunakan .then() untuk import dinamis agar aman tanpa keyword 'await'
-    import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js")
-    .then(({ update, increment }) => {
-        const userRef = ref(db, `users/${auth.currentUser.uid}`);
-        
-        // Eksekusi update atomik serentak ke server Firebase
-        return update(userRef, {
-            "total_score": increment(skorAmanYangDikirim),
-            "last_played": Date.now() // Mengirim stempel waktu milidetik saat ini
-        });
+    // 🚨 PEMANGGILAN API SERVERLESS VERCEL
+    fetch('/api/submit-score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            uid: auth.currentUser.uid,
+            correct: correct,
+            dbName: currentDatabase
+        })
     })
-    .then(() => {
-        console.log("⚡ Skor +3 poin berhasil diverifikasi oleh durasi waktu manusia!");
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log("⚡ Skor diverifikasi & disimpan oleh Vercel Serverless:", data.message);
+        } else {
+            console.error("🚨 Gagal simpan skor:", data.message);
+        }
     })
     .catch(err => {
-        console.error("🚨 DIBLOKIR SATPAM FIREBASE:", err.message);
-        alert("Gagal menyimpan skor! Server mendeteksi kamu mengirim skor terlalu cepat (wajib jeda 3 menit) atau kelebihan batas poin.");
+        console.error("🚨 Network error serverless:", err);
     });
 }
+
 
     els.mIcon.innerText = rank.icon;
     els.mIcon.style.display = 'block';
@@ -1788,19 +1848,33 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         // Start button - Dibungkus aman agar tidak bocor MouseEvent bray!
         document.getElementById('btn-start').addEventListener('click', () => startLearningCycle());
 
-        
         // Back to home button (from quiz)
-        document.getElementById('btn-back-home').addEventListener('click', () => {
-            if (confirm('Yakin ingin kembali ke home? Progress quiz akan hilang.')) {
-                els.viewQuiz.style.display = 'none';
-                els.viewStart.style.display = 'flex';
-                quizData = null;
-                wordIndex = 0;
-                stepIndex = 1;
-                quizScore = { correct: 0, wrong: 0, total: 0 };
-            }
-        });
+        document.getElementById('btn-back-home')?.addEventListener('click', () => {
+    const isCommunity = Boolean(currentCommunityQuiz);
+    const confirmMsg = isCommunity 
+        ? 'Yakin ingin kembali ke Arena Komunitas? Progress kuis akan hilang.' 
+        : 'Yakin ingin kembali ke Beranda? Progress kuis akan hilang.';
+
+    if (confirm(confirmMsg)) {
+        // Reset tampilan
+        if (els.viewQuiz) els.viewQuiz.style.display = 'none';
+        if (els.viewStart) els.viewStart.style.display = 'flex';
         
+        // Reset state kuis biasa
+        quizData = null;
+        wordIndex = 0;
+        stepIndex = 1;
+        quizScore = { correct: 0, wrong: 0, total: 0 };
+
+        // Jika kuis dari Komunitas -> Tendang balik ke Tab Arena!
+        if (isCommunity) {
+            currentCommunityQuiz = null;
+            currentCommunityIdx = 0;
+            if (typeof switchPage === 'function') switchPage('arena');
+        }
+    }
+});
+
         // Database selection
         document.querySelectorAll('.db-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -2004,26 +2078,25 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
         });
 
       // SELIPKAN INI DI DALAM initApp() BRAY:
-const btnInfoRank = document.getElementById('btn-info-rank');
-const infoRankBox = document.getElementById('info-rank-box');
+              // Pemicu Pop-up Info Rank
+        const btnInfoRank = document.getElementById('btn-info-rank');
+        const infoRankBox = document.getElementById('info-rank-box');
 
-if (btnInfoRank) {
-    btnInfoRank.addEventListener('click', (e) => {
-        e.stopPropagation(); // Kunci jalur biar gak memicu event lain bray
-        if (infoRankBox) {
-            infoRankBox.style.display = (infoRankBox.style.display === 'none' || infoRankBox.style.display === '') ? 'block' : 'none';
+        if (btnInfoRank) {
+            btnInfoRank.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (infoRankBox) {
+                    infoRankBox.style.display = (infoRankBox.style.display === 'none' || infoRankBox.style.display === '') ? 'block' : 'none';
+                }
+            });
         }
-    });
-}
-
-
-
 
         // Load data
         loadPublicDawuh();
         loadComments();
         initVisitorCounter();
         initLeaderboardRealtimeSync();
+        initCommunityQuizzesSync(); // <-- Dipanggil aman di sini
     }
 
     if (document.readyState === 'loading') { 
@@ -2032,11 +2105,386 @@ if (btnInfoRank) {
         initApp(); 
     }
 
+// ==========================================
+// 🏟️ STATE & FUNGSI KUIS KOMUNITAS (GLOBAL)
+// ==========================================
+let currentCommunityQuiz = null;
+let currentCommunityIdx = 0;
+
+// 1. FUNGSI PENARIK DATA KUIS DARI FIREBASE
+function initCommunityQuizzesSync() {
+    const quizGrid = document.getElementById('community-quiz-grid');
+    if (!quizGrid) return;
+
+    onValue(ref(db, 'community_quizzes'), (snapshot) => {
+        const data = snapshot.val();
+        quizGrid.innerHTML = '';
+
+        if (data) {
+            const quizzes = Object.values(data);
+            quizzes.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+            quizzes.forEach(quiz => {
+                const card = document.createElement('div');
+                card.className = 'explore-item-card';
+                card.style.position = 'relative';
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; width:100%; margin-bottom: 6px;">
+                        <span style="font-size: 0.7rem; color: var(--ios-green); font-weight: 700;">● ${(quiz.category || 'UMUM').toUpperCase()}</span>
+                        <span style="font-size: 0.7rem; opacity: 0.6;"><i class="ph ph-play-circle"></i> ${quiz.plays_count || 0}x dimainkan</span>
+                    </div>
+                    <div class="explore-card-arabic" style="font-size: 1.2rem;">${quiz.questions?.[0]?.word || quiz.title}</div>
+                    <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-top: 4px;">${quiz.title}</div>
+                    <div class="explore-card-meta" style="margin-top: 8px;">
+                        <span><i class="ph ph-user"></i> ${quiz.author_name || 'Santri Anonim'}</span>
+                    </div>
+                `;
+
+                card.onclick = (e) => {
+                    e.stopPropagation();
+                    startCommunityQuiz(quiz);
+                };
+
+                quizGrid.appendChild(card);
+            });
+        } else {
+            quizGrid.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada kuis komunitas bray. Yuk buat yang pertama di menu Studio!</p>';
+        }
+    });
+}
+
+// 2. FUNGSI UNTUK MEMAINKAN KUIS KOMUNITAS
+function startCommunityQuiz(quiz) {
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        return alert("Soal kuis ini tidak valid atau kosong!");
+    }
+
+    currentCommunityQuiz = quiz;
+    currentCommunityIdx = 0;
+
+    // 🚨 FIX UTAMA: Pindahkan layar utama & tombol nav ke HOME secara instan!
+    if (typeof switchPage === 'function') {
+        switchPage('home');
+    } else {
+        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-home')?.classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-page="home"]')?.classList.add('active');
+    }
+
+    // Tampilkan View Kuis & Sembunyikan Start/Loading
+    if (els.viewStart) els.viewStart.style.display = 'none';
+    if (els.viewLoading) els.viewLoading.style.display = 'none';
+    if (els.viewQuiz) els.viewQuiz.style.display = 'block';
+
+    // Render Soal Pertama
+    renderCommunityQuestion();
+
+    // Tambah Statistik Dimainkan
+    if (quiz.id) {
+        try {
+            const playRef = ref(db, `community_quizzes/${quiz.id}/plays_count`);
+            runTransaction(playRef, (current) => (current || 0) + 1).catch(() => {});
+        } catch (e) {
+            console.log("Skip update play count");
+        }
+    }
+}
+
+// 3. FUNGSI RENDER SOAL KUIS KOMUNITAS
+function renderCommunityQuestion() {
+    if (!currentCommunityQuiz || !currentCommunityQuiz.questions) return;
+
+    const q = currentCommunityQuiz.questions[currentCommunityIdx];
+    
+    // 🚨 JIKA KUIS SELESAI: BALIKKAN KE TAB ARENA / KOMUNITAS!
+    if (!q) {
+        alert("🎉 Selamat! Kamu telah menyelesaikan kuis komunitas ini!");
+        
+        // Reset state
+        currentCommunityQuiz = null;
+        currentCommunityIdx = 0;
+
+        // Sembunyikan view kuis, siapkan view start home untuk nanti
+        if (els.viewStart) els.viewStart.style.display = 'flex';
+        if (els.viewQuiz) els.viewQuiz.style.display = 'none';
+        
+        // 🚀 KEMBALIKAN KE TAB ARENA
+        if (typeof switchPage === 'function') {
+            switchPage('arena');
+        }
+        return;
+    }
+
+    if (els.badge) els.badge.textContent = `SOAL ${currentCommunityIdx + 1} / ${currentCommunityQuiz.questions.length}`;
+    if (els.ctxSent) els.ctxSent.textContent = q.sentence || q.context || '-';
+    if (els.ctxWord) els.ctxWord.textContent = q.word || '-';
+    if (els.qText) els.qText.textContent = q.question || 'Pilih jawaban yang benar:';
+
+    if (els.options) {
+        els.options.innerHTML = '';
+        const options = q.options || [];
+        
+        options.forEach((optText) => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-option';
+            btn.innerHTML = `<span>${optText}</span> <i class="ph ph-caret-right"></i>`;
+
+            btn.onclick = () => {
+                const correctOptText = q.options[q.correctIndex] || q.correct;
+                checkCommunityAnswer(optText, correctOptText, q.explanation);
+            };
+
+            els.options.appendChild(btn);
+        });
+    }
+}
+
+// 4. FUNGSI CEK JAWABAN KUIS KOMUNITAS
+function checkCommunityAnswer(selected, correct, explanation) {
+    const isCorrect = (selected === correct);
+
+    if (typeof playSound === 'function') playSound(isCorrect);
+    if (els.mImgArea) els.mImgArea.style.display = 'none';
+    if (els.mMsg) els.mMsg.style.display = 'block';
+    if (els.mIcon) els.mIcon.style.display = 'block';
+
+    if (isCorrect) {
+        if (els.mTitle) { els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; }
+        if (els.mIcon) els.mIcon.innerText = "✨";
+        if (els.mMsg) els.mMsg.innerText = explanation || "Jawabanmu tepat sekali!";
+    } else {
+        if (els.mTitle) { els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; }
+        if (els.mIcon) els.mIcon.innerText = "❌";
+        if (els.mMsg) els.mMsg.innerHTML = `Jawaban Benar: <b>${correct}</b><br><br>${explanation || ''}`;
+    }
+
+    if (els.modal) els.modal.style.display = 'flex';
+    setTimeout(() => { if (els.mCard) els.mCard.style.transform = 'scale(1)'; }, 10);
+
+    if (els.fbBtn) {
+        els.fbBtn.onclick = () => {
+            if (els.mCard) els.mCard.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                if (els.modal) els.modal.style.display = 'none';
+                if (isCorrect) {
+                    currentCommunityIdx++;
+                    renderCommunityQuestion();
+                }
+            }, 200);
+        };
+    }
+}
+
+// ==========================================
+// 🏟️ LOGIKA ARENA SANTRI & SUB-TAB SWITCHING
+// ==========================================
+document.querySelectorAll('[data-sub-arena]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const targetSub = e.currentTarget.getAttribute('data-sub-arena');
+        
+        document.querySelectorAll('[data-sub-arena]').forEach(b => b.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+
+        document.querySelectorAll('.sub-page-arena').forEach(sp => sp.style.display = 'none');
+        const targetElem = document.getElementById(`sub-arena-${targetSub}`);
+        if (targetElem) targetElem.style.display = 'block';
+    });
+});
+
+// ==========================================
+// 🛠️ MANAJER STUDIO KUIS DINAMIS (1 - 14 SOAL)
+// ==========================================
+let studioQuestionCount = 0;
+const MAX_QUESTIONS = 14;
+
+function createQuestionBlockHTML(index) {
+    const isFirst = (index === 1);
+    return `
+        <div class="q-block-item" data-q-index="${index}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--ios-blue);">📌 Soal #${index}</span>
+                ${!isFirst ? `<button type="button" class="btn-remove-q" onclick="removeStudioQuestionBlock(${index})" style="background: rgba(255,59,48,0.2); border: 1px solid rgba(255,59,48,0.4); color: #FF3B30; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;"><i class="ph ph-trash"></i> Hapus</button>` : ''}
+            </div>
+
+            <label style="font-size: 0.78rem; color: var(--text-muted);">Kalimat Arab Lengkap (Konteks)</label>
+            <input type="text" class="glass-field q-sentence" placeholder="قُلْ هُوَ اللَّهُ أَحَدٌ" maxlength="100" style="font-family: 'Amiri', serif; font-size: 1.1rem; direction: rtl;">
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Lafadz / Kata yang Ditanyakan</label>
+            <input type="text" class="glass-field q-word" placeholder="قُلْ" maxlength="30" style="font-family: 'Amiri', serif; font-size: 1.1rem; direction: rtl;">
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Pertanyaan Soal</label>
+            <input type="text" class="glass-field q-question" placeholder="Apa kedudukan / jenis kata dari lafadz ini?" maxlength="120">
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Pilihan Jawaban (A, B, C, D)</label>
+            <input type="text" class="glass-field q-opt1" placeholder="Opsi A (Misal: Fi'il Amar)" maxlength="40" style="margin-bottom: 5px;">
+            <input type="text" class="glass-field q-opt2" placeholder="Opsi B (Misal: Isim Mufrad)" maxlength="40" style="margin-bottom: 5px;">
+            <input type="text" class="glass-field q-opt3" placeholder="Opsi C (Misal: Huruf Jar)" maxlength="40" style="margin-bottom: 5px;">
+            <input type="text" class="glass-field q-opt4" placeholder="Opsi D (Misal: Fi'il Madhi)" maxlength="40" style="margin-bottom: 5px;">
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Kunci Jawaban Benar</label>
+            <select class="glass-field q-correct" style="color: #fff; background: rgba(0,0,0,0.5);">
+                <option value="0">Opsi A</option>
+                <option value="1">Opsi B</option>
+                <option value="2">Opsi C</option>
+                <option value="3">Opsi D</option>
+            </select>
+
+            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Syarah / Penjelasan Singkat (Opsional)</label>
+            <input type="text" class="glass-field q-explanation" placeholder="Misal: Termasuk Fi'il Amar mabni atas sukun." maxlength="150">
+        </div>
+    `;
+}
+
+function addStudioQuestionBlock() {
+    if (studioQuestionCount >= MAX_QUESTIONS) {
+        return alert(`Batas maksimal adalah ${MAX_QUESTIONS} soal per kuis!`);
+    }
+    studioQuestionCount++;
+    const container = document.getElementById('quiz-questions-list');
+    if (container) {
+        container.insertAdjacentHTML('beforeend', createQuestionBlockHTML(studioQuestionCount));
+    }
+    updateStudioQuestionBadge();
+}
+
+window.removeStudioQuestionBlock = function(index) {
+    const block = document.querySelector(`.q-block-item[data-q-index="${index}"]`);
+    if (block) {
+        block.remove();
+        reindexStudioQuestionBlocks();
+    }
+};
+
+function reindexStudioQuestionBlocks() {
+    const blocks = document.querySelectorAll('.q-block-item');
+    studioQuestionCount = blocks.length;
+    blocks.forEach((b, idx) => {
+        const newNum = idx + 1;
+        b.setAttribute('data-q-index', newNum);
+        const titleSpan = b.querySelector('span');
+        if (titleSpan) titleSpan.textContent = `📌 Soal #${newNum}`;
+        const delBtn = b.querySelector('.btn-remove-q');
+        if (delBtn) delBtn.setAttribute('onclick', `removeStudioQuestionBlock(${newNum})`);
+    });
+    updateStudioQuestionBadge();
+}
+
+function updateStudioQuestionBadge() {
+    const badge = document.getElementById('q-count-badge');
+    if (badge) badge.textContent = studioQuestionCount;
+
+    const btnAdd = document.getElementById('btn-add-question-block');
+    if (btnAdd) {
+        btnAdd.style.display = (studioQuestionCount >= MAX_QUESTIONS) ? 'none' : 'block';
+    }
+}
+
+function initStudioForm() {
+    const container = document.getElementById('quiz-questions-list');
+    if (container && container.children.length === 0) {
+        studioQuestionCount = 0;
+        addStudioQuestionBlock();
+    }
+}
+
+// Jalankan form studio secara otomatis
+initStudioForm();
+
+document.getElementById('btn-add-question-block')?.addEventListener('click', () => {
+    addStudioQuestionBlock();
+});
+
+document.getElementById('btn-publish-quiz')?.addEventListener('click', async () => {
+    if (!auth.currentUser) {
+        return alert("Kamu wajib login Google di menu Rank terlebih dahulu untuk menerbitkan kuis!");
+    }
+
+    const title = document.getElementById('studio-quiz-title').value.trim();
+    const category = document.getElementById('studio-quiz-category').value;
+
+    if (!title) {
+        return alert("Judul kuis tidak boleh kosong!");
+    }
+
+    const questionBlocks = document.querySelectorAll('.q-block-item');
+    const questionsArray = [];
+
+    for (let i = 0; i < questionBlocks.length; i++) {
+        const b = questionBlocks[i];
+        const sentence = b.querySelector('.q-sentence')?.value.trim();
+        const word = b.querySelector('.q-word')?.value.trim();
+        const question = b.querySelector('.q-question')?.value.trim();
+        const opt1 = b.querySelector('.q-opt1')?.value.trim();
+        const opt2 = b.querySelector('.q-opt2')?.value.trim();
+        const opt3 = b.querySelector('.q-opt3')?.value.trim();
+        const opt4 = b.querySelector('.q-opt4')?.value.trim();
+        const correctIdx = b.querySelector('.q-correct')?.value;
+        const explanation = b.querySelector('.q-explanation')?.value.trim();
+
+        if (!sentence || !question || !opt1 || !opt2) {
+            return alert(`Soal #${i + 1} belum lengkap! Lengkapi kalimat Arab, pertanyaan, dan minimal Opsi A & B.`);
+        }
+
+        const optionsArray = [opt1, opt2, opt3, opt4].filter(o => o !== '');
+
+        questionsArray.push({
+            sentence: sentence,
+            word: word,
+            question: question,
+            options: optionsArray,
+            correctIndex: correctIdx,
+            explanation: explanation
+        });
+    }
+
+    const authorNameValue = (typeof currentUserNickname !== 'undefined' && currentUserNickname) 
+        ? currentUserNickname 
+        : (auth.currentUser.displayName || "Santri Anonim");
+
+    try {
+        const btn = document.getElementById('btn-publish-quiz');
+        btn.disabled = true;
+        btn.innerText = "Menerbitkan...";
+
+        const response = await fetch('/api/quiz-create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                uid: auth.currentUser.uid,
+                authorName: authorNameValue,
+                title: title,
+                category: category,
+                questions: questionsArray
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> Terbitkan Kuis ke Arena';
+            return alert(`Gagal terhubung (${response.status}): ${errText}`);
+        }
+
+        const data = await response.json();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> Terbitkan Kuis ke Arena';
+
+        if (data.success) {
+            alert(data.message);
+            document.getElementById('studio-quiz-title').value = '';
+            document.getElementById('quiz-questions-list').innerHTML = '';
+            initStudioForm();
+        } else {
+            alert("Gagal menerbitkan: " + data.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Terjadi kesalahan koneksi server!");
+    }
+});
+
 
 /// end 
-
-
-
-
-
 
