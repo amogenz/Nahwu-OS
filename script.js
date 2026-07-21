@@ -12,7 +12,16 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
-
+    
+    function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
     const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
     const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
@@ -73,7 +82,7 @@
     let isAdminLoggedIn = false;
     let adminUploadImage = null;
     let currentUserNickname = "";
-        // --- MULTIPLIER TINGKAT KESULITAN LEVEL KITAB ---
+
     const LEVEL_MULTIPLIERS = {
         'lv1': 1,            // Jurumiyah
         'tajwid': 1.5,       // Tajwid
@@ -83,10 +92,9 @@
         'alfiyah-fiil': 5    // Alfiyah Fi'il
     };
 
-    let isRankMode = false;      // Menandai apakah user sedang main Mode Rank atau Biasa bray
-    let currentUserData = null;  // Tempat menyimpan data profil publik user aktif
+    let isRankMode = false;      
+    let currentUserData = null; 
 
-    // --- 4. FUNGSI PENDUKUNG ---
     function loadPublicDawuh() {
         onValue(ref(db, 'dawuh_images'), (snapshot) => {
             const data = snapshot.val();
@@ -109,16 +117,14 @@
         }
     }
 
-    // --- TWITTER VERIFIED BADGE GENERATOR (INLINE SVG) ---
+    // --- TWITTER VERIFIED BADGE 
     function generateTwitterBadgeSVG(fillColor) {
     return `<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:${fillColor}; display:inline-block; vertical-align:middle; margin-left:4px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>`;
 }
-
-
-     // 1. Pantau Status Login Secara Live di Latar Belakang
      
-    // --- Pantau Status Login Secara Live di Latar Belakang ---
-onAuthStateChanged(auth, (user) => {
+    // --- Pantau Status 
+    
+      onAuthStateChanged(auth, (user) => {
     const rankLoginArea = document.getElementById('rank-login-area');
     const rankSetupArea = document.getElementById('rank-setup-area');
     const rankMainArea = document.getElementById('rank-main-area');
@@ -173,16 +179,15 @@ onAuthStateChanged(auth, (user) => {
 
     updateUIAfterLogin(user);
 });
-
       
       function updateUIAfterLogin(user) {
 
       console.log("Status  user:", user ? "Login" : "Logout");
 }
 
-const listContainer = document.getElementById('leaderboard-list');
+      const listContainer = document.getElementById('leaderboard-list');
 
-    function initLeaderboardRealtimeSync() {
+      function initLeaderboardRealtimeSync() {
     if (window.isLeaderboardSynced) return;
     window.isLeaderboardSynced = true;
 
@@ -241,9 +246,12 @@ const listContainer = document.getElementById('leaderboard-list');
                     }
                     
                     // Ganti bagian pesanTahtaHtml lu jadi ini, lebih aman:
-const statusMsg = user.status_message || ""; // Default ke string kosong jika null/undefined
-const pesanTahtaHtml = (rankPosition <= 2 && statusMsg.length > 0) 
-    ? `<div style="font-family: 'BerlinSansFB'; font-size:0.75rem; color:#fff; opacity:0.7; margin-top:4px; font-style:italic;">"${statusMsg}"</div>` 
+const statusMsg = user.status_message || ""; 
+const safeStatusMsg = escapeHTML(statusMsg);
+const safeNickname = escapeHTML(user.nickname || 'Santri');
+
+const pesanTahtaHtml = (rankPosition <= 2 && safeStatusMsg.length > 0) 
+    ? `<div style="font-family: 'BerlinSansFB'; font-size:0.75rem; color:#fff; opacity:0.7; margin-top:4px; font-style:italic;">"${safeStatusMsg}"</div>` 
     : '';
 
 
@@ -254,29 +262,30 @@ const pesanTahtaHtml = (rankPosition <= 2 && statusMsg.length > 0)
                     }
 
                     // --- RENDER LAYOUT KLASEMEN (POSISI PRESISI DENGAN FONT BERLIN) ---
-                    if (rankPosition <= 3) {
-                        row.innerHTML = `
-                            <div class="rank-item-left" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 0 4px 2px;">
-                                <span style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; font-size: 0.65rem; color: ${autoColor}; font-weight: 700; letter-spacing: 0.8px; opacity: 0.9;">
-                                    ${rankText}
-                                </span>
-                                <span class="rank-name-text" style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; color: #ffffff; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
-                                    ${rankIconSvg} ${user.nickname} ${inlineBadgeSvg}
-                                </span>
-                                ${pesanTahtaHtml} 
-                            </div>
-                            <span class="rank-points" style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; color: ${autoColor}; font-weight: 700; font-size: 0.95rem;">
-                                ${(user.total_score || 0).toLocaleString('id-ID')} Poin
-                            </span>
-                        `;
-                    } else {
-                        row.innerHTML = `
-                            <div class="rank-item-left" style="display: flex; align-items: center; gap: 12px;">
-                                <span class="rank-number">#${rankPosition}</span>
-                                <span class="rank-name-text" style="font-size: 0.9rem;">${user.nickname} ${inlineBadgeSvg}</span>
-                            </div>
-                            <span class="rank-points" style="font-size: 0.85rem; opacity: 0.8;">
-                                ${(user.total_score || 0).toLocaleString('id-ID')} Poin
+if (rankPosition <= 3) {
+    row.innerHTML = `
+        <div class="rank-item-left" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 0 4px 2px;">
+            <span style="font-family: 'BerlinSansFB'; font-size: 0.65rem; color: ${autoColor}; font-weight: 700; letter-spacing: 0.8px; opacity: 0.9;">
+                ${rankText}
+            </span>
+            <span class="rank-name-text" style="font-family: 'BerlinSansFB'; color: #ffffff; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
+                ${rankIconSvg} ${safeNickname} ${inlineBadgeSvg}
+            </span>
+            ${pesanTahtaHtml} 
+        </div>
+        <span class="rank-points" style="font-family: 'BerlinSansFB'; color: ${autoColor}; font-weight: 700; font-size: 0.95rem;">
+            ${(user.total_score || 0).toLocaleString('id-ID')} Poin
+        </span>
+    `;
+} else {
+    // Render Baris Regular
+    row.innerHTML = `
+        <div class="rank-item-left" style="display: flex; align-items: center; gap: 12px;">
+            <span class="rank-number">#${rankPosition}</span>
+            <span class="rank-name-text" style="font-size: 0.9rem;">${safeNickname} ${inlineBadgeSvg}</span>
+        </div>
+        <span class="rank-points" style="font-size: 0.85rem; opacity: 0.8;">
+            ${(user.total_score || 0).toLocaleString('id-ID')} Poin
                             </span>
                         `;
                     }
@@ -308,7 +317,6 @@ updatePesanTahtaUI(usersArr);
 
     if (!inputPesan || !btnSave || !infoText) return;
 
-    // 🔒 JIKA USER LOGOUT / BELUM LOGIN (Langsung Kunci Total)
     if (!auth.currentUser) {
         inputPesan.disabled = true;
         btnSave.disabled = true;
@@ -317,30 +325,25 @@ updatePesanTahtaUI(usersArr);
         return;
     }
 
-    // Jika data klasemen dari Firebase belum siap, biarkan terkunci dulu sementara
     if (!usersArr || usersArr.length === 0) return;
 
     const myRankIndex = usersArr.findIndex(u => u.uid === auth.currentUser.uid);
 
-    // 🔓 JIKA USER MASUK CATEGORY TOP 2 (Rank 1 indeks 0, Rank 2 indeks 1)
     if (myRankIndex !== -1 && myRankIndex <= 1) {
         inputPesan.disabled = false;
         btnSave.disabled = false;
         infoText.innerText = " KAMU ADALAH PENGAWAS TAHTA";
         
-        // Hanya isi jika kolom kosong agar tidak merusak ketikan baru yang sedang ditulis user
         if (inputPesan.value === "") {
              inputPesan.value = usersArr[myRankIndex].status_message || "";
         }
     } else {
-        // 🔒 JIKA LOGGED IN TAPI BUKAN TOP 2 (Kunci & Tendang)
         inputPesan.disabled = true;
         btnSave.disabled = true;
         inputPesan.value = ""; // Bersihkan kolom
         infoText.innerText = " PESAN KHUSUS RANK 1 & 2";
     }
 }
-
 
     // Visitor Counter
     function initVisitorCounter() {
@@ -358,8 +361,6 @@ updatePesanTahtaUI(usersArr);
         });
     }
 
-    // Database Selection
-    // Fungsi untuk mendapatkan URL mentah dari GitHub via jsDelivr CDN
     function getDbUrl(dbName) {
         const baseUrl = "https://cdn.jsdelivr.net/gh/amogenz/Amogenz/db";
         switch(dbName) {
@@ -438,7 +439,6 @@ updatePesanTahtaUI(usersArr);
         } 
     }
     
-    // --- CARI & GANTI FUNGSI handleAdminLogin DI script.js ---
     async function handleAdminLogin() { 
     const inputPass = els.adminPass.value.trim();
     
@@ -780,7 +780,6 @@ updatePesanTahtaUI(usersArr);
     }
 }
 
-
     function renderQuestion() {
     isCurrentStepWrong = false; // <-- Reset saklar setiap kali langkah/soal baru dimuat
 
@@ -803,7 +802,6 @@ updatePesanTahtaUI(usersArr);
         els.options.appendChild(btn);
     });
 }
-
 
     function handleAnswer(ans, data) {
     const cleanUser = ans.trim().toLowerCase();
@@ -862,7 +860,6 @@ updatePesanTahtaUI(usersArr);
     }
 }
 
-
     function showRewardPhase() {
     els.mTitle.innerText = "Lafadz Selesai"; 
     els.mTitle.style.color = "#FFD700"; 
@@ -911,7 +908,6 @@ updatePesanTahtaUI(usersArr);
         }, 200);
     };
 }
-
 
     function tampilkanRaporPremium(correct, total, isSimulation = false) {
     const rank = getRankData(correct, total);
@@ -1140,7 +1136,6 @@ if (isRankMode && !isSimulation && auth.currentUser) {
     };
 }
 
-
     function getRankData(correct, total) {
         const wrong = total - correct;
         const halfOrMore = wrong >= Math.ceil(total / 2);
@@ -1231,6 +1226,7 @@ if (isRankMode && !isSimulation && auth.currentUser) {
     }
 
     // --- 6. PAGE NAVIGATION ---
+    
     function switchPage(pageName) {
     // Hide all pages
     document.querySelectorAll('.page-content').forEach(page => {
@@ -1254,7 +1250,6 @@ if (isRankMode && !isSimulation && auth.currentUser) {
     }
 }
 
-
     // --- 7. SYARAH AI FUNCTIONS ---
 
     function isArabicText(text) {
@@ -1266,9 +1261,7 @@ if (isRankMode && !isSimulation && auth.currentUser) {
         return text.trim().split(/\s+/).filter(word => isArabicText(word)).length;
     }
 
-    // Fungsi pembantu untuk membuat ID unik di Firebase dari lafadz Arab
     function createCacheKey(text) {
-    // Hilangkan harakat dan ubah spasi jadi underscore agar aman masuk Firebase
     const cleanText = text.replace(/[\u064B-\u065F]/g, "").trim().replace(/\s+/g, '_');
     return btoa(unescape(encodeURIComponent(cleanText))).replace(/[/+=]/g, ""); 
 }
@@ -1446,49 +1439,42 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     }
 }
 
-    // Fungsi Display agar TIDAK "Kotak dalam Kotak"
-
     function displaySyarahResult(result) {
     const resultDiv = document.getElementById('syarah-content');
     const resultContainer = document.getElementById('syarah-result');
-    
-    // 1. Bersihkan Markdown Bold (**teks**) menjadi <strong>
-    // Kita tambahkan penanganan agar teks yang belum tutup (misal **teks...) tidak rusak
-    let cleanText = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    if (!resultDiv) return;
 
-    // 2. Pecah per baris
-    const lines = cleanText.split('\n');
+    // Pecah per baris
+    const lines = result.split('\n');
     
     const formattedHtml = lines.map(line => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
+        // 1. 🛡️ ESCAPE DULU SEMUA KARAKTER BAHAYA HTML DARI TIAP BARIS
+        let safeLine = escapeHTML(line.trim());
+        if (!safeLine) return '<div class="spacer" style="height:10px"></div>'; 
 
-        // Jika baris adalah Header (=== LAFADZ ===)
-        if (trimmedLine.startsWith('===')) {
-            const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
+        // 2. SETELAH AMAN, BARU UBAH MARKDOWN **TEKS** MENJADI <strong>TEKS</strong>
+        safeLine = safeLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        // 3. Render ke dalam pembungkus UI
+        if (safeLine.startsWith('===')) {
+            const label = safeLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
             return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
         }
 
-        // Jika baris adalah Poin (1. Jenis: ...)
-        // Regex diperkuat agar tetap rapi saat teks baru setengah jalan
-        if (/^\d+\./.test(trimmedLine)) {
-            return `<div class="analysis-point">${trimmedLine}</div>`;
+        if (/^\d+\./.test(safeLine)) {
+            return `<div class="analysis-point">${safeLine}</div>`;
         }
 
-        // Baris biasa
-        return `<div class="normal-line">${trimmedLine}</div>`;
+        return `<div class="normal-line">${safeLine}</div>`;
     }).join('');
 
-    // RENDER: Gunakan requestAnimationFrame agar browser merender lebih mulus
-        requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
         resultDiv.innerHTML = formattedHtml;
         
-        if (resultContainer.style.display !== 'block') {
+        if (resultContainer && resultContainer.style.display !== 'block') {
             resultContainer.style.display = 'block';
         }
 
-        // Scroll otomatis hanya jika user berada di dekat bawah
-        // Agar tidak "memaksa" layar lompat-lompat
         const threshold = 150; 
         const isNearBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - threshold;
         
@@ -1496,7 +1482,6 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
         }
     });
-
 }
 
     function copySyarahResult() {
@@ -1528,117 +1513,124 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     }
 
     async function sendComment() {
-        const name = document.getElementById('comment-name').value.trim();
-        const msg = document.getElementById('comment-msg').value.trim();
-        const password = document.getElementById('admin-password').value;
-        
-        if (!name || !msg) {
-            alert('Nama dan komentar harus diisi!');
-            return;
-        }
-        
-        let isAdmin = false;
-        let imageUrl = null;
-        
-        // Check if admin with hashed password
-        if (name.toLowerCase() === 'amogenz') {
-            const hashedPassword = await sha256(password);
-            if (hashedPassword === ADMIN_PASSWORD_HASH) {
+    const name = document.getElementById('comment-name').value.trim();
+    const msg = document.getElementById('comment-msg').value.trim();
+    const password = document.getElementById('admin-password').value;
+    
+    if (!name || !msg) {
+        alert('Nama dan komentar harus diisi!');
+        return;
+    }
+    
+    let isAdmin = false;
+    let imageUrl = null;
+    
+    // Verifikasi Admin lewat API Serverless Vercel
+    if (name.toLowerCase() === 'amogenz') {
+        try {
+            const res = await fetch('/api/admin-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password })
+            });
+            const data = await res.json();
+
+            if (data.success) {
                 isAdmin = true;
-                if (adminUploadImage) {
-                    imageUrl = adminUploadImage;
-                }
+                if (adminUploadImage) imageUrl = adminUploadImage;
             } else {
-                alert('Password admin salah!');
+                alert('Password admin salah bray!');
                 return;
             }
+        } catch (err) {
+            alert('Gagal memverifikasi password admin!');
+            return;
         }
-        
-        const commentData = {
-            name: name,
-            message: msg,
-            timestamp: Date.now(),
-            isAdmin: isAdmin,
-            imageUrl: imageUrl,
-            replies: {}
-        };
-        
-        push(ref(db, 'suggestions'), commentData).then(() => {
-            alert('Komentar berhasil dikirim!');
-            document.getElementById('comment-name').value = '';
-            document.getElementById('comment-msg').value = '';
-            document.getElementById('admin-password').value = '';
-            document.getElementById('admin-password-field').style.display = 'none';
-            document.getElementById('admin-image-upload').style.display = 'none';
-            adminUploadImage = null;
-            document.getElementById('image-preview-area').style.display = 'none';
-        });
     }
+    
+    const commentData = {
+        name: name,
+        message: msg,
+        timestamp: Date.now(),
+        isAdmin: isAdmin,
+        imageUrl: imageUrl,
+        replies: {}
+    };
+    
+    push(ref(db, 'suggestions'), commentData).then(() => {
+        alert('Komentar berhasil dikirim!');
+        document.getElementById('comment-name').value = '';
+        document.getElementById('comment-msg').value = '';
+        document.getElementById('admin-password').value = '';
+        document.getElementById('admin-password-field').style.display = 'none';
+        document.getElementById('admin-image-upload').style.display = 'none';
+        adminUploadImage = null;
+        document.getElementById('image-preview-area').style.display = 'none';
+    });
+}
 
     function loadComments() {
-        onValue(query(ref(db, 'suggestions'), limitToLast(20)), (snapshot) => {
-            const list = document.getElementById('comments-list');
-            if (!list) return;
-            list.innerHTML = '';
-            
-            const data = snapshot.val();
-            if (data) {
-                Object.entries(data).reverse().forEach(([key, item]) => {
-                    const div = document.createElement('div');
-                    div.className = 'comment-item';
-                    
-                    let dateStr = "";
-                    if (item.timestamp) {
-                        dateStr = new Date(item.timestamp).toLocaleDateString('id-ID', {
-                            day: 'numeric', 
-                            month: 'short', 
-                            year: 'numeric',
-                            hour: '2-digit', 
-                            minute: '2-digit'
-                        });
-                    }
-                    
-                    const verifiedBadge = item.isAdmin ? 
-                        '<span class="verified-badge"><i class="ph-fill ph-seal-check"></i></span>' : '';
-                    
-                    const imageHtml = item.imageUrl ? 
-                        `<img src="${item.imageUrl}" class="comment-image" alt="Image">` : '';
-                    
-                    div.innerHTML = `
-                        <div class="comment-header">
-                            <span class="comment-name">${item.name} ${verifiedBadge}</span>
-                            <span class="comment-date">${dateStr}</span>
-                        </div>
-                        <div class="comment-msg">${item.message}</div>
-                        ${imageHtml}
-                        <button class="btn-reply" data-comment-id="${key}">
-                            <i class="ph ph-arrow-bend-up-left"></i> Balas
-                        </button>
-                        <div class="replies-container" id="replies-${key}"></div>
-                    `;
-                    
-                    list.appendChild(div);
-                    
-                    // Load replies
-                    if (item.replies) {
-                        loadReplies(key, item.replies);
-                    }
-                });
+    onValue(query(ref(db, 'suggestions'), limitToLast(20)), (snapshot) => {
+        const list = document.getElementById('comments-list');
+        if (!list) return;
+        list.innerHTML = '';
+        
+        const data = snapshot.val();
+        if (data) {
+            Object.entries(data).reverse().forEach(([key, item]) => {
+                const div = document.createElement('div');
+                div.className = 'comment-item';
                 
-                // Add reply button listeners
-               // 🚨 SEKARANG AMAN: Hanya mencari tombol balas yang berada di dalam KOTAK KOMENTAR SAJA 
-               document.querySelectorAll('#comments-list .btn-reply').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const commentId = e.currentTarget.getAttribute('data-comment-id');
-        showReplyForm(commentId);
-    });
-});
+                let dateStr = "";
+                if (item.timestamp) {
+                    dateStr = new Date(item.timestamp).toLocaleDateString('id-ID', {
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric',
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                    });
+                }
+                
+                const verifiedBadge = item.isAdmin ? 
+                    '<span class="verified-badge"><i class="ph-fill ph-seal-check"></i></span>' : '';
+                
+                // 🛡️ BUNGKUS imageUrl DENGAN escapeHTML
+                const imageHtml = item.imageUrl ? 
+                    `<img src="${escapeHTML(item.imageUrl)}" class="comment-image" alt="Image">` : '';
+                
+                div.innerHTML = `
+                    <div class="comment-header">
+                        <span class="comment-name">${escapeHTML(item.name)} ${verifiedBadge}</span>
+                        <span class="comment-date">${escapeHTML(dateStr)}</span>
+                    </div>
+                    <div class="comment-msg">${escapeHTML(item.message)}</div>
+                    ${imageHtml}
+                    <button class="btn-reply" data-comment-id="${escapeHTML(key)}">
+                        <i class="ph ph-arrow-bend-up-left"></i> Balas
+                    </button>
+                    <div class="replies-container" id="replies-${escapeHTML(key)}"></div>
+                `;
+                
+                list.appendChild(div);
+                
+                if (item.replies) {
+                    loadReplies(key, item.replies);
+                }
+            });
+            
+            document.querySelectorAll('#comments-list .btn-reply').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const commentId = e.currentTarget.getAttribute('data-comment-id');
+                    showReplyForm(commentId);
+                });
+            });
 
-               } else {
-                list.innerHTML = '<p style="text-align:center; font-size:14px; opacity:0.5;">Belum ada komentar.</p>';
-            }
-        });
-    }
+        } else {
+            list.innerHTML = '<p style="text-align:center; font-size:14px; opacity:0.5;">Belum ada komentar.</p>';
+        }
+    });
+}
 
     function loadReplies(commentId, replies) {
         const repliesContainer = document.getElementById(`replies-${commentId}`);
@@ -1662,13 +1654,14 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
             const verifiedBadge = reply.isAdmin ? 
                 '<span class="verified-badge small"><i class="ph-fill ph-seal-check"></i></span>' : '';
             
-            replyDiv.innerHTML = `
-                <div class="reply-header">
-                    <span class="reply-name">${reply.name} ${verifiedBadge}</span>
-                    <span class="reply-date">${dateStr}</span>
-                </div>
-                <div class="reply-msg">${reply.message}</div>
-            `;
+            // B. Di dalam loadReplies()
+replyDiv.innerHTML = `
+    <div class="reply-header">
+        <span class="reply-name">${escapeHTML(reply.name)} ${verifiedBadge}</span>
+        <span class="reply-date">${dateStr}</span>
+    </div>
+    <div class="reply-msg">${escapeHTML(reply.message)}</div>
+`;
             
             repliesContainer.appendChild(replyDiv);
         });
@@ -1774,58 +1767,107 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
             visitorCounter: document.getElementById('visitor-counter')
         };
 
-        // 1. Tangkap kembalian redirect login Google setelah layar memantul kembali bray
-        // getRedirectResult(auth).catch(err => console.error("Redirect Login Error:", err));
+        // 🚨 1. EVENT LISTENER GOOGLE LOGIN (DISUNTIKKAN KEMBALI)
+        document.getElementById('btn-google-login')?.addEventListener('click', async () => {
+            const btn = document.getElementById('btn-google-login');
+            const originalText = btn ? btn.innerHTML : '';
 
-        // 2. Trigger Otentikasi Tombol Google Login & Logout di Halaman Peringkat
-        document.getElementById('btn-google-login').onclick = () => {
-    signInWithPopup(auth, googleProvider)
-        .then((result) => {
-            console.log("Login sukses bray!", result.user);
-        })
-        .catch((error) => {
-            console.error("Gagal login popup bray:", error);
-            alert("Gagal masuk: " + error.message);
-        });
-};
-
-        document.getElementById('btn-google-logout').onclick = () => { 
-            if(confirm("Keluar dari papan kompetisi rank bray?")) signOut(auth); 
-        };
-        
-        // 3. Logika Pendaftaran & Validasi Nickname Unik Publik Pengguna Baru
-        document.getElementById('btn-save-nickname').onclick = () => {
-            const nickInput = document.getElementById('rank-custom-name').value.trim();
-            if (!nickInput || nickInput.length < 3) return alert("Nickname kustom minimal harus 3 karakter bray!");
-            
-            get(ref(db, 'users')).then((snap) => {
-                let isUnique = true;
-                if (snap.exists()) {
-                    Object.values(snap.val()).forEach(u => {
-                        if (u.nickname && u.nickname.toLowerCase() === nickInput.toLowerCase()) isUnique = false;
-                    });
+            try {
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="ph ph-spinner spin"></i> Memproses Login...';
                 }
-                if (!isUnique) {
-                    alert("Nama kustom tersebut sudah diambil santri lain bray, silakan cari nama kustom lainnya!");
-                } else {
-                    // Nama terbukti murni unik, daftarkan koordinat entitas akun baru ke database bray
-                    set(ref(db, `users/${auth.currentUser.uid}`), {
-                        nickname: nickInput,
-                        total_score: 0,
-                        ever_top_3: false,
-                        created_at: Date.now()
-                    });
+
+                const result = await signInWithPopup(auth, googleProvider);
+                console.log("Login sukses bray!", result.user);
+
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            } catch (error) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+
+                if (error.code === 'auth/popup-blocked') {
+                    alert("Popup login diblokir browser HP-mu bray! Izinkan popup di setelan browser.");
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    alert("Domain ini belum terdaftar di Authorized Domains Firebase!");
+                } else if (error.code !== 'auth/popup-closed-by-user') {
+                    alert("Gagal masuk: " + error.message);
+                }
+            }
+        });
+
+        // 2. Google Logout
+        document.getElementById('btn-google-logout')?.addEventListener('click', () => { 
+            if (confirm("Keluar dari papan kompetisi rank bray?")) signOut(auth); 
+        });
+
+        // 3. Simpan Nickname Kustom
+        document.getElementById('btn-save-nickname')?.addEventListener('click', () => {
+    const inputEl = document.getElementById('rank-custom-name');
+    const nickInput = inputEl?.value.trim();
+    
+    if (!nickInput || nickInput.length < 3 || nickInput.length > 20) {
+        return alert("Nickname kustom harus antara 3 hingga 20 karakter bray!");
+    }
+    
+    if (!auth.currentUser) {
+        return alert("Kamu harus login Google terlebih dahulu bray!");
+    }
+
+    const uid = auth.currentUser.uid;
+
+    get(ref(db, 'users')).then((snap) => {
+        let isUnique = true;
+        if (snap.exists()) {
+            Object.values(snap.val()).forEach(u => {
+                if (u.nickname && u.nickname.toLowerCase() === nickInput.toLowerCase()) {
+                    isUnique = false;
                 }
             });
-        };
+        }
 
-        // 4. Logika Pengoper Saklar Tombol Pilihan Mode Belajar di Halaman Beranda
-        document.getElementById('btn-mode-biasa').onclick = () => {
+        if (!isUnique) {
+            alert("Nama kustom tersebut sudah dipakai santri lain bray, coba nama lain!");
+        } else {
+            // 🚨 HANYA TULIS KE PATH /users/$uid/nickname AGAR SESUAI RULES FIREBASE
+            set(ref(db, `users/${uid}/nickname`), nickInput)
+            .then(() => {
+                alert("Nickname berhasil dikunci bray!");
+                
+                if (inputEl) inputEl.value = '';
+                
+                const rankSetupArea = document.getElementById('rank-setup-area');
+                const rankMainArea = document.getElementById('rank-main-area');
+                
+                if (rankSetupArea) rankSetupArea.style.display = 'none';
+                if (rankMainArea) rankMainArea.style.display = 'block';
+
+                if (typeof renderUserProfile === 'function') {
+                    renderUserProfile();
+                }
+            })
+            .catch((err) => {
+                alert("Gagal menyimpan nickname: " + err.message);
+            });
+        }
+    }).catch((err) => {
+        alert("Gagal terhubung ke database: " + err.message);
+    });
+});
+
+        // 4. Mode Belajar (Biasa VS Rank)
+        document.getElementById('btn-mode-biasa')?.addEventListener('click', () => {
             isRankMode = false;
-            document.getElementById('btn-mode-biasa').classList.add('active');
-            document.getElementById('btn-mode-rank').classList.remove('active');
-        };
-        document.getElementById('btn-mode-rank').onclick = () => {
+            document.getElementById('btn-mode-biasa')?.classList.add('active');
+            document.getElementById('btn-mode-rank')?.classList.remove('active');
+        });
+
+        document.getElementById('btn-mode-rank')?.addEventListener('click', () => {
             if (!auth.currentUser) {
                 alert("Kamu wajib login Google dan mengunci nickname kustom terlebih dahulu di Halaman Rank bray!");
                 switchPage('rank');
@@ -1834,46 +1876,40 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
                 switchPage('rank');
             } else {
                 isRankMode = true;
-                document.getElementById('btn-mode-rank').classList.add('active');
-                document.getElementById('btn-mode-biasa').classList.remove('active');
+                document.getElementById('btn-mode-rank')?.classList.add('active');
+                document.getElementById('btn-mode-biasa')?.classList.remove('active');
             }
-        };
+        });
 
+        // Secret Admin & Start
+        document.getElementById('secret-logo')?.addEventListener('click', handleSecretTap);
+        document.getElementById('btn-admin-login')?.addEventListener('click', handleAdminLogin);
+        document.getElementById('btn-close-admin')?.addEventListener('click', closeAdmin);
+        document.getElementById('btn-start')?.addEventListener('click', () => startLearningCycle());
 
-        // Secret admin access
-        document.getElementById('secret-logo').addEventListener('click', handleSecretTap);
-        document.getElementById('btn-admin-login').addEventListener('click', handleAdminLogin);
-        document.getElementById('btn-close-admin').addEventListener('click', closeAdmin);
-        
-        // Start button - Dibungkus aman agar tidak bocor MouseEvent bray!
-        document.getElementById('btn-start').addEventListener('click', () => startLearningCycle());
-
-        // Back to home button (from quiz)
+        // Back to Home
         document.getElementById('btn-back-home')?.addEventListener('click', () => {
-    const isCommunity = Boolean(currentCommunityQuiz);
-    const confirmMsg = isCommunity 
-        ? 'Yakin ingin kembali ke Arena Komunitas? Progress kuis akan hilang.' 
-        : 'Yakin ingin kembali ke Beranda? Progress kuis akan hilang.';
+            const isCommunity = Boolean(currentCommunityQuiz);
+            const confirmMsg = isCommunity 
+                ? 'Yakin ingin kembali ke Arena Komunitas? Progress kuis akan hilang.' 
+                : 'Yakin ingin kembali ke Beranda? Progress kuis akan hilang.';
 
-    if (confirm(confirmMsg)) {
-        // Reset tampilan
-        if (els.viewQuiz) els.viewQuiz.style.display = 'none';
-        if (els.viewStart) els.viewStart.style.display = 'flex';
-        
-        // Reset state kuis biasa
-        quizData = null;
-        wordIndex = 0;
-        stepIndex = 1;
-        quizScore = { correct: 0, wrong: 0, total: 0 };
+            if (confirm(confirmMsg)) {
+                if (els.viewQuiz) els.viewQuiz.style.display = 'none';
+                if (els.viewStart) els.viewStart.style.display = 'flex';
+                
+                quizData = null;
+                wordIndex = 0;
+                stepIndex = 1;
+                quizScore = { correct: 0, wrong: 0, total: 0 };
 
-        // Jika kuis dari Komunitas -> Tendang balik ke Tab Arena!
-        if (isCommunity) {
-            currentCommunityQuiz = null;
-            currentCommunityIdx = 0;
-            if (typeof switchPage === 'function') switchPage('arena');
-        }
-    }
-});
+                if (isCommunity) {
+                    currentCommunityQuiz = null;
+                    currentCommunityIdx = 0;
+                    if (typeof switchPage === 'function') switchPage('arena');
+                }
+            }
+        });
 
         // Database selection
         document.querySelectorAll('.db-btn').forEach(btn => {
@@ -1897,37 +1933,37 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         const charCount = document.getElementById('char-count');
         const btnSyarah = document.getElementById('btn-syarah');
         
-        arabicInput.addEventListener('input', (e) => {
+        arabicInput?.addEventListener('input', (e) => {
             const text = e.target.value;
             const wordCount = countArabicWords(text);
             const charLength = text.length;
             
-            charCount.textContent = charLength;
+            if (charCount) charCount.textContent = charLength;
             
-            // Enable/disable button based on Arabic content and word count
-            if (isArabicText(text) && wordCount > 0 && wordCount <= 7) {
-                btnSyarah.disabled = false;
-            } else {
-                btnSyarah.disabled = true;
+            if (btnSyarah) {
+                if (isArabicText(text) && wordCount > 0 && wordCount <= 7) {
+                    btnSyarah.disabled = false;
+                } else {
+                    btnSyarah.disabled = true;
+                }
             }
             
-            // Lock input if exceeds character limit
             if (charLength >= 21) {
                 e.target.value = text.substring(0, 21);
             }
         });
         
-        btnSyarah.addEventListener('click', analyzeSyarah);
-        document.getElementById('btn-copy-syarah').addEventListener('click', copySyarahResult);
+        btnSyarah?.addEventListener('click', analyzeSyarah);
+        document.getElementById('btn-copy-syarah')?.addEventListener('click', copySyarahResult);
         
         // Comments page
-        document.getElementById('comment-name').addEventListener('input', checkAdminName);
-        document.getElementById('btn-send-comment').addEventListener('click', sendComment);
-        document.getElementById('admin-img-file').addEventListener('change', handleImageUpload);
-        document.getElementById('btn-remove-image').addEventListener('click', removeImage);
+        document.getElementById('comment-name')?.addEventListener('input', checkAdminName);
+        document.getElementById('btn-send-comment')?.addEventListener('click', sendComment);
+        document.getElementById('admin-img-file')?.addEventListener('change', handleImageUpload);
+        document.getElementById('btn-remove-image')?.addEventListener('click', removeImage);
         
         // Marquee animation
-        if(els.marqueeText) {
+        if (els.marqueeText) {
             els.marqueeText.addEventListener('animationiteration', () => {
                 dawuhIndex = (dawuhIndex + 1) % DAWUH_PLAYLIST.length;
                 els.marqueeText.innerText = DAWUH_PLAYLIST[dawuhIndex];
@@ -1935,22 +1971,21 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         }
 
         // Image loading
-        els.mImgSrc.onload = () => { 
-            els.mSpinner.style.display = 'none'; 
-            els.mImgSrc.style.display = 'block'; 
-        };
-        els.mImgSrc.onerror = () => { 
-            els.mSpinner.style.display = 'none'; 
-            els.mImgArea.style.display = 'none'; 
-            els.mMsg.innerText = "Gagal memuat gambar."; 
-        };
+        if (els.mImgSrc) {
+            els.mImgSrc.onload = () => { 
+                if (els.mSpinner) els.mSpinner.style.display = 'none'; 
+                els.mImgSrc.style.display = 'block'; 
+            };
+            els.mImgSrc.onerror = () => { 
+                if (els.mSpinner) els.mSpinner.style.display = 'none'; 
+                if (els.mImgArea) els.mImgArea.style.display = 'none'; 
+                if (els.mMsg) els.mMsg.innerText = "Gagal memuat gambar."; 
+            };
+        }
 
-        // ==========================================
-        // SUB-TAB NAVIGATION SETUP & EXPLORE LAFADZ
-        // ==========================================
-        // GANTI MENJADI SEPERTI INI AGAR BERIKATAN KHUSUS DI HALAMAN SYARAH SAJA:
-const subTabBtns = document.querySelectorAll('#page-syarah .sub-tab-btn');
-const subPageContents = document.querySelectorAll('#page-syarah .sub-page-content');
+        // Sub-Tab Navigation Syarah
+        const subTabBtns = document.querySelectorAll('#page-syarah .sub-tab-btn');
+        const subPageContents = document.querySelectorAll('#page-syarah .sub-page-content');
 
         subTabBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1959,16 +1994,18 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
                 
                 e.currentTarget.classList.add('active');
                 const targetSub = e.currentTarget.getAttribute('data-sub');
-                document.getElementById(`sub-syarah-${targetSub}`).classList.add('active');
+                document.getElementById(`sub-syarah-${targetSub}`)?.classList.add('active');
                 
                 if (targetSub === 'explore') {
-                    document.getElementById('explore-main-view').style.display = 'block';
-                    document.getElementById('explore-detail-view').style.display = 'none';
+                    const mainView = document.getElementById('explore-main-view');
+                    const detailView = document.getElementById('explore-detail-view');
+                    if (mainView) mainView.style.display = 'block';
+                    if (detailView) detailView.style.display = 'none';
                 }
             });
         });
 
-        // Tombol kembali dari Detail View ke Grid List Utama
+        // Tombol kembali & copy Explore
         const btnBackExplore = document.getElementById('btn-back-explore');
         if (btnBackExplore) {
             btnBackExplore.onclick = () => {
@@ -1977,11 +2014,10 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
             };
         }
 
-        // Tombol salin hasil syarah explore
         const btnCopyExplore = document.getElementById('btn-copy-explore');
         if (btnCopyExplore) {
             btnCopyExplore.onclick = () => {
-                const content = document.getElementById('explore-detail-content').innerText;
+                const content = document.getElementById('explore-detail-content')?.innerText || '';
                 navigator.clipboard.writeText(content).then(() => {
                     const originalHTML = btnCopyExplore.innerHTML;
                     btnCopyExplore.innerHTML = '<i class="ph ph-check"></i> Tersalin!';
@@ -1990,95 +2026,7 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
             };
         }
 
-        // Fungsi Render Detail Syarah Terpilih (Satu Scope Aman dari ReferenceError)
-        function showExploreDetail(title, resultRaw) {
-            document.getElementById('explore-main-view').style.display = 'none';
-            document.getElementById('explore-detail-view').style.display = 'block';
-            
-            document.getElementById('explore-title-text').textContent = title;
-            const detailContentDiv = document.getElementById('explore-detail-content');
-            
-            // Format teks markdown bawaan dari AI (sama dengan fungsi utama webmu)
-            let cleanText = resultRaw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            const lines = cleanText.split('\n');
-            
-            const formattedHtml = lines.map(line => {
-                const trimmedLine = line.trim();
-                if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
-
-                if (trimmedLine.startsWith('===')) {
-                    const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
-                    return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
-                }
-
-                if (/^\d+\./.test(trimmedLine)) {
-                    return `<div class="analysis-point">${trimmedLine}</div>`;
-                }
-
-                return `<div class="normal-line">${trimmedLine}</div>`;
-            }).join('');
-
-            requestAnimationFrame(() => {
-                detailContentDiv.innerHTML = formattedHtml;
-                const contentArea = document.querySelector('#page-syarah .content-area');
-                if (contentArea) contentArea.scrollTop = 0;
-            });
-        }
-
-   // Ambil Data dari Firebase & Render ke Grid List (Urut Waktu Paling Baru di Atas!)
-        onValue(ref(db, 'syarah_cache'), (snapshot) => {
-            const cacheData = snapshot.val();
-            const badge = document.getElementById('cache-total-badge');
-            const gridContainer = document.getElementById('explore-grid');
-            
-            if (!gridContainer) return;
-            gridContainer.innerHTML = ''; 
-            
-            if (cacheData) {
-                const items = Object.entries(cacheData);
-                if (badge) badge.textContent = items.length;
-                
-                // --- LOGIKA SORTING AJABIB TERBARU DI SINI BRAY ---
-                // Kita urutkan manual berdasarkan property created_at dari yang paling besar (paling baru)
-                items.sort((a, b) => {
-                    const timeA = a[1].created_at || 0;
-                    const timeB = b[1].created_at || 0;
-                    return timeB - timeA; // Nilai waktu lebih besar/baru ditaruh di atas
-                });
-                // -------------------------------------------------
-                
-                // Sekarang tinggal kita render langsung tanpa perlu .reverse() lagi bray
-                items.forEach(([key, value]) => {
-                    const card = document.createElement('div');
-                    card.className = 'explore-item-card';
-                    
-                    let formattedDate = "Baru";
-                    if (value.created_at) {
-                        formattedDate = new Date(value.created_at).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short'
-                        });
-                    }
-                    
-                    card.innerHTML = `
-                        <div class="explore-card-arabic">${value.original_input}</div>
-                        <div class="explore-card-meta"><i class="ph ph-calendar"></i> ${formattedDate}</div>
-                    `;
-                    
-                    card.onclick = () => {
-                        showExploreDetail(value.original_input, value.result);
-                    };
-                    
-                    gridContainer.appendChild(card);
-                });
-            } else {
-                if (badge) badge.textContent = '0';
-                gridContainer.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada riwayat lafadz bray.</p>';
-            }
-        });
-
-      // SELIPKAN INI DI DALAM initApp() BRAY:
-              // Pemicu Pop-up Info Rank
+        // Pop-up Info Rank
         const btnInfoRank = document.getElementById('btn-info-rank');
         const infoRankBox = document.getElementById('info-rank-box');
 
@@ -2096,8 +2044,10 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
         loadComments();
         initVisitorCounter();
         initLeaderboardRealtimeSync();
-        initCommunityQuizzesSync(); // <-- Dipanggil aman di sini
+        initCommunityQuizzesSync();
+        initExploreSyarahSync();
     }
+
 
     if (document.readyState === 'loading') { 
         document.addEventListener('DOMContentLoaded', initApp); 
@@ -2129,17 +2079,17 @@ function initCommunityQuizzesSync() {
                 card.className = 'explore-item-card';
                 card.style.position = 'relative';
 
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; width:100%; margin-bottom: 6px;">
-                        <span style="font-size: 0.7rem; color: var(--ios-green); font-weight: 700;">● ${(quiz.category || 'UMUM').toUpperCase()}</span>
-                        <span style="font-size: 0.7rem; opacity: 0.6;"><i class="ph ph-play-circle"></i> ${quiz.plays_count || 0}x dimainkan</span>
-                    </div>
-                    <div class="explore-card-arabic" style="font-size: 1.2rem;">${quiz.questions?.[0]?.word || quiz.title}</div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-top: 4px;">${quiz.title}</div>
-                    <div class="explore-card-meta" style="margin-top: 8px;">
-                        <span><i class="ph ph-user"></i> ${quiz.author_name || 'Santri Anonim'}</span>
-                    </div>
-                `;
+card.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; width:100%; margin-bottom: 6px;">
+        <span style="font-size: 0.7rem; color: var(--ios-green); font-weight: 700;">● ${escapeHTML(quiz.category || 'UMUM').toUpperCase()}</span>
+        <span style="font-size: 0.7rem; opacity: 0.6;"><i class="ph ph-play-circle"></i> ${quiz.plays_count || 0}x dimainkan</span>
+    </div>
+    <div class="explore-card-arabic" style="font-size: 1.2rem;">${escapeHTML(quiz.questions?.[0]?.word || quiz.title)}</div>
+    <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-top: 4px;">${escapeHTML(quiz.title)}</div>
+    <div class="explore-card-meta" style="margin-top: 8px;">
+        <span><i class="ph ph-user"></i> ${escapeHTML(quiz.author_name || 'Santri Anonim')}</span>
+    </div>
+`;
 
                 card.onclick = (e) => {
                     e.stopPropagation();
@@ -2151,6 +2101,97 @@ function initCommunityQuizzesSync() {
         } else {
             quizGrid.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada kuis komunitas bray. Yuk buat yang pertama di menu Studio!</p>';
         }
+    });
+}
+
+// 🔍 SYNC DATA EXPLORE LAFADZ DARI FIREBASE
+
+function initExploreSyarahSync() {
+    onValue(ref(db, 'syarah_cache'), (snapshot) => {
+        const cacheData = snapshot.val();
+        const badge = document.getElementById('cache-total-badge');
+        const gridContainer = document.getElementById('explore-grid');
+        
+        if (!gridContainer) return;
+        gridContainer.innerHTML = ''; 
+        
+        if (cacheData) {
+            const items = Object.entries(cacheData);
+            if (badge) badge.textContent = items.length;
+            
+            // Urutkan dari lafadz terbaru di atas
+            items.sort((a, b) => {
+                const timeA = a[1].created_at || 0;
+                const timeB = b[1].created_at || 0;
+                return timeB - timeA;
+            });
+            
+            items.forEach(([key, value]) => {
+                const card = document.createElement('div');
+                card.className = 'explore-item-card';
+                
+                let formattedDate = "Baru";
+                if (value.created_at) {
+                    formattedDate = new Date(value.created_at).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short'
+                    });
+                }
+                
+                card.innerHTML = `
+                    <div class="explore-card-arabic">${escapeHTML(value.original_input)}</div>
+                    <div class="explore-card-meta"><i class="ph ph-calendar"></i> ${formattedDate}</div>
+                `;
+                
+                card.onclick = () => {
+                    showExploreDetail(value.original_input, value.result);
+                };
+                
+                gridContainer.appendChild(card);
+            });
+        } else {
+            if (badge) badge.textContent = '0';
+            gridContainer.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada riwayat lafadz bray.</p>';
+        }
+    });
+}
+
+// 📖 FUNGSI RENDER DETAIL EXPLORE SYARAH
+function showExploreDetail(title, resultRaw) {
+    const mainView = document.getElementById('explore-main-view');
+    const detailView = document.getElementById('explore-detail-view');
+    const titleText = document.getElementById('explore-title-text');
+    const detailContentDiv = document.getElementById('explore-detail-content');
+
+    if (mainView) mainView.style.display = 'none';
+    if (detailView) detailView.style.display = 'block';
+    if (titleText) titleText.textContent = title;
+    
+    if (!detailContentDiv) return;
+
+    let cleanText = resultRaw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    const lines = cleanText.split('\n');
+    
+    const formattedHtml = lines.map(line => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
+
+        if (trimmedLine.startsWith('===')) {
+            const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
+            return `<div class="lafadz-header">📝 LAFADZ: ${escapeHTML(label)}</div>`;
+        }
+
+        if (/^\d+\./.test(trimmedLine)) {
+            return `<div class="analysis-point">${escapeHTML(trimmedLine)}</div>`;
+        }
+
+        return `<div class="normal-line">${escapeHTML(trimmedLine)}</div>`;
+    }).join('');
+
+    requestAnimationFrame(() => {
+        detailContentDiv.innerHTML = formattedHtml;
+        const contentArea = document.querySelector('#page-syarah .content-area');
+        if (contentArea) contentArea.scrollTop = 0;
     });
 }
 
