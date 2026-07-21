@@ -1760,17 +1760,59 @@ replyDiv.innerHTML = `
             visitorCounter: document.getElementById('visitor-counter')
         };
 
+        // 🚨 1. EVENT LISTENER GOOGLE LOGIN (DISUNTIKKAN KEMBALI)
+        document.getElementById('btn-google-login')?.addEventListener('click', async () => {
+            const btn = document.getElementById('btn-google-login');
+            const originalText = btn ? btn.innerHTML : '';
+
+            try {
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="ph ph-spinner spin"></i> Memproses Login...';
+                }
+
+                const result = await signInWithPopup(auth, googleProvider);
+                console.log("Login sukses bray!", result.user);
+
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            } catch (error) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+
+                if (error.code === 'auth/popup-blocked') {
+                    alert("Popup login diblokir browser HP-mu bray! Izinkan popup di setelan browser.");
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    alert("Domain ini belum terdaftar di Authorized Domains Firebase!");
+                } else if (error.code !== 'auth/popup-closed-by-user') {
+                    alert("Gagal masuk: " + error.message);
+                }
+            }
+        });
+
+        // 2. Google Logout
+        document.getElementById('btn-google-logout')?.addEventListener('click', () => { 
+            if (confirm("Keluar dari papan kompetisi rank bray?")) signOut(auth); 
+        });
+
+        // 3. Simpan Nickname Kustom
         document.getElementById('btn-save-nickname')?.addEventListener('click', () => {
     const inputEl = document.getElementById('rank-custom-name');
     const nickInput = inputEl?.value.trim();
     
-    if (!nickInput || nickInput.length < 3) {
-        return alert("Nickname kustom minimal harus 3 karakter bray!");
+    if (!nickInput || nickInput.length < 3 || nickInput.length > 20) {
+        return alert("Nickname kustom harus antara 3 hingga 20 karakter bray!");
     }
     
     if (!auth.currentUser) {
         return alert("Kamu harus login Google terlebih dahulu bray!");
     }
+
+    const uid = auth.currentUser.uid;
 
     get(ref(db, 'users')).then((snap) => {
         let isUnique = true;
@@ -1785,27 +1827,19 @@ replyDiv.innerHTML = `
         if (!isUnique) {
             alert("Nama kustom tersebut sudah dipakai santri lain bray, coba nama lain!");
         } else {
-            // 🚨 TAMBAHKAN .then() SETELAH SET UNTUK ME-RESET UI
-            set(ref(db, `users/${auth.currentUser.uid}`), {
-                nickname: nickInput,
-                total_score: 0,
-                ever_top_3: false,
-                created_at: Date.now()
-            })
+            // 🚨 HANYA TULIS KE PATH /users/$uid/nickname AGAR SESUAI RULES FIREBASE
+            set(ref(db, `users/${uid}/nickname`), nickInput)
             .then(() => {
                 alert("Nickname berhasil dikunci bray!");
                 
-                // 1. Kosongkan kolom input
                 if (inputEl) inputEl.value = '';
                 
-                // 2. Refresh / alihkan tampilan area setup ke area utama
                 const rankSetupArea = document.getElementById('rank-setup-area');
                 const rankMainArea = document.getElementById('rank-main-area');
                 
                 if (rankSetupArea) rankSetupArea.style.display = 'none';
                 if (rankMainArea) rankMainArea.style.display = 'block';
 
-                // 3. Perbarui UI Profil jika fungsi render tersedia
                 if (typeof renderUserProfile === 'function') {
                     renderUserProfile();
                 }
@@ -1819,44 +1853,14 @@ replyDiv.innerHTML = `
     });
 });
 
-
-        document.getElementById('btn-google-logout').onclick = () => { 
-            if(confirm("Keluar dari papan kompetisi rank bray?")) signOut(auth); 
-        };
-        
-        // 3. Logika Pendaftaran & Validasi Nickname Unik Publik Pengguna Baru
-        document.getElementById('btn-save-nickname').onclick = () => {
-            const nickInput = document.getElementById('rank-custom-name').value.trim();
-            if (!nickInput || nickInput.length < 3) return alert("Nickname kustom minimal harus 3 karakter bray!");
-            
-            get(ref(db, 'users')).then((snap) => {
-                let isUnique = true;
-                if (snap.exists()) {
-                    Object.values(snap.val()).forEach(u => {
-                        if (u.nickname && u.nickname.toLowerCase() === nickInput.toLowerCase()) isUnique = false;
-                    });
-                }
-                if (!isUnique) {
-                    alert("Nama kustom tersebut sudah diambil santri lain bray, silakan cari nama kustom lainnya!");
-                } else {
-                    // Nama terbukti murni unik, daftarkan koordinat entitas akun baru ke database bray
-                    set(ref(db, `users/${auth.currentUser.uid}`), {
-                        nickname: nickInput,
-                        total_score: 0,
-                        ever_top_3: false,
-                        created_at: Date.now()
-                    });
-                }
-            });
-        };
-
-        // 4. Logika Pengoper Saklar Tombol Pilihan Mode Belajar di Halaman Beranda
-        document.getElementById('btn-mode-biasa').onclick = () => {
+        // 4. Mode Belajar (Biasa VS Rank)
+        document.getElementById('btn-mode-biasa')?.addEventListener('click', () => {
             isRankMode = false;
-            document.getElementById('btn-mode-biasa').classList.add('active');
-            document.getElementById('btn-mode-rank').classList.remove('active');
-        };
-        document.getElementById('btn-mode-rank').onclick = () => {
+            document.getElementById('btn-mode-biasa')?.classList.add('active');
+            document.getElementById('btn-mode-rank')?.classList.remove('active');
+        });
+
+        document.getElementById('btn-mode-rank')?.addEventListener('click', () => {
             if (!auth.currentUser) {
                 alert("Kamu wajib login Google dan mengunci nickname kustom terlebih dahulu di Halaman Rank bray!");
                 switchPage('rank');
@@ -1865,46 +1869,40 @@ replyDiv.innerHTML = `
                 switchPage('rank');
             } else {
                 isRankMode = true;
-                document.getElementById('btn-mode-rank').classList.add('active');
-                document.getElementById('btn-mode-biasa').classList.remove('active');
+                document.getElementById('btn-mode-rank')?.classList.add('active');
+                document.getElementById('btn-mode-biasa')?.classList.remove('active');
             }
-        };
+        });
 
+        // Secret Admin & Start
+        document.getElementById('secret-logo')?.addEventListener('click', handleSecretTap);
+        document.getElementById('btn-admin-login')?.addEventListener('click', handleAdminLogin);
+        document.getElementById('btn-close-admin')?.addEventListener('click', closeAdmin);
+        document.getElementById('btn-start')?.addEventListener('click', () => startLearningCycle());
 
-        // Secret admin access
-        document.getElementById('secret-logo').addEventListener('click', handleSecretTap);
-        document.getElementById('btn-admin-login').addEventListener('click', handleAdminLogin);
-        document.getElementById('btn-close-admin').addEventListener('click', closeAdmin);
-        
-        // Start button - Dibungkus aman agar tidak bocor MouseEvent bray!
-        document.getElementById('btn-start').addEventListener('click', () => startLearningCycle());
-
-        // Back to home button (from quiz)
+        // Back to Home
         document.getElementById('btn-back-home')?.addEventListener('click', () => {
-    const isCommunity = Boolean(currentCommunityQuiz);
-    const confirmMsg = isCommunity 
-        ? 'Yakin ingin kembali ke Arena Komunitas? Progress kuis akan hilang.' 
-        : 'Yakin ingin kembali ke Beranda? Progress kuis akan hilang.';
+            const isCommunity = Boolean(currentCommunityQuiz);
+            const confirmMsg = isCommunity 
+                ? 'Yakin ingin kembali ke Arena Komunitas? Progress kuis akan hilang.' 
+                : 'Yakin ingin kembali ke Beranda? Progress kuis akan hilang.';
 
-    if (confirm(confirmMsg)) {
-        // Reset tampilan
-        if (els.viewQuiz) els.viewQuiz.style.display = 'none';
-        if (els.viewStart) els.viewStart.style.display = 'flex';
-        
-        // Reset state kuis biasa
-        quizData = null;
-        wordIndex = 0;
-        stepIndex = 1;
-        quizScore = { correct: 0, wrong: 0, total: 0 };
+            if (confirm(confirmMsg)) {
+                if (els.viewQuiz) els.viewQuiz.style.display = 'none';
+                if (els.viewStart) els.viewStart.style.display = 'flex';
+                
+                quizData = null;
+                wordIndex = 0;
+                stepIndex = 1;
+                quizScore = { correct: 0, wrong: 0, total: 0 };
 
-        // Jika kuis dari Komunitas -> Tendang balik ke Tab Arena!
-        if (isCommunity) {
-            currentCommunityQuiz = null;
-            currentCommunityIdx = 0;
-            if (typeof switchPage === 'function') switchPage('arena');
-        }
-    }
-});
+                if (isCommunity) {
+                    currentCommunityQuiz = null;
+                    currentCommunityIdx = 0;
+                    if (typeof switchPage === 'function') switchPage('arena');
+                }
+            }
+        });
 
         // Database selection
         document.querySelectorAll('.db-btn').forEach(btn => {
@@ -1928,37 +1926,37 @@ replyDiv.innerHTML = `
         const charCount = document.getElementById('char-count');
         const btnSyarah = document.getElementById('btn-syarah');
         
-        arabicInput.addEventListener('input', (e) => {
+        arabicInput?.addEventListener('input', (e) => {
             const text = e.target.value;
             const wordCount = countArabicWords(text);
             const charLength = text.length;
             
-            charCount.textContent = charLength;
+            if (charCount) charCount.textContent = charLength;
             
-            // Enable/disable button based on Arabic content and word count
-            if (isArabicText(text) && wordCount > 0 && wordCount <= 7) {
-                btnSyarah.disabled = false;
-            } else {
-                btnSyarah.disabled = true;
+            if (btnSyarah) {
+                if (isArabicText(text) && wordCount > 0 && wordCount <= 7) {
+                    btnSyarah.disabled = false;
+                } else {
+                    btnSyarah.disabled = true;
+                }
             }
             
-            // Lock input if exceeds character limit
             if (charLength >= 21) {
                 e.target.value = text.substring(0, 21);
             }
         });
         
-        btnSyarah.addEventListener('click', analyzeSyarah);
-        document.getElementById('btn-copy-syarah').addEventListener('click', copySyarahResult);
+        btnSyarah?.addEventListener('click', analyzeSyarah);
+        document.getElementById('btn-copy-syarah')?.addEventListener('click', copySyarahResult);
         
         // Comments page
-        document.getElementById('comment-name').addEventListener('input', checkAdminName);
-        document.getElementById('btn-send-comment').addEventListener('click', sendComment);
-        document.getElementById('admin-img-file').addEventListener('change', handleImageUpload);
-        document.getElementById('btn-remove-image').addEventListener('click', removeImage);
+        document.getElementById('comment-name')?.addEventListener('input', checkAdminName);
+        document.getElementById('btn-send-comment')?.addEventListener('click', sendComment);
+        document.getElementById('admin-img-file')?.addEventListener('change', handleImageUpload);
+        document.getElementById('btn-remove-image')?.addEventListener('click', removeImage);
         
         // Marquee animation
-        if(els.marqueeText) {
+        if (els.marqueeText) {
             els.marqueeText.addEventListener('animationiteration', () => {
                 dawuhIndex = (dawuhIndex + 1) % DAWUH_PLAYLIST.length;
                 els.marqueeText.innerText = DAWUH_PLAYLIST[dawuhIndex];
@@ -1966,22 +1964,21 @@ replyDiv.innerHTML = `
         }
 
         // Image loading
-        els.mImgSrc.onload = () => { 
-            els.mSpinner.style.display = 'none'; 
-            els.mImgSrc.style.display = 'block'; 
-        };
-        els.mImgSrc.onerror = () => { 
-            els.mSpinner.style.display = 'none'; 
-            els.mImgArea.style.display = 'none'; 
-            els.mMsg.innerText = "Gagal memuat gambar."; 
-        };
+        if (els.mImgSrc) {
+            els.mImgSrc.onload = () => { 
+                if (els.mSpinner) els.mSpinner.style.display = 'none'; 
+                els.mImgSrc.style.display = 'block'; 
+            };
+            els.mImgSrc.onerror = () => { 
+                if (els.mSpinner) els.mSpinner.style.display = 'none'; 
+                if (els.mImgArea) els.mImgArea.style.display = 'none'; 
+                if (els.mMsg) els.mMsg.innerText = "Gagal memuat gambar."; 
+            };
+        }
 
-        // ==========================================
-        // SUB-TAB NAVIGATION SETUP & EXPLORE LAFADZ
-        // ==========================================
-        // GANTI MENJADI SEPERTI INI AGAR BERIKATAN KHUSUS DI HALAMAN SYARAH SAJA:
-const subTabBtns = document.querySelectorAll('#page-syarah .sub-tab-btn');
-const subPageContents = document.querySelectorAll('#page-syarah .sub-page-content');
+        // Sub-Tab Navigation Syarah
+        const subTabBtns = document.querySelectorAll('#page-syarah .sub-tab-btn');
+        const subPageContents = document.querySelectorAll('#page-syarah .sub-page-content');
 
         subTabBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1990,16 +1987,18 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
                 
                 e.currentTarget.classList.add('active');
                 const targetSub = e.currentTarget.getAttribute('data-sub');
-                document.getElementById(`sub-syarah-${targetSub}`).classList.add('active');
+                document.getElementById(`sub-syarah-${targetSub}`)?.classList.add('active');
                 
                 if (targetSub === 'explore') {
-                    document.getElementById('explore-main-view').style.display = 'block';
-                    document.getElementById('explore-detail-view').style.display = 'none';
+                    const mainView = document.getElementById('explore-main-view');
+                    const detailView = document.getElementById('explore-detail-view');
+                    if (mainView) mainView.style.display = 'block';
+                    if (detailView) detailView.style.display = 'none';
                 }
             });
         });
 
-        // Tombol kembali dari Detail View ke Grid List Utama
+        // Tombol kembali & copy Explore
         const btnBackExplore = document.getElementById('btn-back-explore');
         if (btnBackExplore) {
             btnBackExplore.onclick = () => {
@@ -2008,11 +2007,10 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
             };
         }
 
-        // Tombol salin hasil syarah explore
         const btnCopyExplore = document.getElementById('btn-copy-explore');
         if (btnCopyExplore) {
             btnCopyExplore.onclick = () => {
-                const content = document.getElementById('explore-detail-content').innerText;
+                const content = document.getElementById('explore-detail-content')?.innerText || '';
                 navigator.clipboard.writeText(content).then(() => {
                     const originalHTML = btnCopyExplore.innerHTML;
                     btnCopyExplore.innerHTML = '<i class="ph ph-check"></i> Tersalin!';
@@ -2021,95 +2019,7 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
             };
         }
 
-        // Fungsi Render Detail Syarah Terpilih (Satu Scope Aman dari ReferenceError)
-        function showExploreDetail(title, resultRaw) {
-            document.getElementById('explore-main-view').style.display = 'none';
-            document.getElementById('explore-detail-view').style.display = 'block';
-            
-            document.getElementById('explore-title-text').textContent = title;
-            const detailContentDiv = document.getElementById('explore-detail-content');
-            
-            // Format teks markdown bawaan dari AI (sama dengan fungsi utama webmu)
-            let cleanText = resultRaw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            const lines = cleanText.split('\n');
-            
-            const formattedHtml = lines.map(line => {
-                const trimmedLine = line.trim();
-                if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
-
-                if (trimmedLine.startsWith('===')) {
-                    const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
-                    return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
-                }
-
-                if (/^\d+\./.test(trimmedLine)) {
-                    return `<div class="analysis-point">${trimmedLine}</div>`;
-                }
-
-                return `<div class="normal-line">${trimmedLine}</div>`;
-            }).join('');
-
-            requestAnimationFrame(() => {
-                detailContentDiv.innerHTML = formattedHtml;
-                const contentArea = document.querySelector('#page-syarah .content-area');
-                if (contentArea) contentArea.scrollTop = 0;
-            });
-        }
-
-   // Ambil Data dari Firebase & Render ke Grid List (Urut Waktu Paling Baru di Atas!)
-        onValue(ref(db, 'syarah_cache'), (snapshot) => {
-            const cacheData = snapshot.val();
-            const badge = document.getElementById('cache-total-badge');
-            const gridContainer = document.getElementById('explore-grid');
-            
-            if (!gridContainer) return;
-            gridContainer.innerHTML = ''; 
-            
-            if (cacheData) {
-                const items = Object.entries(cacheData);
-                if (badge) badge.textContent = items.length;
-                
-                // --- LOGIKA SORTING AJABIB TERBARU DI SINI BRAY ---
-                // Kita urutkan manual berdasarkan property created_at dari yang paling besar (paling baru)
-                items.sort((a, b) => {
-                    const timeA = a[1].created_at || 0;
-                    const timeB = b[1].created_at || 0;
-                    return timeB - timeA; // Nilai waktu lebih besar/baru ditaruh di atas
-                });
-                // -------------------------------------------------
-                
-                // Sekarang tinggal kita render langsung tanpa perlu .reverse() lagi bray
-                items.forEach(([key, value]) => {
-                    const card = document.createElement('div');
-                    card.className = 'explore-item-card';
-                    
-                    let formattedDate = "Baru";
-                    if (value.created_at) {
-                        formattedDate = new Date(value.created_at).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short'
-                        });
-                    }
-                    
-                    card.innerHTML = `
-    <div class="explore-card-arabic">${escapeHTML(value.original_input)}</div>
-    <div class="explore-card-meta"><i class="ph ph-calendar"></i> ${formattedDate}</div>
-`;
-                    
-                    card.onclick = () => {
-                        showExploreDetail(value.original_input, value.result);
-                    };
-                    
-                    gridContainer.appendChild(card);
-                });
-            } else {
-                if (badge) badge.textContent = '0';
-                gridContainer.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada riwayat lafadz bray.</p>';
-            }
-        });
-
-      // SELIPKAN INI DI DALAM initApp() BRAY:
-              // Pemicu Pop-up Info Rank
+        // Pop-up Info Rank
         const btnInfoRank = document.getElementById('btn-info-rank');
         const infoRankBox = document.getElementById('info-rank-box');
 
@@ -2127,8 +2037,9 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
         loadComments();
         initVisitorCounter();
         initLeaderboardRealtimeSync();
-        initCommunityQuizzesSync(); // <-- Dipanggil aman di sini
+        initCommunityQuizzesSync();
     }
+
 
     if (document.readyState === 'loading') { 
         document.addEventListener('DOMContentLoaded', initApp); 
