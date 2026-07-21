@@ -12,7 +12,16 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
-
+    
+    function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
     const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
     const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
@@ -73,7 +82,7 @@
     let isAdminLoggedIn = false;
     let adminUploadImage = null;
     let currentUserNickname = "";
-        // --- MULTIPLIER TINGKAT KESULITAN LEVEL KITAB ---
+
     const LEVEL_MULTIPLIERS = {
         'lv1': 1,            // Jurumiyah
         'tajwid': 1.5,       // Tajwid
@@ -83,10 +92,9 @@
         'alfiyah-fiil': 5    // Alfiyah Fi'il
     };
 
-    let isRankMode = false;      // Menandai apakah user sedang main Mode Rank atau Biasa bray
-    let currentUserData = null;  // Tempat menyimpan data profil publik user aktif
+    let isRankMode = false;      
+    let currentUserData = null; 
 
-    // --- 4. FUNGSI PENDUKUNG ---
     function loadPublicDawuh() {
         onValue(ref(db, 'dawuh_images'), (snapshot) => {
             const data = snapshot.val();
@@ -109,16 +117,14 @@
         }
     }
 
-    // --- TWITTER VERIFIED BADGE GENERATOR (INLINE SVG) ---
+    // --- TWITTER VERIFIED BADGE 
     function generateTwitterBadgeSVG(fillColor) {
     return `<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:${fillColor}; display:inline-block; vertical-align:middle; margin-left:4px;"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.356.275C14.77 2.57 13.5 1.5 12 1.5s-2.77 1.07-3.416 2.285c-.415-.175-.876-.275-1.356-.275-2.108 0-3.818 1.78-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.356-.275C9.23 21.43 10.5 22.5 12 22.5s2.77-1.07 3.416-2.285c.415.175.876.275 1.356.275 2.108 0 3.818-1.78 3.818-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.22 3.518l-3.32-3.32 1.42-1.42 1.9 1.9 4.67-4.67 1.42 1.42-6.09 6.09z"/></svg>`;
 }
-
-
-     // 1. Pantau Status Login Secara Live di Latar Belakang
      
-    // --- Pantau Status Login Secara Live di Latar Belakang ---
-onAuthStateChanged(auth, (user) => {
+    // --- Pantau Status 
+    
+      onAuthStateChanged(auth, (user) => {
     const rankLoginArea = document.getElementById('rank-login-area');
     const rankSetupArea = document.getElementById('rank-setup-area');
     const rankMainArea = document.getElementById('rank-main-area');
@@ -173,16 +179,15 @@ onAuthStateChanged(auth, (user) => {
 
     updateUIAfterLogin(user);
 });
-
       
       function updateUIAfterLogin(user) {
 
       console.log("Status  user:", user ? "Login" : "Logout");
 }
 
-const listContainer = document.getElementById('leaderboard-list');
+      const listContainer = document.getElementById('leaderboard-list');
 
-    function initLeaderboardRealtimeSync() {
+      function initLeaderboardRealtimeSync() {
     if (window.isLeaderboardSynced) return;
     window.isLeaderboardSynced = true;
 
@@ -241,9 +246,12 @@ const listContainer = document.getElementById('leaderboard-list');
                     }
                     
                     // Ganti bagian pesanTahtaHtml lu jadi ini, lebih aman:
-const statusMsg = user.status_message || ""; // Default ke string kosong jika null/undefined
-const pesanTahtaHtml = (rankPosition <= 2 && statusMsg.length > 0) 
-    ? `<div style="font-family: 'BerlinSansFB'; font-size:0.75rem; color:#fff; opacity:0.7; margin-top:4px; font-style:italic;">"${statusMsg}"</div>` 
+const statusMsg = user.status_message || ""; 
+const safeStatusMsg = escapeHTML(statusMsg);
+const safeNickname = escapeHTML(user.nickname || 'Santri');
+
+const pesanTahtaHtml = (rankPosition <= 2 && safeStatusMsg.length > 0) 
+    ? `<div style="font-family: 'BerlinSansFB'; font-size:0.75rem; color:#fff; opacity:0.7; margin-top:4px; font-style:italic;">"${safeStatusMsg}"</div>` 
     : '';
 
 
@@ -254,29 +262,30 @@ const pesanTahtaHtml = (rankPosition <= 2 && statusMsg.length > 0)
                     }
 
                     // --- RENDER LAYOUT KLASEMEN (POSISI PRESISI DENGAN FONT BERLIN) ---
-                    if (rankPosition <= 3) {
-                        row.innerHTML = `
-                            <div class="rank-item-left" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 0 4px 2px;">
-                                <span style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; font-size: 0.65rem; color: ${autoColor}; font-weight: 700; letter-spacing: 0.8px; opacity: 0.9;">
-                                    ${rankText}
-                                </span>
-                                <span class="rank-name-text" style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; color: #ffffff; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
-                                    ${rankIconSvg} ${user.nickname} ${inlineBadgeSvg}
-                                </span>
-                                ${pesanTahtaHtml} 
-                            </div>
-                            <span class="rank-points" style="font-family: 'BerlinSansFB', 'BerlinSansFB', BerlinSansFB; color: ${autoColor}; font-weight: 700; font-size: 0.95rem;">
-                                ${(user.total_score || 0).toLocaleString('id-ID')} Poin
-                            </span>
-                        `;
-                    } else {
-                        row.innerHTML = `
-                            <div class="rank-item-left" style="display: flex; align-items: center; gap: 12px;">
-                                <span class="rank-number">#${rankPosition}</span>
-                                <span class="rank-name-text" style="font-size: 0.9rem;">${user.nickname} ${inlineBadgeSvg}</span>
-                            </div>
-                            <span class="rank-points" style="font-size: 0.85rem; opacity: 0.8;">
-                                ${(user.total_score || 0).toLocaleString('id-ID')} Poin
+if (rankPosition <= 3) {
+    row.innerHTML = `
+        <div class="rank-item-left" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 0 4px 2px;">
+            <span style="font-family: 'BerlinSansFB'; font-size: 0.65rem; color: ${autoColor}; font-weight: 700; letter-spacing: 0.8px; opacity: 0.9;">
+                ${rankText}
+            </span>
+            <span class="rank-name-text" style="font-family: 'BerlinSansFB'; color: #ffffff; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
+                ${rankIconSvg} ${safeNickname} ${inlineBadgeSvg}
+            </span>
+            ${pesanTahtaHtml} 
+        </div>
+        <span class="rank-points" style="font-family: 'BerlinSansFB'; color: ${autoColor}; font-weight: 700; font-size: 0.95rem;">
+            ${(user.total_score || 0).toLocaleString('id-ID')} Poin
+        </span>
+    `;
+} else {
+    // Render Baris Regular
+    row.innerHTML = `
+        <div class="rank-item-left" style="display: flex; align-items: center; gap: 12px;">
+            <span class="rank-number">#${rankPosition}</span>
+            <span class="rank-name-text" style="font-size: 0.9rem;">${safeNickname} ${inlineBadgeSvg}</span>
+        </div>
+        <span class="rank-points" style="font-size: 0.85rem; opacity: 0.8;">
+            ${(user.total_score || 0).toLocaleString('id-ID')} Poin
                             </span>
                         `;
                     }
@@ -308,7 +317,6 @@ updatePesanTahtaUI(usersArr);
 
     if (!inputPesan || !btnSave || !infoText) return;
 
-    // 🔒 JIKA USER LOGOUT / BELUM LOGIN (Langsung Kunci Total)
     if (!auth.currentUser) {
         inputPesan.disabled = true;
         btnSave.disabled = true;
@@ -317,30 +325,25 @@ updatePesanTahtaUI(usersArr);
         return;
     }
 
-    // Jika data klasemen dari Firebase belum siap, biarkan terkunci dulu sementara
     if (!usersArr || usersArr.length === 0) return;
 
     const myRankIndex = usersArr.findIndex(u => u.uid === auth.currentUser.uid);
 
-    // 🔓 JIKA USER MASUK CATEGORY TOP 2 (Rank 1 indeks 0, Rank 2 indeks 1)
     if (myRankIndex !== -1 && myRankIndex <= 1) {
         inputPesan.disabled = false;
         btnSave.disabled = false;
         infoText.innerText = " KAMU ADALAH PENGAWAS TAHTA";
         
-        // Hanya isi jika kolom kosong agar tidak merusak ketikan baru yang sedang ditulis user
         if (inputPesan.value === "") {
              inputPesan.value = usersArr[myRankIndex].status_message || "";
         }
     } else {
-        // 🔒 JIKA LOGGED IN TAPI BUKAN TOP 2 (Kunci & Tendang)
         inputPesan.disabled = true;
         btnSave.disabled = true;
         inputPesan.value = ""; // Bersihkan kolom
         infoText.innerText = " PESAN KHUSUS RANK 1 & 2";
     }
 }
-
 
     // Visitor Counter
     function initVisitorCounter() {
@@ -358,8 +361,6 @@ updatePesanTahtaUI(usersArr);
         });
     }
 
-    // Database Selection
-    // Fungsi untuk mendapatkan URL mentah dari GitHub via jsDelivr CDN
     function getDbUrl(dbName) {
         const baseUrl = "https://cdn.jsdelivr.net/gh/amogenz/Amogenz/db";
         switch(dbName) {
@@ -438,7 +439,6 @@ updatePesanTahtaUI(usersArr);
         } 
     }
     
-    // --- CARI & GANTI FUNGSI handleAdminLogin DI script.js ---
     async function handleAdminLogin() { 
     const inputPass = els.adminPass.value.trim();
     
@@ -780,7 +780,6 @@ updatePesanTahtaUI(usersArr);
     }
 }
 
-
     function renderQuestion() {
     isCurrentStepWrong = false; // <-- Reset saklar setiap kali langkah/soal baru dimuat
 
@@ -803,7 +802,6 @@ updatePesanTahtaUI(usersArr);
         els.options.appendChild(btn);
     });
 }
-
 
     function handleAnswer(ans, data) {
     const cleanUser = ans.trim().toLowerCase();
@@ -862,7 +860,6 @@ updatePesanTahtaUI(usersArr);
     }
 }
 
-
     function showRewardPhase() {
     els.mTitle.innerText = "Lafadz Selesai"; 
     els.mTitle.style.color = "#FFD700"; 
@@ -911,7 +908,6 @@ updatePesanTahtaUI(usersArr);
         }, 200);
     };
 }
-
 
     function tampilkanRaporPremium(correct, total, isSimulation = false) {
     const rank = getRankData(correct, total);
@@ -1140,7 +1136,6 @@ if (isRankMode && !isSimulation && auth.currentUser) {
     };
 }
 
-
     function getRankData(correct, total) {
         const wrong = total - correct;
         const halfOrMore = wrong >= Math.ceil(total / 2);
@@ -1231,6 +1226,7 @@ if (isRankMode && !isSimulation && auth.currentUser) {
     }
 
     // --- 6. PAGE NAVIGATION ---
+    
     function switchPage(pageName) {
     // Hide all pages
     document.querySelectorAll('.page-content').forEach(page => {
@@ -1254,7 +1250,6 @@ if (isRankMode && !isSimulation && auth.currentUser) {
     }
 }
 
-
     // --- 7. SYARAH AI FUNCTIONS ---
 
     function isArabicText(text) {
@@ -1266,9 +1261,7 @@ if (isRankMode && !isSimulation && auth.currentUser) {
         return text.trim().split(/\s+/).filter(word => isArabicText(word)).length;
     }
 
-    // Fungsi pembantu untuk membuat ID unik di Firebase dari lafadz Arab
     function createCacheKey(text) {
-    // Hilangkan harakat dan ubah spasi jadi underscore agar aman masuk Firebase
     const cleanText = text.replace(/[\u064B-\u065F]/g, "").trim().replace(/\s+/g, '_');
     return btoa(unescape(encodeURIComponent(cleanText))).replace(/[/+=]/g, ""); 
 }
@@ -1446,14 +1439,10 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     }
 }
 
-    // Fungsi Display agar TIDAK "Kotak dalam Kotak"
-
     function displaySyarahResult(result) {
     const resultDiv = document.getElementById('syarah-content');
     const resultContainer = document.getElementById('syarah-result');
     
-    // 1. Bersihkan Markdown Bold (**teks**) menjadi <strong>
-    // Kita tambahkan penanganan agar teks yang belum tutup (misal **teks...) tidak rusak
     let cleanText = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     // 2. Pecah per baris
@@ -1463,7 +1452,6 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         const trimmedLine = line.trim();
         if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
 
-        // Jika baris adalah Header (=== LAFADZ ===)
         if (trimmedLine.startsWith('===')) {
             const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
             return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
@@ -1479,7 +1467,6 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         return `<div class="normal-line">${trimmedLine}</div>`;
     }).join('');
 
-    // RENDER: Gunakan requestAnimationFrame agar browser merender lebih mulus
         requestAnimationFrame(() => {
         resultDiv.innerHTML = formattedHtml;
         
@@ -1605,17 +1592,17 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
                         `<img src="${item.imageUrl}" class="comment-image" alt="Image">` : '';
                     
                     div.innerHTML = `
-                        <div class="comment-header">
-                            <span class="comment-name">${item.name} ${verifiedBadge}</span>
-                            <span class="comment-date">${dateStr}</span>
-                        </div>
-                        <div class="comment-msg">${item.message}</div>
-                        ${imageHtml}
-                        <button class="btn-reply" data-comment-id="${key}">
-                            <i class="ph ph-arrow-bend-up-left"></i> Balas
-                        </button>
-                        <div class="replies-container" id="replies-${key}"></div>
-                    `;
+    <div class="comment-header">
+        <span class="comment-name">${escapeHTML(item.name)} ${verifiedBadge}</span>
+        <span class="comment-date">${dateStr}</span>
+    </div>
+    <div class="comment-msg">${escapeHTML(item.message)}</div>
+    ${imageHtml}
+    <button class="btn-reply" data-comment-id="${key}">
+        <i class="ph ph-arrow-bend-up-left"></i> Balas
+    </button>
+    <div class="replies-container" id="replies-${key}"></div>
+`;
                     
                     list.appendChild(div);
                     
@@ -1662,13 +1649,14 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
             const verifiedBadge = reply.isAdmin ? 
                 '<span class="verified-badge small"><i class="ph-fill ph-seal-check"></i></span>' : '';
             
-            replyDiv.innerHTML = `
-                <div class="reply-header">
-                    <span class="reply-name">${reply.name} ${verifiedBadge}</span>
-                    <span class="reply-date">${dateStr}</span>
-                </div>
-                <div class="reply-msg">${reply.message}</div>
-            `;
+            // B. Di dalam loadReplies()
+replyDiv.innerHTML = `
+    <div class="reply-header">
+        <span class="reply-name">${escapeHTML(reply.name)} ${verifiedBadge}</span>
+        <span class="reply-date">${dateStr}</span>
+    </div>
+    <div class="reply-msg">${escapeHTML(reply.message)}</div>
+`;
             
             repliesContainer.appendChild(replyDiv);
         });
@@ -2061,9 +2049,9 @@ const subPageContents = document.querySelectorAll('#page-syarah .sub-page-conten
                     }
                     
                     card.innerHTML = `
-                        <div class="explore-card-arabic">${value.original_input}</div>
-                        <div class="explore-card-meta"><i class="ph ph-calendar"></i> ${formattedDate}</div>
-                    `;
+    <div class="explore-card-arabic">${escapeHTML(value.original_input)}</div>
+    <div class="explore-card-meta"><i class="ph ph-calendar"></i> ${formattedDate}</div>
+`;
                     
                     card.onclick = () => {
                         showExploreDetail(value.original_input, value.result);
@@ -2129,17 +2117,17 @@ function initCommunityQuizzesSync() {
                 card.className = 'explore-item-card';
                 card.style.position = 'relative';
 
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; width:100%; margin-bottom: 6px;">
-                        <span style="font-size: 0.7rem; color: var(--ios-green); font-weight: 700;">● ${(quiz.category || 'UMUM').toUpperCase()}</span>
-                        <span style="font-size: 0.7rem; opacity: 0.6;"><i class="ph ph-play-circle"></i> ${quiz.plays_count || 0}x dimainkan</span>
-                    </div>
-                    <div class="explore-card-arabic" style="font-size: 1.2rem;">${quiz.questions?.[0]?.word || quiz.title}</div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-top: 4px;">${quiz.title}</div>
-                    <div class="explore-card-meta" style="margin-top: 8px;">
-                        <span><i class="ph ph-user"></i> ${quiz.author_name || 'Santri Anonim'}</span>
-                    </div>
-                `;
+card.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; width:100%; margin-bottom: 6px;">
+        <span style="font-size: 0.7rem; color: var(--ios-green); font-weight: 700;">● ${escapeHTML(quiz.category || 'UMUM').toUpperCase()}</span>
+        <span style="font-size: 0.7rem; opacity: 0.6;"><i class="ph ph-play-circle"></i> ${quiz.plays_count || 0}x dimainkan</span>
+    </div>
+    <div class="explore-card-arabic" style="font-size: 1.2rem;">${escapeHTML(quiz.questions?.[0]?.word || quiz.title)}</div>
+    <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-top: 4px;">${escapeHTML(quiz.title)}</div>
+    <div class="explore-card-meta" style="margin-top: 8px;">
+        <span><i class="ph ph-user"></i> ${escapeHTML(quiz.author_name || 'Santri Anonim')}</span>
+    </div>
+`;
 
                 card.onclick = (e) => {
                     e.stopPropagation();
