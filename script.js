@@ -1442,40 +1442,39 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     function displaySyarahResult(result) {
     const resultDiv = document.getElementById('syarah-content');
     const resultContainer = document.getElementById('syarah-result');
-    
-    let cleanText = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    if (!resultDiv) return;
 
-    // 2. Pecah per baris
-    const lines = cleanText.split('\n');
+    // Pecah per baris
+    const lines = result.split('\n');
     
     const formattedHtml = lines.map(line => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
+        // 1. 🛡️ ESCAPE DULU SEMUA KARAKTER BAHAYA HTML DARI TIAP BARIS
+        let safeLine = escapeHTML(line.trim());
+        if (!safeLine) return '<div class="spacer" style="height:10px"></div>'; 
 
-        if (trimmedLine.startsWith('===')) {
-            const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
+        // 2. SETELAH AMAN, BARU UBAH MARKDOWN **TEKS** MENJADI <strong>TEKS</strong>
+        safeLine = safeLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        // 3. Render ke dalam pembungkus UI
+        if (safeLine.startsWith('===')) {
+            const label = safeLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
             return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
         }
 
-        // Jika baris adalah Poin (1. Jenis: ...)
-        // Regex diperkuat agar tetap rapi saat teks baru setengah jalan
-        if (/^\d+\./.test(trimmedLine)) {
-            return `<div class="analysis-point">${trimmedLine}</div>`;
+        if (/^\d+\./.test(safeLine)) {
+            return `<div class="analysis-point">${safeLine}</div>`;
         }
 
-        // Baris biasa
-        return `<div class="normal-line">${trimmedLine}</div>`;
+        return `<div class="normal-line">${safeLine}</div>`;
     }).join('');
 
-        requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
         resultDiv.innerHTML = formattedHtml;
         
-        if (resultContainer.style.display !== 'block') {
+        if (resultContainer && resultContainer.style.display !== 'block') {
             resultContainer.style.display = 'block';
         }
 
-        // Scroll otomatis hanya jika user berada di dekat bawah
-        // Agar tidak "memaksa" layar lompat-lompat
         const threshold = 150; 
         const isNearBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - threshold;
         
@@ -1483,7 +1482,6 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
         }
     });
-
 }
 
     function copySyarahResult() {
@@ -1515,52 +1513,61 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     }
 
     async function sendComment() {
-        const name = document.getElementById('comment-name').value.trim();
-        const msg = document.getElementById('comment-msg').value.trim();
-        const password = document.getElementById('admin-password').value;
-        
-        if (!name || !msg) {
-            alert('Nama dan komentar harus diisi!');
-            return;
-        }
-        
-        let isAdmin = false;
-        let imageUrl = null;
-        
-        // Check if admin with hashed password
-        if (name.toLowerCase() === 'amogenz') {
-            const hashedPassword = await sha256(password);
-            if (hashedPassword === ADMIN_PASSWORD_HASH) {
+    const name = document.getElementById('comment-name').value.trim();
+    const msg = document.getElementById('comment-msg').value.trim();
+    const password = document.getElementById('admin-password').value;
+    
+    if (!name || !msg) {
+        alert('Nama dan komentar harus diisi!');
+        return;
+    }
+    
+    let isAdmin = false;
+    let imageUrl = null;
+    
+    // Verifikasi Admin lewat API Serverless Vercel
+    if (name.toLowerCase() === 'amogenz') {
+        try {
+            const res = await fetch('/api/admin-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password })
+            });
+            const data = await res.json();
+
+            if (data.success) {
                 isAdmin = true;
-                if (adminUploadImage) {
-                    imageUrl = adminUploadImage;
-                }
+                if (adminUploadImage) imageUrl = adminUploadImage;
             } else {
-                alert('Password admin salah!');
+                alert('Password admin salah bray!');
                 return;
             }
+        } catch (err) {
+            alert('Gagal memverifikasi password admin!');
+            return;
         }
-        
-        const commentData = {
-            name: name,
-            message: msg,
-            timestamp: Date.now(),
-            isAdmin: isAdmin,
-            imageUrl: imageUrl,
-            replies: {}
-        };
-        
-        push(ref(db, 'suggestions'), commentData).then(() => {
-            alert('Komentar berhasil dikirim!');
-            document.getElementById('comment-name').value = '';
-            document.getElementById('comment-msg').value = '';
-            document.getElementById('admin-password').value = '';
-            document.getElementById('admin-password-field').style.display = 'none';
-            document.getElementById('admin-image-upload').style.display = 'none';
-            adminUploadImage = null;
-            document.getElementById('image-preview-area').style.display = 'none';
-        });
     }
+    
+    const commentData = {
+        name: name,
+        message: msg,
+        timestamp: Date.now(),
+        isAdmin: isAdmin,
+        imageUrl: imageUrl,
+        replies: {}
+    };
+    
+    push(ref(db, 'suggestions'), commentData).then(() => {
+        alert('Komentar berhasil dikirim!');
+        document.getElementById('comment-name').value = '';
+        document.getElementById('comment-msg').value = '';
+        document.getElementById('admin-password').value = '';
+        document.getElementById('admin-password-field').style.display = 'none';
+        document.getElementById('admin-image-upload').style.display = 'none';
+        adminUploadImage = null;
+        document.getElementById('image-preview-area').style.display = 'none';
+    });
+}
 
     function loadComments() {
     onValue(query(ref(db, 'suggestions'), limitToLast(20)), (snapshot) => {
@@ -2038,6 +2045,7 @@ replyDiv.innerHTML = `
         initVisitorCounter();
         initLeaderboardRealtimeSync();
         initCommunityQuizzesSync();
+        initExploreSyarahSync();
     }
 
 
@@ -2093,6 +2101,97 @@ card.innerHTML = `
         } else {
             quizGrid.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada kuis komunitas bray. Yuk buat yang pertama di menu Studio!</p>';
         }
+    });
+}
+
+// 🔍 SYNC DATA EXPLORE LAFADZ DARI FIREBASE
+
+function initExploreSyarahSync() {
+    onValue(ref(db, 'syarah_cache'), (snapshot) => {
+        const cacheData = snapshot.val();
+        const badge = document.getElementById('cache-total-badge');
+        const gridContainer = document.getElementById('explore-grid');
+        
+        if (!gridContainer) return;
+        gridContainer.innerHTML = ''; 
+        
+        if (cacheData) {
+            const items = Object.entries(cacheData);
+            if (badge) badge.textContent = items.length;
+            
+            // Urutkan dari lafadz terbaru di atas
+            items.sort((a, b) => {
+                const timeA = a[1].created_at || 0;
+                const timeB = b[1].created_at || 0;
+                return timeB - timeA;
+            });
+            
+            items.forEach(([key, value]) => {
+                const card = document.createElement('div');
+                card.className = 'explore-item-card';
+                
+                let formattedDate = "Baru";
+                if (value.created_at) {
+                    formattedDate = new Date(value.created_at).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short'
+                    });
+                }
+                
+                card.innerHTML = `
+                    <div class="explore-card-arabic">${escapeHTML(value.original_input)}</div>
+                    <div class="explore-card-meta"><i class="ph ph-calendar"></i> ${formattedDate}</div>
+                `;
+                
+                card.onclick = () => {
+                    showExploreDetail(value.original_input, value.result);
+                };
+                
+                gridContainer.appendChild(card);
+            });
+        } else {
+            if (badge) badge.textContent = '0';
+            gridContainer.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada riwayat lafadz bray.</p>';
+        }
+    });
+}
+
+// 📖 FUNGSI RENDER DETAIL EXPLORE SYARAH
+function showExploreDetail(title, resultRaw) {
+    const mainView = document.getElementById('explore-main-view');
+    const detailView = document.getElementById('explore-detail-view');
+    const titleText = document.getElementById('explore-title-text');
+    const detailContentDiv = document.getElementById('explore-detail-content');
+
+    if (mainView) mainView.style.display = 'none';
+    if (detailView) detailView.style.display = 'block';
+    if (titleText) titleText.textContent = title;
+    
+    if (!detailContentDiv) return;
+
+    let cleanText = resultRaw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    const lines = cleanText.split('\n');
+    
+    const formattedHtml = lines.map(line => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
+
+        if (trimmedLine.startsWith('===')) {
+            const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
+            return `<div class="lafadz-header">📝 LAFADZ: ${escapeHTML(label)}</div>`;
+        }
+
+        if (/^\d+\./.test(trimmedLine)) {
+            return `<div class="analysis-point">${escapeHTML(trimmedLine)}</div>`;
+        }
+
+        return `<div class="normal-line">${escapeHTML(trimmedLine)}</div>`;
+    }).join('');
+
+    requestAnimationFrame(() => {
+        detailContentDiv.innerHTML = formattedHtml;
+        const contentArea = document.querySelector('#page-syarah .content-area');
+        if (contentArea) contentArea.scrollTop = 0;
     });
 }
 
