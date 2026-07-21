@@ -1760,20 +1760,65 @@ replyDiv.innerHTML = `
             visitorCounter: document.getElementById('visitor-counter')
         };
 
-        // 1. Tangkap kembalian redirect login Google setelah layar memantul kembali bray
-        // getRedirectResult(auth).catch(err => console.error("Redirect Login Error:", err));
+        document.getElementById('btn-save-nickname')?.addEventListener('click', () => {
+    const inputEl = document.getElementById('rank-custom-name');
+    const nickInput = inputEl?.value.trim();
+    
+    if (!nickInput || nickInput.length < 3) {
+        return alert("Nickname kustom minimal harus 3 karakter bray!");
+    }
+    
+    if (!auth.currentUser) {
+        return alert("Kamu harus login Google terlebih dahulu bray!");
+    }
 
-        // 2. Trigger Otentikasi Tombol Google Login & Logout di Halaman Peringkat
-        document.getElementById('btn-google-login').onclick = () => {
-    signInWithPopup(auth, googleProvider)
-        .then((result) => {
-            console.log("Login sukses bray!", result.user);
-        })
-        .catch((error) => {
-            console.error("Gagal login popup bray:", error);
-            alert("Gagal masuk: " + error.message);
-        });
-};
+    get(ref(db, 'users')).then((snap) => {
+        let isUnique = true;
+        if (snap.exists()) {
+            Object.values(snap.val()).forEach(u => {
+                if (u.nickname && u.nickname.toLowerCase() === nickInput.toLowerCase()) {
+                    isUnique = false;
+                }
+            });
+        }
+
+        if (!isUnique) {
+            alert("Nama kustom tersebut sudah dipakai santri lain bray, coba nama lain!");
+        } else {
+            // 🚨 TAMBAHKAN .then() SETELAH SET UNTUK ME-RESET UI
+            set(ref(db, `users/${auth.currentUser.uid}`), {
+                nickname: nickInput,
+                total_score: 0,
+                ever_top_3: false,
+                created_at: Date.now()
+            })
+            .then(() => {
+                alert("Nickname berhasil dikunci bray!");
+                
+                // 1. Kosongkan kolom input
+                if (inputEl) inputEl.value = '';
+                
+                // 2. Refresh / alihkan tampilan area setup ke area utama
+                const rankSetupArea = document.getElementById('rank-setup-area');
+                const rankMainArea = document.getElementById('rank-main-area');
+                
+                if (rankSetupArea) rankSetupArea.style.display = 'none';
+                if (rankMainArea) rankMainArea.style.display = 'block';
+
+                // 3. Perbarui UI Profil jika fungsi render tersedia
+                if (typeof renderUserProfile === 'function') {
+                    renderUserProfile();
+                }
+            })
+            .catch((err) => {
+                alert("Gagal menyimpan nickname: " + err.message);
+            });
+        }
+    }).catch((err) => {
+        alert("Gagal terhubung ke database: " + err.message);
+    });
+});
+
 
         document.getElementById('btn-google-logout').onclick = () => { 
             if(confirm("Keluar dari papan kompetisi rank bray?")) signOut(auth); 
