@@ -1563,69 +1563,67 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     }
 
     function loadComments() {
-        onValue(query(ref(db, 'suggestions'), limitToLast(20)), (snapshot) => {
-            const list = document.getElementById('comments-list');
-            if (!list) return;
-            list.innerHTML = '';
-            
-            const data = snapshot.val();
-            if (data) {
-                Object.entries(data).reverse().forEach(([key, item]) => {
-                    const div = document.createElement('div');
-                    div.className = 'comment-item';
-                    
-                    let dateStr = "";
-                    if (item.timestamp) {
-                        dateStr = new Date(item.timestamp).toLocaleDateString('id-ID', {
-                            day: 'numeric', 
-                            month: 'short', 
-                            year: 'numeric',
-                            hour: '2-digit', 
-                            minute: '2-digit'
-                        });
-                    }
-                    
-                    const verifiedBadge = item.isAdmin ? 
-                        '<span class="verified-badge"><i class="ph-fill ph-seal-check"></i></span>' : '';
-                    
-                    const imageHtml = item.imageUrl ? 
-                        `<img src="${item.imageUrl}" class="comment-image" alt="Image">` : '';
-                    
-                    div.innerHTML = `
-    <div class="comment-header">
-        <span class="comment-name">${escapeHTML(item.name)} ${verifiedBadge}</span>
-        <span class="comment-date">${dateStr}</span>
-    </div>
-    <div class="comment-msg">${escapeHTML(item.message)}</div>
-    ${imageHtml}
-    <button class="btn-reply" data-comment-id="${key}">
-        <i class="ph ph-arrow-bend-up-left"></i> Balas
-    </button>
-    <div class="replies-container" id="replies-${key}"></div>
-`;
-                    
-                    list.appendChild(div);
-                    
-                    // Load replies
-                    if (item.replies) {
-                        loadReplies(key, item.replies);
-                    }
-                });
+    onValue(query(ref(db, 'suggestions'), limitToLast(20)), (snapshot) => {
+        const list = document.getElementById('comments-list');
+        if (!list) return;
+        list.innerHTML = '';
+        
+        const data = snapshot.val();
+        if (data) {
+            Object.entries(data).reverse().forEach(([key, item]) => {
+                const div = document.createElement('div');
+                div.className = 'comment-item';
                 
-                // Add reply button listeners
-               // 🚨 SEKARANG AMAN: Hanya mencari tombol balas yang berada di dalam KOTAK KOMENTAR SAJA 
-               document.querySelectorAll('#comments-list .btn-reply').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const commentId = e.currentTarget.getAttribute('data-comment-id');
-        showReplyForm(commentId);
-    });
-});
+                let dateStr = "";
+                if (item.timestamp) {
+                    dateStr = new Date(item.timestamp).toLocaleDateString('id-ID', {
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric',
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                    });
+                }
+                
+                const verifiedBadge = item.isAdmin ? 
+                    '<span class="verified-badge"><i class="ph-fill ph-seal-check"></i></span>' : '';
+                
+                // 🛡️ BUNGKUS imageUrl DENGAN escapeHTML
+                const imageHtml = item.imageUrl ? 
+                    `<img src="${escapeHTML(item.imageUrl)}" class="comment-image" alt="Image">` : '';
+                
+                div.innerHTML = `
+                    <div class="comment-header">
+                        <span class="comment-name">${escapeHTML(item.name)} ${verifiedBadge}</span>
+                        <span class="comment-date">${escapeHTML(dateStr)}</span>
+                    </div>
+                    <div class="comment-msg">${escapeHTML(item.message)}</div>
+                    ${imageHtml}
+                    <button class="btn-reply" data-comment-id="${escapeHTML(key)}">
+                        <i class="ph ph-arrow-bend-up-left"></i> Balas
+                    </button>
+                    <div class="replies-container" id="replies-${escapeHTML(key)}"></div>
+                `;
+                
+                list.appendChild(div);
+                
+                if (item.replies) {
+                    loadReplies(key, item.replies);
+                }
+            });
+            
+            document.querySelectorAll('#comments-list .btn-reply').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const commentId = e.currentTarget.getAttribute('data-comment-id');
+                    showReplyForm(commentId);
+                });
+            });
 
-               } else {
-                list.innerHTML = '<p style="text-align:center; font-size:14px; opacity:0.5;">Belum ada komentar.</p>';
-            }
-        });
-    }
+        } else {
+            list.innerHTML = '<p style="text-align:center; font-size:14px; opacity:0.5;">Belum ada komentar.</p>';
+        }
+    });
+}
 
     function loadReplies(commentId, replies) {
         const repliesContainer = document.getElementById(`replies-${commentId}`);
