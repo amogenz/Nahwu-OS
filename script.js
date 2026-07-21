@@ -920,15 +920,18 @@ if (isRankMode && !isSimulation && auth.currentUser) {
     const multiplier = LEVEL_MULTIPLIERS[currentDatabase] || 1;
     let kalkulasiPoin = Math.round(correct * multiplier);
     const skorAmanYangDikirim = Math.min(kalkulasiPoin, 3);
-    
+
     modeRankBadgeHtml = `<div style="font-size:0.85rem; color:#FFD700; font-weight:700; margin-top:-8px; margin-bottom:12px;"><i class="ph ph-sparkles"></i> Mode Rank: +${skorAmanYangDikirim} Poin Klasemen!</div>`;
-    
-    // 🚨 PEMANGGILAN API SERVERLESS VERCEL
+
+// 🚨 PEMANGGILAN API SERVERLESS VERCEL (versi aman: kirim ID Token, bukan uid mentah)
+auth.currentUser.getIdToken().then(idToken => {
     fetch('/api/submit-score', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+        },
         body: JSON.stringify({
-            uid: auth.currentUser.uid,
             correct: correct,
             dbName: currentDatabase
         })
@@ -944,8 +947,10 @@ if (isRankMode && !isSimulation && auth.currentUser) {
     .catch(err => {
         console.error("🚨 Network error serverless:", err);
     });
+}).catch(err => {
+    console.error("🚨 Gagal ambil ID Token:", err);
+});
 }
-
 
     els.mIcon.innerText = rank.icon;
     els.mIcon.style.display = 'block';
