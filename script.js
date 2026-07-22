@@ -363,6 +363,7 @@ updatePesanTahtaUI(usersArr);
 
     function getDbUrl(dbName) {
         const baseUrl = "https://cdn.jsdelivr.net/gh/amogenz/Amogenz/db";
+        const v = Date.now();
         switch(dbName) {
             case 'lv1':          return `${baseUrl}/amogenzdb-lv1.js`;
             case 'lv2':          return `${baseUrl}/amogenzdb-lv2.js`;
@@ -2044,6 +2045,13 @@ replyDiv.innerHTML = `
             });
         }
 
+// Inisialisasi tampilan ukuran cache saat aplikasi dibuka
+updateCacheSizeDisplay();
+
+// Listener tombol clear cache
+document.getElementById('btn-clear-cache')?.addEventListener('click', clearAppCache);
+
+
         // Load data
         loadPublicDawuh();
         loadComments();
@@ -2530,6 +2538,74 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
         alert("Terjadi kesalahan koneksi server!");
     }
 });
+// --- FUNGSI MENGHITUNG UKURAN CACHE & STORAGE ---
+async function updateCacheSizeDisplay() {
+    const cacheSizeEl = document.getElementById('cache-size-text');
+    if (!cacheSizeEl) return;
+
+    try {
+        let totalBytes = 0;
+
+        // 1. Ambil estimasi penggunaan Storage Manager API (Cache API / ServiceWorker / DB)
+        if (navigator.storage && navigator.storage.estimate) {
+            const estimate = await navigator.storage.estimate();
+            totalBytes = estimate.usage || 0;
+        } else {
+            // Fallback: Hitung ukuran LocalStorage secara manual
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    totalBytes += ((localStorage[key].length + key.length) * 2);
+                }
+            }
+        }
+
+        // Format angka ke KB / MB
+        if (totalBytes === 0) {
+            cacheSizeEl.innerText = "0 KB (Bersih)";
+        } else if (totalBytes < 1024 * 1024) {
+            const kb = (totalBytes / 1024).toFixed(1);
+            cacheSizeEl.innerText = `${kb} KB tersimpan`;
+        } else {
+            const mb = (totalBytes / (1024 * 1024)).toFixed(2);
+            cacheSizeEl.innerText = `${mb} MB tersimpan`;
+        }
+    } catch (e) {
+        cacheSizeEl.innerText = "0 KB";
+    }
+}
+
+// --- FUNGSI EKSEKUSI PEMBERSIHAN CACHE ---
+async function clearAppCache() {
+    if (!confirm("Yakin mau membersihkan seluruh cache & penyimpanan lokal aplikasi bray?")) return;
+
+    const btn = document.getElementById('btn-clear-cache');
+    if (btn) {
+        btn.innerText = "Memproses...";
+        btn.disabled = true;
+    }
+
+    try {
+        // 1. Hapus seluruh Web Cache Storage
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+
+        // 2. Hapus LocalStorage & SessionStorage
+        localStorage.clear();
+        sessionStorage.clear();
+
+        alert("Cache berhasil dibersihkan tuntas bray! Halaman akan dimuat ulang.");
+        window.location.reload();
+    } catch (err) {
+        console.error("Gagal menghapus cache:", err);
+        alert("Gagal membersihkan cache: " + err.message);
+        if (btn) {
+            btn.innerText = "Clear";
+            btn.disabled = false;
+        }
+    }
+}
 
 
 /// end 
