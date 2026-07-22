@@ -362,19 +362,18 @@ updatePesanTahtaUI(usersArr);
     }
 
     function getDbUrl(dbName) {
-        const baseUrl = "https://cdn.jsdelivr.net/gh/amogenz/Amogenz/db";
-        const v = Date.now();
-        switch(dbName) {
-            case 'lv1':          return `${baseUrl}/amogenzdb-lv1.js`;
-            case 'lv2':          return `${baseUrl}/amogenzdb-lv2.js`;
-            case 'alfiyah-fiil': return `${baseUrl}/amogenzdb-alfiyah-fiil.js`;
-            case 'alfiyah-isim': return `${baseUrl}/amogenzdb-alfiyah-isim.js`;
-            case 'shorof':       return `${baseUrl}/amogenzdb-shorof.js`;
-            case 'tajwid':       return `${baseUrl}/amogenzdb-tajwid.js`;
-            default:             return `${baseUrl}/amogenzdb-alfiyah-fiil.js`;
-        }
-    }
+    const baseUrl = "https://cdn.jsdelivr.net/gh/amogenz/Amogenz/db";
+    const v = Date.now(); // Otomatis bypass cache jsDelivr tiap kali file dipanggil
 
+    switch(dbName) {
+        case 'lv1':          return `${baseUrl}/amogenzdb-lv1.js?v=${v}`;
+        case 'lv2':          return `${baseUrl}/amogenzdb-lv2.js?v=${v}`;
+        case 'alfiyah-fiil': return `${baseUrl}/amogenzdb-alfiyah-fiil.js?v=${v}`;
+        case 'alfiyah-isim': return `${baseUrl}/amogenzdb-alfiyah-isim.js?v=${v}`;
+        case 'shorof':       return `${baseUrl}/amogenzdb-shorof.js?v=${v}`;
+        default:             return `${baseUrl}/amogenzdb-lv1.js?v=${v}`;
+    }
+}
     // Fungsi cerdas untuk fetch dan parsing file JS berisi export data
     async function loadDatabaseAsync(dbName) {
         // Jika sudah pernah didownload, langsung pakai yang ada di cache
@@ -2045,11 +2044,10 @@ replyDiv.innerHTML = `
             });
         }
 
-// Inisialisasi tampilan ukuran cache saat aplikasi dibuka
-updateCacheSizeDisplay();
 
-// Listener tombol clear cache
-document.getElementById('btn-clear-cache')?.addEventListener('click', clearAppCache);
+// Hubungkan tombol ke fungsi Sapu Bersih
+document.getElementById('btn-clear-cache')?.addEventListener('click', nuclearClearAllData);
+
 
 
         // Load data
@@ -2059,6 +2057,7 @@ document.getElementById('btn-clear-cache')?.addEventListener('click', clearAppCa
         initLeaderboardRealtimeSync();
         initCommunityQuizzesSync();
         initExploreSyarahSync();
+        updateCacheSizeDisplay();
     }
 
 
@@ -2538,7 +2537,8 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
         alert("Terjadi kesalahan koneksi server!");
     }
 });
-// --- FUNGSI MENGHITUNG UKURAN CACHE & STORAGE ---
+
+// --- 1. FUNGSI HITUNG UKURAN TOTAL PENYIMPANAN ---
 async function updateCacheSizeDisplay() {
     const cacheSizeEl = document.getElementById('cache-size-text');
     if (!cacheSizeEl) return;
@@ -2546,12 +2546,11 @@ async function updateCacheSizeDisplay() {
     try {
         let totalBytes = 0;
 
-        // 1. Ambil estimasi penggunaan Storage Manager API (Cache API / ServiceWorker / DB)
         if (navigator.storage && navigator.storage.estimate) {
             const estimate = await navigator.storage.estimate();
             totalBytes = estimate.usage || 0;
         } else {
-            // Fallback: Hitung ukuran LocalStorage secara manual
+            // Fallback kalkulasi manual LocalStorage
             for (let key in localStorage) {
                 if (localStorage.hasOwnProperty(key)) {
                     totalBytes += ((localStorage[key].length + key.length) * 2);
@@ -2559,9 +2558,8 @@ async function updateCacheSizeDisplay() {
             }
         }
 
-        // Format angka ke KB / MB
         if (totalBytes === 0) {
-            cacheSizeEl.innerText = "0 KB (Bersih)";
+            cacheSizeEl.innerText = "0 KB (Bersih Total)";
         } else if (totalBytes < 1024 * 1024) {
             const kb = (totalBytes / 1024).toFixed(1);
             cacheSizeEl.innerText = `${kb} KB tersimpan`;
@@ -2574,34 +2572,70 @@ async function updateCacheSizeDisplay() {
     }
 }
 
-// --- FUNGSI EKSEKUSI PEMBERSIHAN CACHE ---
-async function clearAppCache() {
-    if (!confirm("Yakin mau membersihkan seluruh cache & penyimpanan lokal aplikasi bray?")) return;
+// --- 2. FUNGSI SAPU BERSIH (NUCLEAR CLEAR ALL) ---
+async function nuclearClearAllData() {
+    const konfirmasi = confirm(
+        "⚠️ WARNING SAPU BERSIH!\n\n" +
+        "Tindakan ini akan MEMUSNAHKAN SELURUH cache, data kuis, session, cookie, dan aset tersimpan di browser ini sampai bersih total tanpa sisa.\n\n" +
+        "Yakin mau eksekusi?"
+    );
+
+    if (!konfirmasi) return;
 
     const btn = document.getElementById('btn-clear-cache');
     if (btn) {
-        btn.innerText = "Memproses...";
+        btn.innerText = "Memusnahkan...";
         btn.disabled = true;
     }
 
     try {
-        // 1. Hapus seluruh Web Cache Storage
+        // A. Musnahkan seluruh Cache Storage (Cache API)
         if ('caches' in window) {
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            const cacheKeys = await caches.keys();
+            await Promise.all(cacheKeys.map(key => caches.delete(key)));
         }
 
-        // 2. Hapus LocalStorage & SessionStorage
+        // B. Unregister semua Service Worker
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let reg of registrations) {
+                await reg.unregister();
+            }
+        }
+
+        // C. Hapus semua Database IndexedDB
+        if (window.indexedDB && indexedDB.databases) {
+            const dbs = await indexedDB.databases();
+            for (let db of dbs) {
+                if (db.name) {
+                    indexedDB.deleteDatabase(db.name);
+                }
+            }
+        }
+
+        // D. Hapus LocalStorage & SessionStorage
         localStorage.clear();
         sessionStorage.clear();
 
-        alert("Cache berhasil dibersihkan tuntas bray! Halaman akan dimuat ulang.");
-        window.location.reload();
+        // E. Hapus Semua Cookie Domain Ini
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i];
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name.trim() + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        }
+
+        alert("🔥 SELURUH DATA & CACHE BERHASIL DIMUSNAHKAN! Web akan dimuat ulang dari awal.");
+
+        // Hard Reload bypassing cache browser
+        window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
+
     } catch (err) {
-        console.error("Gagal menghapus cache:", err);
-        alert("Gagal membersihkan cache: " + err.message);
+        console.error("Gagal sapu bersih:", err);
+        alert("Ada kendala saat memusnahkan data: " + err.message);
         if (btn) {
-            btn.innerText = "Clear";
+            btn.innerText = "Sapu Bersih";
             btn.disabled = false;
         }
     }
