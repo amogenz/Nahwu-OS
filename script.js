@@ -2168,7 +2168,7 @@ function initExploreSyarahSync() {
     });
 }
 
-// 📖 FUNGSI RENDER DETAIL EXPLORE SYARAH
+// 📖 FUNGSI RENDER DETAIL EXPLORE SYARAH (FIXED)
 function showExploreDetail(title, resultRaw) {
     const mainView = document.getElementById('explore-main-view');
     const detailView = document.getElementById('explore-detail-view');
@@ -2181,23 +2181,30 @@ function showExploreDetail(title, resultRaw) {
     
     if (!detailContentDiv) return;
 
-    let cleanText = resultRaw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    const lines = cleanText.split('\n');
+    // Pecah langsung dari resultRaw tanpa replace di awal
+    const lines = resultRaw.split('\n');
     
     const formattedHtml = lines.map(line => {
         const trimmedLine = line.trim();
         if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
 
-        if (trimmedLine.startsWith('===')) {
-            const label = trimmedLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
-            return `<div class="lafadz-header">📝 LAFADZ: ${escapeHTML(label)}</div>`;
+        // 1. Escape karakter berbahaya dulu
+        let safeLine = escapeHTML(trimmedLine);
+
+        // 2. Baru ubah markdown **teks** menjadi <strong>teks</strong>
+        safeLine = safeLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        // 3. Render ke pembungkus UI
+        if (safeLine.startsWith('===')) {
+            const label = safeLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
+            return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
         }
 
-        if (/^\d+\./.test(trimmedLine)) {
-            return `<div class="analysis-point">${escapeHTML(trimmedLine)}</div>`;
+        if (/^\d+\./.test(safeLine)) {
+            return `<div class="analysis-point">${safeLine}</div>`;
         }
 
-        return `<div class="normal-line">${escapeHTML(trimmedLine)}</div>`;
+        return `<div class="normal-line">${safeLine}</div>`;
     }).join('');
 
     requestAnimationFrame(() => {
@@ -2206,6 +2213,7 @@ function showExploreDetail(title, resultRaw) {
         if (contentArea) contentArea.scrollTop = 0;
     });
 }
+
 
 // 2. FUNGSI UNTUK MEMAINKAN KUIS KOMUNITAS
 function startCommunityQuiz(quiz) {
