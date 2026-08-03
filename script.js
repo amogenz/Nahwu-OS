@@ -85,10 +85,11 @@
 
     const LEVEL_MULTIPLIERS = {
         'lv1': 1,            // Jurumiyah
-        'tajwid': 1.5,       // Tajwid
         'shorof': 2,         // Shorof
         'lv2': 3,            // Imrithi
         'alfiyah-isim': 4,   // Alfiyah Isim
+        'bina': 4,
+        'tasrif': 4,
         'alfiyah-fiil': 5    // Alfiyah Fi'il
     };
 
@@ -371,6 +372,8 @@ updatePesanTahtaUI(usersArr);
         case 'alfiyah-fiil': return `${baseUrl}/amogenzdb-alfiyah-fiil.js?v=${v}`;
         case 'alfiyah-isim': return `${baseUrl}/amogenzdb-alfiyah-isim.js?v=${v}`;
         case 'shorof':       return `${baseUrl}/amogenzdb-shorof.js?v=${v}`;
+        case 'bina':       return `${baseUrl}/amogenzdb-bina.js?v=${v}`;
+        case 'tasrif':       return `${baseUrl}/amogenzdb-tasrif.js?v=${v}`;
         default:             return `${baseUrl}/amogenzdb-lv1.js?v=${v}`;
     }
 }
