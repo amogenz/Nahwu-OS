@@ -1260,6 +1260,26 @@ auth.currentUser.getIdToken().then(idToken => {
         navBtn.classList.add('active');
     }
 }
+    // --- AUTO DIRECT TO TAB VIA URL PARAMETER ---
+// Membaca URL seperti: https://nahwu.amogenz.xyz/?tab=syarah
+function handleUrlTabRouting() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetTab = urlParams.get('tab');
+    
+    if (targetTab) {
+        // Panggil fungsi switchPage bawaan Nahwu OS
+        if (typeof switchPage === 'function') {
+            switchPage(targetTab);
+        } else {
+            // Fallback manual trigger jika switchPage tidak di scope global
+            const tabBtn = document.querySelector(`.nav-btn[data-page="${targetTab}"]`);
+            if (tabBtn) tabBtn.click();
+        }
+    }
+}
+
+// Jalankan saat aplikasi selesai dimuat
+window.addEventListener('DOMContentLoaded', handleUrlTabRouting);
 
     // --- 7. SYARAH AI FUNCTIONS ---
 
