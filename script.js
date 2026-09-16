@@ -362,47 +362,50 @@ updatePesanTahtaUI(usersArr);
         });
     }
 
-    function getDbUrl(dbName) {
-    const baseUrl = "https://cdn.jsdelivr.net/gh/amogenz/Amogenz/db";
-    const v = Date.now(); // Otomatis bypass cache jsDelivr tiap kali file dipanggil
+    // MEMORI CACHE LOCAL
+
+function getDbUrl(dbName) {
+    // Pakai raw.githubusercontent.com agar langsung mengambil data asli dari GitHub
+    const baseUrl = "https://raw.githubusercontent.com/amogenz/Amogenz/main/db";
+    const cacheBuster = Date.now(); // Di GitHub Raw, timestamp ini BISA menembus cache
 
     switch(dbName) {
-        case 'lv1':          return `${baseUrl}/amogenzdb-lv1.js?v=${v}`;
-        case 'lv2':          return `${baseUrl}/amogenzdb-lv2.js?v=${v}`;
-        case 'alfiyah-fiil': return `${baseUrl}/amogenzdb-alfiyah-fiil.js?v=${v}`;
-        case 'alfiyah-isim': return `${baseUrl}/amogenzdb-alfiyah-isim.js?v=${v}`;
-        case 'shorof':       return `${baseUrl}/amogenzdb-shorof.js?v=${v}`;
-        case 'bina':       return `${baseUrl}/amogenzdb-bina.js?v=${v}`;
-        case 'tasrif':       return `${baseUrl}/amogenzdb-tasrif.js?v=${v}`;
-        default:             return `${baseUrl}/amogenzdb-lv1.js?v=${v}`;
+        case 'lv1':          return `${baseUrl}/amogenzdb-lv1.js?v=${cacheBuster}`;
+        case 'lv2':          return `${baseUrl}/amogenzdb-lv2.js?v=${cacheBuster}`;
+        case 'alfiyah-fiil': return `${baseUrl}/amogenzdb-alfiyah-fiil.js?v=${cacheBuster}`;
+        case 'alfiyah-isim': return `${baseUrl}/amogenzdb-alfiyah-isim.js?v=${cacheBuster}`;
+        case 'shorof':       return `${baseUrl}/amogenzdb-shorof.js?v=${cacheBuster}`;
+        case 'bina':         return `${baseUrl}/amogenzdb-bina.js?v=${cacheBuster}`;
+        case 'tasrif':       return `${baseUrl}/amogenzdb-tasrif.js?v=${cacheBuster}`;
+        default:             return `${baseUrl}/amogenzdb-lv1.js?v=${cacheBuster}`;
     }
 }
-    // Fungsi cerdas untuk fetch dan parsing file JS berisi export data
-    async function loadDatabaseAsync(dbName) {
-        // Jika sudah pernah didownload, langsung pakai yang ada di cache
-        if (dbCache[dbName]) return dbCache[dbName];
 
-        const url = getDbUrl(dbName);
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Gagal mengunduh file database: ${dbName}`);
-        
-        const text = await response.text();
-
-        // Trik Regex ajaib untuk mengambil isi array/object di dalam export const AMOGENZ_DB_...
-        // Mengubah string file JS mentah menjadi objek JSON asli JavaScript
-        const match = text.match(/export\s+const\s+AMOGENZ_DB_[A-Z0-9_]+\s*=\s*([\s\S]*?);?\s*$/);
-        if (!match) throw new Error(`Format data di dalam file ${dbName} tidak valid.`);
-
-        // Bersihkan dan evaluasi teks menjadi data array
-        let rawData = match[1].trim();
-        
-        // Gunakan Function constructor (aman karena source milik kamu sendiri di GitHub)
-        const parsedData = new Function(`return ${rawData}`)();
-        
-        // Simpan ke cache memory
-        dbCache[dbName] = parsedData;
-        return parsedData;
+async function loadDatabaseAsync(dbName, forceReload = false) {
+    // Jika tidak dipaksa reload dan data sudah ada di memori RAM, gunakan cache
+    if (!forceReload && dbCache[dbName]) {
+        return dbCache[dbName];
     }
+
+    const url = getDbUrl(dbName);
+    
+    // Tanpa custom headers agar aman dari error CORS / Failed to fetch
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Gagal mengunduh file database: ${dbName} (Status: ${response.status})`);
+    
+    const text = await response.text();
+
+    const match = text.match(/export\s+const\s+AMOGENZ_DB_[A-Z0-9_]+\s*=\s*([\s\S]*?);?\s*$/);
+    if (!match || !match[1]) throw new Error(`Format data di dalam file ${dbName} tidak valid.`);
+
+    let rawData = match[1].trim();
+    const parsedData = new Function(`return ${rawData}`)();
+    
+    // Simpan ke cache memori lokal
+    dbCache[dbName] = parsedData;
+    return parsedData;
+}
+
 
     function getSeenSentences() { 
         const key = `nahwu_seen_indices_${currentDatabase}`;
@@ -1257,6 +1260,26 @@ auth.currentUser.getIdToken().then(idToken => {
         navBtn.classList.add('active');
     }
 }
+    // --- AUTO DIRECT TO TAB VIA URL PARAMETER ---
+// Membaca URL seperti: https://nahwu.amogenz.xyz/?tab=syarah
+function handleUrlTabRouting() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetTab = urlParams.get('tab');
+    
+    if (targetTab) {
+        // Panggil fungsi switchPage bawaan Nahwu OS
+        if (typeof switchPage === 'function') {
+            switchPage(targetTab);
+        } else {
+            // Fallback manual trigger jika switchPage tidak di scope global
+            const tabBtn = document.querySelector(`.nav-btn[data-page="${targetTab}"]`);
+            if (tabBtn) tabBtn.click();
+        }
+    }
+}
+
+// Jalankan saat aplikasi selesai dimuat
+window.addEventListener('DOMContentLoaded', handleUrlTabRouting);
 
     // --- 7. SYARAH AI FUNCTIONS ---
 
