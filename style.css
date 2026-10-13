@@ -202,9 +202,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            background: var(--glass-header);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: var(--glass-bg-card);
             border-top: 1px solid var(--glass-border);
             border-radius: 0;
             padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
