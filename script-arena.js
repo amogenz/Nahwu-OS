@@ -252,11 +252,11 @@ function checkCommunityAnswer(selected, correct, explanation) {
     if (els.mIcon) els.mIcon.style.display = 'block';
 
     if (isCorrect) {
-        if (els.mTitle) { els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; }
+        if (els.mTitle) { els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#4CAF50"; }
         if (els.mIcon) els.mIcon.innerHTML = '<i class="ph ph-sparkle"></i>';
         if (els.mMsg) els.mMsg.innerText = explanation || "Jawabanmu tepat sekali!";
     } else {
-        if (els.mTitle) { els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; }
+        if (els.mTitle) { els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#E5484D"; }
         if (els.mIcon) els.mIcon.innerHTML = '<i class="ph ph-x-circle"></i>';
         if (els.mMsg) els.mMsg.innerHTML = `Jawaban Benar: <b>${correct}</b><br><br>${explanation || ''}`;
     }
@@ -306,7 +306,7 @@ function createQuestionBlockHTML(index) {
         <div class="q-block-item" data-q-index="${index}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-size: 0.85rem; font-weight: 700; color: var(--ios-blue);">Soal #${index}</span>
-                ${!isFirst ? `<button type="button" class="btn-remove-q" onclick="removeStudioQuestionBlock(${index})" style="background: rgba(255,59,48,0.2); border: 1px solid rgba(255,59,48,0.4); color: #FF3B30; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;"><i class="ph ph-trash"></i> Hapus</button>` : ''}
+                ${!isFirst ? `<button type="button" class="btn-remove-q" onclick="removeStudioQuestionBlock(${index})" style="background: rgba(229,72,77,0.2); border: 1px solid rgba(229,72,77,0.4); color: #E5484D; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;"><i class="ph ph-trash"></i> Hapus</button>` : ''}
             </div>
 
             <label style="font-size: 0.78rem; color: var(--text-muted);">Kalimat Arab Lengkap (Konteks)</label>
