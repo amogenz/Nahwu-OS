@@ -23,6 +23,42 @@
         .replace(/'/g, "&#039;");
 }
 
+/* ===== AMOGENZ VIBE: Banner (pengganti alert/toast) & Dialog Aksi ===== */
+let __bannerTimer = null;
+function showBanner(msg, isErr) {
+    const b = document.getElementById('vibe-banner');
+    if (!b) { window.alert(msg); return; } // fallback darurat
+    document.getElementById('vibe-banner-txt').textContent = msg;
+    b.classList.toggle('err', !!isErr);
+    const ic = b.querySelector('i');
+    if (ic) ic.className = isErr ? 'ph ph-warning-circle' : 'ph ph-check-circle';
+    b.classList.add('show');
+    clearTimeout(__bannerTimer);
+    __bannerTimer = setTimeout(() => b.classList.remove('show'), 2800);
+}
+/* Dialog Aksi: satu-satunya momen aplikasi bertanya (aksi permanen) */
+function vibeConfirm(title, desc, okLabel) {
+    return new Promise((resolve) => {
+        const ovl = document.getElementById('modal-confirm');
+        if (!ovl) { resolve(window.confirm(title + '\n\n' + desc)); return; }
+        document.getElementById('mc-title').textContent = title;
+        document.getElementById('mc-desc').textContent = desc;
+        const okBtn = document.getElementById('mc-ok');
+        okBtn.textContent = okLabel || 'Ya, lanjutkan';
+        const done = (val) => {
+            ovl.style.display = 'none';
+            okBtn.onclick = null;
+            document.getElementById('mc-cancel').onclick = null;
+            ovl.onclick = null;
+            resolve(val);
+        };
+        okBtn.onclick = () => done(true);
+        document.getElementById('mc-cancel').onclick = () => done(false);
+        ovl.onclick = (e) => { if (e.target === ovl) done(false); };
+        ovl.style.display = 'flex';
+    });
+}
+
     const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
     const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
     sndCorrect.load(); sndWrong.load();
@@ -82,6 +118,10 @@
     let isAdminLoggedIn = false;
     let adminUploadImage = null;
     let currentUserNickname = "";
+
+// ===== Modul Arena & Studio (dipecah dari file ini; dynamic import agar cache-bust ikut versi) =====
+const arenaMod = await import(`./script-arena.js?v=${window.__nahwu_v || '1'}`);
+const arenaApi = arenaMod.initArena({ db, els, escapeHTML, showBanner, playSound, switchPage });
 
     const LEVEL_MULTIPLIERS = {
         'lv1': 1,            // Jurumiyah
@@ -305,8 +345,8 @@ updatePesanTahtaUI(usersArr);
         const msg = document.getElementById('input-pesan-tahta').value;
         if (auth.currentUser) {
             set(ref(db, `users/${auth.currentUser.uid}/status_message`), msg)
-                .then(() => alert("Pesan Tahta diperbarui bray!"))
-                .catch(err => alert("Gagal: " + err.message));
+                .then(() => showBanner("Pesan Tahta diperbarui bray!"))
+                .catch(err => showBanner("Gagal: " + err.message));
         }
     };
     }
@@ -449,7 +489,7 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
     const inputPass = els.adminPass.value.trim();
     
     if (!inputPass) {
-        return alert("Sandi tidak boleh kosong bray!");
+        return showBanner("Sandi tidak boleh kosong bray!");
     }
 
     try {
@@ -464,11 +504,11 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
         if (data.success) {
             unlockAdminPanel(); // Buka panel admin jika sukses
         } else {
-            alert(data.message || "Sandi Salah!");
+            showBanner(data.message || "Sandi Salah!");
         }
     } catch (err) {
         console.error("Gagal terhubung ke verifikasi admin:", err);
-        alert("Gagal melakukan verifikasi admin.");
+        showBanner("Gagal melakukan verifikasi admin.");
     }
 }
     
@@ -532,8 +572,8 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
             <div class="dev-sector">
                 <div class="dev-sector-title"><i class="ph ph-eye"></i> Sektor 1: Visual Simulator</div>
                 <div class="dev-sector-grid">
-                    <button id="btn-sim-score" class="dev-btn-action">✨ Uji Instan Rapor</button>
-                    <button id="btn-sim-splash" class="dev-btn-action">🎬 Uji Animasi Splash</button>
+                    <button id="btn-sim-score" class="dev-btn-action"><i class="ph ph-sparkle"></i> Uji Instan Rapor</button>
+                    <button id="btn-sim-splash" class="dev-btn-action"><i class="ph ph-film-strip"></i> Uji Animasi Splash</button>
                 </div>
             </div>
             
@@ -643,7 +683,7 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
     const cap = document.getElementById('dawuh-caption').value.trim(); 
     let finalUrl = (mode === 'url') ? inpUrl.value.trim() : uploadBase64; 
     
-    if (!finalUrl) return alert("Gambar belum dipilih!"); 
+    if (!finalUrl) return showBanner("Gambar belum dipilih!"); 
 
     try {
         const response = await fetch('/api/dawuh-manage', {
@@ -660,17 +700,17 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
         const data = await response.json();
         
         if (data.success) {
-            alert(data.message); 
+            showBanner(data.message); 
             inpUrl.value = ''; 
             document.getElementById('dawuh-caption').value = ''; 
             uploadBase64 = null; 
             document.getElementById('img-preview').style.display = 'none'; 
         } else {
-            alert("Gagal: " + data.message);
+            showBanner("Gagal: " + data.message);
         }
     } catch (err) {
         console.error("Gagal simpan gambar:", err);
-        alert("Terjadi kesalahan koneksi server!");
+        showBanner("Terjadi kesalahan koneksi server!");
     }
 });
     
@@ -705,7 +745,7 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
                     delBtn.innerText = "Hapus"; 
                     delBtn.style.cssText = "background:var(--ios-red); border:none; color:white; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; flex-shrink:0;"; 
                     delBtn.onclick = async () => { 
-    if (confirm("Yakin mau hapus gambar ini?")) {
+    if (await vibeConfirm('Hapus gambar ini?', 'Gambar dawuh akan dihapus permanen dari database.')) {
         try {
             const response = await fetch('/api/dawuh-manage', {
                 method: 'POST',
@@ -720,16 +760,18 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
             const data = await response.json();
 
             if (data.success) {
-                alert(data.message);
+                showBanner(data.message);
             } else {
-                alert("Gagal menghapus: " + data.message);
+                showBanner("Gagal menghapus: " + data.message);
             }
         } catch (err) {
             console.error("Gagal hapus gambar:", err);
-            alert("Terjadi kesalahan koneksi server!");
+            showBanner("Terjadi kesalahan koneksi server!");
         }
     }
 };
+
+
                     div.appendChild(leftDiv); 
                     div.appendChild(delBtn); 
                     list.appendChild(div); 
@@ -780,7 +822,7 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
 
     } catch (error) {
         console.error(error);
-        alert("Gagal memuat database dari GitHub bray!");
+        showBanner("Gagal memuat database dari GitHub bray!");
         els.viewLoading.style.display = 'none';
         els.viewStart.style.display = 'flex';
     }
@@ -829,7 +871,7 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
 
         els.mTitle.innerText = "Benar!"; 
         els.mTitle.style.color = "#34C759"; 
-        els.mIcon.innerText = "✨";
+        els.mIcon.innerHTML = '<i class="ph ph-sparkle"></i>';
         els.mMsg.innerText = data.explanation; 
         els.modal.style.display = 'flex';
         setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
@@ -855,7 +897,7 @@ async function loadDatabaseAsync(dbName, forceReload = false) {
 
         els.mTitle.innerText = "Kurang Tepat"; 
         els.mTitle.style.color = "#FF3B30"; 
-        els.mIcon.innerText = "❌";
+        els.mIcon.innerHTML = '<i class="ph ph-x-circle"></i>';
         els.mMsg.innerHTML = `Jawaban Benar: <b>${data.correct}</b><br><br>${data.explanation}`;
         els.modal.style.display = 'flex';
         setTimeout(() => els.mCard.style.transform = 'scale(1)', 10);
@@ -958,9 +1000,9 @@ auth.currentUser.getIdToken().then(idToken => {
 });
 }
 
-    els.mIcon.innerText = rank.icon;
+    els.mIcon.innerHTML = '<i class="ph "' + rank.icon + '"></i>';
     els.mIcon.style.display = 'block';
-    els.mTitle.innerText = isSimulation ? "Simulasi Rapor Dev" : "Alhamdulillah! 🎉";
+    els.mTitle.innerText = isSimulation ? "Simulasi Rapor Dev" : "Alhamdulillah!";
     els.mTitle.style.color = "#FFD700";
     
     els.mMsg.innerHTML = `
@@ -1086,7 +1128,7 @@ auth.currentUser.getIdToken().then(idToken => {
             // 7. Proses Output Kanvas Menjadi Berkas Riil PNG Blob
             canvas.toBlob(async (blob) => {
                 if (!blob) {
-                    alert("Gagal memproses gambar bray!");
+                    showBanner("Gagal memproses gambar bray!");
                     txtShare.innerText = "Bagikan Gambar Rapor";
                     btnShare.disabled = false;
                     return;
@@ -1096,7 +1138,7 @@ auth.currentUser.getIdToken().then(idToken => {
                 const filePNG = new File([blob], 'rapor-nahwu-os.png', { type: 'image/png' });
                 
                 // Susun teks caption promosi syiar nahwu beserta URL tujuan
-                const captionTeks = `Alhamdulillah! Saya meraih pangkat ${rank.icon} *${rank.rank}* saat belajar kaidah I'rob di Nahwu OS dengan efisiensi klik ${correct}/${total}. Ayo uji pemahaman nahwu shorof pesantrenmu di sini bray! 🦉✨\n\nMain langsung di: https://nahwu.amogenz.xyz`;
+                const captionTeks = `Alhamdulillah! Saya meraih pangkat *${rank.rank}* saat belajar kaidah I'rob di Nahwu OS dengan efisiensi klik ${correct}/${total}. Ayo uji pemahaman nahwu shorof pesantrenmu di sini bray! 🦉✨\n\nMain langsung di: https://nahwu.amogenz.xyz`;
 
                 // Cek apakah browser HP mendukung fitur pengiriman berkas gambar langsung
                 if (navigator.canShare && navigator.canShare({ files: [filePNG] })) {
@@ -1122,9 +1164,9 @@ auth.currentUser.getIdToken().then(idToken => {
                         linkDownload.download = `rapor_nahwu_os_${correct}_dari_${total}.png`;
                         linkDownload.click();
                         
-                        alert("Browser HP-mu belum mendukung share file langsung bray. Tapi tenang, gambar PNG rapor sudah otomatis diunduh ke galeri HP dan teks caption + tautan web sudah disalin ke memori! Kamu tinggal tempel langsung di WA.");
+                        showBanner("Browser HP-mu belum mendukung share file langsung bray. Tapi tenang, gambar PNG rapor sudah otomatis diunduh ke galeri HP dan teks caption + tautan web sudah disalin ke memori! Kamu tinggal tempel langsung di WA.");
                     } catch (err) {
-                        alert("Gagal mengeksekusi sistem pembagian cadangan.");
+                        showBanner("Gagal mengeksekusi sistem pembagian cadangan.");
                     } finally {
                         txtShare.innerText = "Bagikan Gambar Rapor";
                         btnShare.disabled = false;
@@ -1152,28 +1194,28 @@ auth.currentUser.getIdToken().then(idToken => {
         const halfOrMore = wrong >= Math.ceil(total / 2);
 
         if (total === 0) return {
-            icon: "📖", rank: "Pemula", color: "#8E8E93",
+            icon: "ph-book-open", rank: "Pemula", color: "#8E8E93",
             msg: "Terus semangat belajar! Setiap langkah kecil adalah kemajuan."
         };
         if (wrong === 0) return {
-            icon: "⚔️", rank: "Panglima Nahwu", color: "#FFD700",
+            icon: "ph-swords", rank: "Panglima Nahwu", color: "#FFD700",
             msg: "Luar biasa! Tak ada satupun yang salah. Engkau layak disebut Panglima Nahwu!"
         };
         if (wrong === 1) return {
-            icon: "🎖️", rank: "Komandan Nahwu", color: "#FF9F0A",
+            icon: "ph-medal", rank: "Komandan Nahwu", color: "#FF9F0A",
             msg: "Hampir sempurna! Satu kesalahan saja. Komandan Nahwu, teruslah pimpin barisan!"
         };
         if (wrong === 2) return {
-            icon: "🏅", rank: "Batalion Nahwu", color: "#30D158",
+            icon: "ph-award", rank: "Batalion Nahwu", color: "#30D158",
             msg: "Bagus sekali! Dua kesalahan masih sangat baik. Batalion Nahwu siap tempur!"
         };
         if (halfOrMore) return {
-            icon: "🌱", rank: "Pemula", color: "#8E8E93",
+            icon: "ph-sprout", rank: "Pemula", color: "#8E8E93",
             msg: "Jangan menyerah! من جد وجد — Siapa yang bersungguh-sungguh, pasti berhasil. Ayo ulangi!"
         };
         // Salah kurang dari setengah tapi lebih dari 2
         return {
-            icon: "🛡️", rank: "Prajurit Nahwu", color: "#007AFF",
+            icon: "ph-shield-check", rank: "Prajurit Nahwu", color: "#007AFF",
             msg: "Cukup baik! Masih ada ruang untuk berkembang. Terus latih kaidahmu, wahai Prajurit!"
         };
     }
@@ -1188,9 +1230,9 @@ auth.currentUser.getIdToken().then(idToken => {
             const rank = getRankData(quizScore.correct, quizScore.total);
             const wrongCount = quizScore.total - quizScore.correct;
             
-            els.mIcon.innerText = rank.icon;
+            els.mIcon.innerHTML = '<i class="ph "' + rank.icon + '"></i>';
             els.mIcon.style.display = 'block';
-            els.mTitle.innerText = "Alhamdulillah! 🎉";
+            els.mTitle.innerText = "Alhamdulillah!";
             els.mTitle.style.color = "#FFD700";
             
             // Build score + rank HTML inside modal
@@ -1217,7 +1259,7 @@ auth.currentUser.getIdToken().then(idToken => {
             `;
 
         } else {
-            els.mIcon.innerText = "🚀"; 
+            els.mIcon.innerHTML = '<i class="ph ph-rocket-launch"></i>'; 
             els.mTitle.innerText = title; 
             els.mTitle.style.color = "#007AFF"; 
             els.mMsg.innerText = msg;
@@ -1305,24 +1347,24 @@ window.addEventListener('DOMContentLoaded', handleUrlTabRouting);
     
     // 1. Validasi Input
     if (!input) {
-        alert('Mohon masukkan lafadz Arab terlebih dahulu!');
+        showBanner('Mohon masukkan lafadz Arab terlebih dahulu!');
         return;
     }
     
     if (typeof isArabicText === 'function' && !isArabicText(input)) {
-        alert('Hanya kalimat Arab yang diperbolehkan!');
+        showBanner('Hanya kalimat Arab yang diperbolehkan!');
         return;
     }
     
     const wordCount = input.split(/\s+/).filter(w => w.length > 0).length;
     if (wordCount > 7) {
-        alert(`Kalimat terlalu panjang! (${wordCount} kata). Maksimal 7 kata agar analisis mendalam.`);
+        showBanner(`Kalimat terlalu panjang! (${wordCount} kata). Maksimal 7 kata agar analisis mendalam.`);
         return;
     }
 
     // 2. Cek Koneksi Internet
     if (!navigator.onLine) {
-        alert('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet.');
+        showBanner('Sepertinya kamu sedang offline. Fitur Syarah AI memerlukan internet.');
         return;
     }
     
@@ -1463,7 +1505,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     } 
     catch (error) {
         console.error('Syarah Error:', error);
-        alert('Maaf, kendala: ' + error.message);
+        showBanner('Maaf, kendala: ' + error.message);
     } 
     finally {
         loadingArea.style.display = 'none';
@@ -1489,7 +1531,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
         // 3. Render ke dalam pembungkus UI
         if (safeLine.startsWith('===')) {
             const label = safeLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
-            return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
+            return `<div class="lafadz-header"><i class="ph ph-note"></i> LAFADZ: ${label}</div>`;
         }
 
         if (/^\d+\./.test(safeLine)) {
@@ -1549,7 +1591,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     const password = document.getElementById('admin-password').value;
     
     if (!name || !msg) {
-        alert('Nama dan komentar harus diisi!');
+        showBanner('Nama dan komentar harus diisi!');
         return;
     }
     
@@ -1570,11 +1612,11 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
                 isAdmin = true;
                 if (adminUploadImage) imageUrl = adminUploadImage;
             } else {
-                alert('Password admin salah bray!');
+                showBanner('Password admin salah bray!');
                 return;
             }
         } catch (err) {
-            alert('Gagal memverifikasi password admin!');
+            showBanner('Gagal memverifikasi password admin!');
             return;
         }
     }
@@ -1589,7 +1631,7 @@ Gunakan Bahasa Indonesia yang mudah dipahami santri. Pisahkan antar kata dengan 
     };
     
     push(ref(db, 'suggestions'), commentData).then(() => {
-        alert('Komentar berhasil dikirim!');
+        showBanner('Komentar berhasil dikirim!');
         document.getElementById('comment-name').value = '';
         document.getElementById('comment-msg').value = '';
         document.getElementById('admin-password').value = '';
@@ -1706,7 +1748,7 @@ replyDiv.innerHTML = `
             <div class="reply-modal-content">
                 <div class="reply-modal-header">
                     <h3>Balas Komentar</h3>
-                    <button class="btn-close-modal" id="close-reply-modal">✕</button>
+                    <button class="btn-close-modal" id="close-reply-modal"><i class="ph ph-x"></i></button>
                 </div>
                 <div class="reply-form-body">
                     <input type="text" id="reply-name" class="glass-field" placeholder="Nama Anda">
@@ -1733,7 +1775,7 @@ replyDiv.innerHTML = `
             const message = document.getElementById('reply-message').value.trim();
             
             if (!name || !message) {
-                alert('Nama dan balasan harus diisi!');
+                showBanner('Nama dan balasan harus diisi!');
                 return;
             }
             
@@ -1745,7 +1787,7 @@ replyDiv.innerHTML = `
             };
             
             push(ref(db, `suggestions/${commentId}/replies`), replyData).then(() => {
-                alert('Balasan berhasil dikirim!');
+                showBanner('Balasan berhasil dikirim!');
                 replyModal.classList.remove('active');
                 setTimeout(() => replyModal.remove(), 300);
             });
@@ -1771,7 +1813,7 @@ replyDiv.innerHTML = `
 
     // --- 9. INIT ---
     function initApp() {
-        els = {
+        Object.assign(els, {
             viewStart: document.getElementById('view-start'), 
             viewLoading: document.getElementById('view-loading'), 
             viewQuiz: document.getElementById('view-quiz'),
@@ -1796,7 +1838,7 @@ replyDiv.innerHTML = `
             adminPass: document.getElementById('admin-pass'),
             marqueeText: document.getElementById('marquee-text'),
             visitorCounter: document.getElementById('visitor-counter')
-        };
+        });
 
         // 🚨 1. EVENT LISTENER GOOGLE LOGIN (DISUNTIKKAN KEMBALI)
         document.getElementById('btn-google-login')?.addEventListener('click', async () => {
@@ -1823,18 +1865,19 @@ replyDiv.innerHTML = `
                 }
 
                 if (error.code === 'auth/popup-blocked') {
-                    alert("Popup login diblokir browser HP-mu bray! Izinkan popup di setelan browser.");
+                    showBanner("Popup login diblokir browser HP-mu bray! Izinkan popup di setelan browser.");
                 } else if (error.code === 'auth/unauthorized-domain') {
-                    alert("Domain ini belum terdaftar di Authorized Domains Firebase!");
+                    showBanner("Domain ini belum terdaftar di Authorized Domains Firebase!");
                 } else if (error.code !== 'auth/popup-closed-by-user') {
-                    alert("Gagal masuk: " + error.message);
+                    showBanner("Gagal masuk: " + error.message);
                 }
             }
         });
 
         // 2. Google Logout
-        document.getElementById('btn-google-logout')?.addEventListener('click', () => { 
-            if (confirm("Keluar dari papan kompetisi rank bray?")) signOut(auth); 
+        document.getElementById('btn-google-logout')?.addEventListener('click', () => {
+            signOut(auth);
+            showBanner('Kamu telah keluar. Sampai jumpa lagi!');
         });
 
         // 3. Simpan Nickname Kustom
@@ -1843,11 +1886,11 @@ replyDiv.innerHTML = `
     const nickInput = inputEl?.value.trim();
     
     if (!nickInput || nickInput.length < 3 || nickInput.length > 20) {
-        return alert("Nickname kustom harus antara 3 hingga 20 karakter bray!");
+        return showBanner("Nickname kustom harus antara 3 hingga 20 karakter bray!");
     }
     
     if (!auth.currentUser) {
-        return alert("Kamu harus login Google terlebih dahulu bray!");
+        return showBanner("Kamu harus login Google terlebih dahulu bray!");
     }
 
     const uid = auth.currentUser.uid;
@@ -1863,12 +1906,12 @@ replyDiv.innerHTML = `
         }
 
         if (!isUnique) {
-            alert("Nama kustom tersebut sudah dipakai santri lain bray, coba nama lain!");
+            showBanner("Nama kustom tersebut sudah dipakai santri lain bray, coba nama lain!");
         } else {
             // 🚨 HANYA TULIS KE PATH /users/$uid/nickname AGAR SESUAI RULES FIREBASE
             set(ref(db, `users/${uid}/nickname`), nickInput)
             .then(() => {
-                alert("Nickname berhasil dikunci bray!");
+                showBanner("Nickname berhasil dikunci bray!");
                 
                 if (inputEl) inputEl.value = '';
                 
@@ -1883,11 +1926,11 @@ replyDiv.innerHTML = `
                 }
             })
             .catch((err) => {
-                alert("Gagal menyimpan nickname: " + err.message);
+                showBanner("Gagal menyimpan nickname: " + err.message);
             });
         }
     }).catch((err) => {
-        alert("Gagal terhubung ke database: " + err.message);
+        showBanner("Gagal terhubung ke database: " + err.message);
     });
 });
 
@@ -1900,10 +1943,10 @@ replyDiv.innerHTML = `
 
         document.getElementById('btn-mode-rank')?.addEventListener('click', () => {
             if (!auth.currentUser) {
-                alert("Kamu wajib login Google dan mengunci nickname kustom terlebih dahulu di Halaman Rank bray!");
+                showBanner("Kamu wajib login Google dan mengunci nickname kustom terlebih dahulu di Halaman Rank bray!");
                 switchPage('rank');
             } else if (!currentUserData || !currentUserData.nickname) {
-                alert("Selesaikan setup pembuatan nickname kustom kamu dulu bray agar poin bisa tercatat!");
+                showBanner("Selesaikan setup pembuatan nickname kustom kamu dulu bray agar poin bisa tercatat!");
                 switchPage('rank');
             } else {
                 isRankMode = true;
@@ -1919,13 +1962,13 @@ replyDiv.innerHTML = `
         document.getElementById('btn-start')?.addEventListener('click', () => startLearningCycle());
 
         // Back to Home
-        document.getElementById('btn-back-home')?.addEventListener('click', () => {
-            const isCommunity = Boolean(currentCommunityQuiz);
+        document.getElementById('btn-back-home')?.addEventListener('click', async () => {
+            const isCommunity = Boolean(arenaMod.arenaState.currentCommunityQuiz);
             const confirmMsg = isCommunity 
                 ? 'Yakin ingin kembali ke Arena Komunitas? Progress kuis akan hilang.' 
                 : 'Yakin ingin kembali ke Beranda? Progress kuis akan hilang.';
 
-            if (confirm(confirmMsg)) {
+            if (await vibeConfirm('Kembali?', confirmMsg, 'Ya, kembali')) {
                 if (els.viewQuiz) els.viewQuiz.style.display = 'none';
                 if (els.viewStart) els.viewStart.style.display = 'flex';
                 
@@ -1935,8 +1978,8 @@ replyDiv.innerHTML = `
                 quizScore = { correct: 0, wrong: 0, total: 0 };
 
                 if (isCommunity) {
-                    currentCommunityQuiz = null;
-                    currentCommunityIdx = 0;
+                    arenaMod.arenaState.currentCommunityQuiz = null;
+                    arenaMod.arenaState.currentCommunityIdx = 0;
                     if (typeof switchPage === 'function') switchPage('arena');
                 }
             }
@@ -2081,8 +2124,8 @@ document.getElementById('btn-clear-cache')?.addEventListener('click', nuclearCle
         loadComments();
         initVisitorCounter();
         initLeaderboardRealtimeSync();
-        initCommunityQuizzesSync();
-        initExploreSyarahSync();
+        arenaApi.initCommunityQuizzesSync();
+        arenaApi.initExploreSyarahSync();
         updateCacheSizeDisplay();
     }
 
@@ -2095,404 +2138,17 @@ document.getElementById('btn-clear-cache')?.addEventListener('click', nuclearCle
 
 // ==========================================
 // 🏟️ STATE & FUNGSI KUIS KOMUNITAS (GLOBAL)
-// ==========================================
-let currentCommunityQuiz = null;
-let currentCommunityIdx = 0;
-
-// 1. FUNGSI PENARIK DATA KUIS DARI FIREBASE
-function initCommunityQuizzesSync() {
-    const quizGrid = document.getElementById('community-quiz-grid');
-    if (!quizGrid) return;
-
-    onValue(ref(db, 'community_quizzes'), (snapshot) => {
-        const data = snapshot.val();
-        quizGrid.innerHTML = '';
-
-        if (data) {
-            const quizzes = Object.values(data);
-            quizzes.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-
-            quizzes.forEach(quiz => {
-                const card = document.createElement('div');
-                card.className = 'explore-item-card';
-                card.style.position = 'relative';
-
-card.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; width:100%; margin-bottom: 6px;">
-        <span style="font-size: 0.7rem; color: var(--ios-green); font-weight: 700;">● ${escapeHTML(quiz.category || 'UMUM').toUpperCase()}</span>
-        <span style="font-size: 0.7rem; opacity: 0.6;"><i class="ph ph-play-circle"></i> ${quiz.plays_count || 0}x dimainkan</span>
-    </div>
-    <div class="explore-card-arabic" style="font-size: 1.2rem;">${escapeHTML(quiz.questions?.[0]?.word || quiz.title)}</div>
-    <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-top: 4px;">${escapeHTML(quiz.title)}</div>
-    <div class="explore-card-meta" style="margin-top: 8px;">
-        <span><i class="ph ph-user"></i> ${escapeHTML(quiz.author_name || 'Santri Anonim')}</span>
-    </div>
-`;
-
-                card.onclick = (e) => {
-                    e.stopPropagation();
-                    startCommunityQuiz(quiz);
-                };
-
-                quizGrid.appendChild(card);
-            });
-        } else {
-            quizGrid.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada kuis komunitas bray. Yuk buat yang pertama di menu Studio!</p>';
-        }
-    });
-}
-
-// 🔍 SYNC DATA EXPLORE LAFADZ DARI FIREBASE
-
-function initExploreSyarahSync() {
-    onValue(ref(db, 'syarah_cache'), (snapshot) => {
-        const cacheData = snapshot.val();
-        const badge = document.getElementById('cache-total-badge');
-        const gridContainer = document.getElementById('explore-grid');
-        
-        if (!gridContainer) return;
-        gridContainer.innerHTML = ''; 
-        
-        if (cacheData) {
-            const items = Object.entries(cacheData);
-            if (badge) badge.textContent = items.length;
-            
-            // Urutkan dari lafadz terbaru di atas
-            items.sort((a, b) => {
-                const timeA = a[1].created_at || 0;
-                const timeB = b[1].created_at || 0;
-                return timeB - timeA;
-            });
-            
-            items.forEach(([key, value]) => {
-                const card = document.createElement('div');
-                card.className = 'explore-item-card';
-                
-                let formattedDate = "Baru";
-                if (value.created_at) {
-                    formattedDate = new Date(value.created_at).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short'
-                    });
-                }
-                
-                card.innerHTML = `
-                    <div class="explore-card-arabic">${escapeHTML(value.original_input)}</div>
-                    <div class="explore-card-meta"><i class="ph ph-calendar"></i> ${formattedDate}</div>
-                `;
-                
-                card.onclick = () => {
-                    showExploreDetail(value.original_input, value.result);
-                };
-                
-                gridContainer.appendChild(card);
-            });
-        } else {
-            if (badge) badge.textContent = '0';
-            gridContainer.innerHTML = '<p style="grid-column: span 2; text-align:center; font-size:13px; opacity:0.5; padding: 30px 0;">Belum ada riwayat lafadz bray.</p>';
-        }
-    });
-}
-
-// 📖 FUNGSI RENDER DETAIL EXPLORE SYARAH (FIXED)
-function showExploreDetail(title, resultRaw) {
-    const mainView = document.getElementById('explore-main-view');
-    const detailView = document.getElementById('explore-detail-view');
-    const titleText = document.getElementById('explore-title-text');
-    const detailContentDiv = document.getElementById('explore-detail-content');
-
-    if (mainView) mainView.style.display = 'none';
-    if (detailView) detailView.style.display = 'block';
-    if (titleText) titleText.textContent = title;
-    
-    if (!detailContentDiv) return;
-
-    // Pecah langsung dari resultRaw tanpa replace di awal
-    const lines = resultRaw.split('\n');
-    
-    const formattedHtml = lines.map(line => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return '<div class="spacer" style="height:10px"></div>'; 
-
-        // 1. Escape karakter berbahaya dulu
-        let safeLine = escapeHTML(trimmedLine);
-
-        // 2. Baru ubah markdown **teks** menjadi <strong>teks</strong>
-        safeLine = safeLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-        // 3. Render ke pembungkus UI
-        if (safeLine.startsWith('===')) {
-            const label = safeLine.replace(/=/g, '').replace('LAFADZ:', '').trim();
-            return `<div class="lafadz-header">📝 LAFADZ: ${label}</div>`;
-        }
-
-        if (/^\d+\./.test(safeLine)) {
-            return `<div class="analysis-point">${safeLine}</div>`;
-        }
-
-        return `<div class="normal-line">${safeLine}</div>`;
-    }).join('');
-
-    requestAnimationFrame(() => {
-        detailContentDiv.innerHTML = formattedHtml;
-        const contentArea = document.querySelector('#page-syarah .content-area');
-        if (contentArea) contentArea.scrollTop = 0;
-    });
-}
-
-
-// 2. FUNGSI UNTUK MEMAINKAN KUIS KOMUNITAS
-function startCommunityQuiz(quiz) {
-    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
-        return alert("Soal kuis ini tidak valid atau kosong!");
-    }
-
-    currentCommunityQuiz = quiz;
-    currentCommunityIdx = 0;
-
-    // 🚨 FIX UTAMA: Pindahkan layar utama & tombol nav ke HOME secara instan!
-    if (typeof switchPage === 'function') {
-        switchPage('home');
-    } else {
-        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-        document.getElementById('page-home')?.classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector('[data-page="home"]')?.classList.add('active');
-    }
-
-    // Tampilkan View Kuis & Sembunyikan Start/Loading
-    if (els.viewStart) els.viewStart.style.display = 'none';
-    if (els.viewLoading) els.viewLoading.style.display = 'none';
-    if (els.viewQuiz) els.viewQuiz.style.display = 'block';
-
-    // Render Soal Pertama
-    renderCommunityQuestion();
-
-    // Tambah Statistik Dimainkan
-    if (quiz.id) {
-        try {
-            const playRef = ref(db, `community_quizzes/${quiz.id}/plays_count`);
-            runTransaction(playRef, (current) => (current || 0) + 1).catch(() => {});
-        } catch (e) {
-            console.log("Skip update play count");
-        }
-    }
-}
-
-// 3. FUNGSI RENDER SOAL KUIS KOMUNITAS
-function renderCommunityQuestion() {
-    if (!currentCommunityQuiz || !currentCommunityQuiz.questions) return;
-
-    const q = currentCommunityQuiz.questions[currentCommunityIdx];
-    
-    // 🚨 JIKA KUIS SELESAI: BALIKKAN KE TAB ARENA / KOMUNITAS!
-    if (!q) {
-        alert("🎉 Selamat! Kamu telah menyelesaikan kuis komunitas ini!");
-        
-        // Reset state
-        currentCommunityQuiz = null;
-        currentCommunityIdx = 0;
-
-        // Sembunyikan view kuis, siapkan view start home untuk nanti
-        if (els.viewStart) els.viewStart.style.display = 'flex';
-        if (els.viewQuiz) els.viewQuiz.style.display = 'none';
-        
-        // 🚀 KEMBALIKAN KE TAB ARENA
-        if (typeof switchPage === 'function') {
-            switchPage('arena');
-        }
-        return;
-    }
-
-    if (els.badge) els.badge.textContent = `SOAL ${currentCommunityIdx + 1} / ${currentCommunityQuiz.questions.length}`;
-    if (els.ctxSent) els.ctxSent.textContent = q.sentence || q.context || '-';
-    if (els.ctxWord) els.ctxWord.textContent = q.word || '-';
-    if (els.qText) els.qText.textContent = q.question || 'Pilih jawaban yang benar:';
-
-    if (els.options) {
-        els.options.innerHTML = '';
-        const options = q.options || [];
-        
-        options.forEach((optText) => {
-            const btn = document.createElement('div');
-            btn.className = 'btn-option';
-            btn.innerHTML = `<span>${optText}</span> <i class="ph ph-caret-right"></i>`;
-
-            btn.onclick = () => {
-                const correctOptText = q.options[q.correctIndex] || q.correct;
-                checkCommunityAnswer(optText, correctOptText, q.explanation);
-            };
-
-            els.options.appendChild(btn);
-        });
-    }
-}
-
-// 4. FUNGSI CEK JAWABAN KUIS KOMUNITAS
-function checkCommunityAnswer(selected, correct, explanation) {
-    const isCorrect = (selected === correct);
-
-    if (typeof playSound === 'function') playSound(isCorrect);
-    if (els.mImgArea) els.mImgArea.style.display = 'none';
-    if (els.mMsg) els.mMsg.style.display = 'block';
-    if (els.mIcon) els.mIcon.style.display = 'block';
-
-    if (isCorrect) {
-        if (els.mTitle) { els.mTitle.innerText = "Benar!"; els.mTitle.style.color = "#34C759"; }
-        if (els.mIcon) els.mIcon.innerText = "✨";
-        if (els.mMsg) els.mMsg.innerText = explanation || "Jawabanmu tepat sekali!";
-    } else {
-        if (els.mTitle) { els.mTitle.innerText = "Kurang Tepat"; els.mTitle.style.color = "#FF3B30"; }
-        if (els.mIcon) els.mIcon.innerText = "❌";
-        if (els.mMsg) els.mMsg.innerHTML = `Jawaban Benar: <b>${correct}</b><br><br>${explanation || ''}`;
-    }
-
-    if (els.modal) els.modal.style.display = 'flex';
-    setTimeout(() => { if (els.mCard) els.mCard.style.transform = 'scale(1)'; }, 10);
-
-    if (els.fbBtn) {
-        els.fbBtn.onclick = () => {
-            if (els.mCard) els.mCard.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                if (els.modal) els.modal.style.display = 'none';
-                if (isCorrect) {
-                    currentCommunityIdx++;
-                    renderCommunityQuestion();
-                }
-            }, 200);
-        };
-    }
-}
-
-// ==========================================
-// 🏟️ LOGIKA ARENA SANTRI & SUB-TAB SWITCHING
-// ==========================================
-document.querySelectorAll('[data-sub-arena]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const targetSub = e.currentTarget.getAttribute('data-sub-arena');
-        
-        document.querySelectorAll('[data-sub-arena]').forEach(b => b.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-
-        document.querySelectorAll('.sub-page-arena').forEach(sp => sp.style.display = 'none');
-        const targetElem = document.getElementById(`sub-arena-${targetSub}`);
-        if (targetElem) targetElem.style.display = 'block';
-    });
-});
-
-// ==========================================
-// 🛠️ MANAJER STUDIO KUIS DINAMIS (1 - 14 SOAL)
-// ==========================================
-let studioQuestionCount = 0;
-const MAX_QUESTIONS = 14;
-
-function createQuestionBlockHTML(index) {
-    const isFirst = (index === 1);
-    return `
-        <div class="q-block-item" data-q-index="${index}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-size: 0.85rem; font-weight: 700; color: var(--ios-blue);">📌 Soal #${index}</span>
-                ${!isFirst ? `<button type="button" class="btn-remove-q" onclick="removeStudioQuestionBlock(${index})" style="background: rgba(255,59,48,0.2); border: 1px solid rgba(255,59,48,0.4); color: #FF3B30; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;"><i class="ph ph-trash"></i> Hapus</button>` : ''}
-            </div>
-
-            <label style="font-size: 0.78rem; color: var(--text-muted);">Kalimat Arab Lengkap (Konteks)</label>
-            <input type="text" class="glass-field q-sentence" placeholder="قُلْ هُوَ اللَّهُ أَحَدٌ" maxlength="100" style="font-family: 'Amiri', serif; font-size: 1.1rem; direction: rtl;">
-
-            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Lafadz / Kata yang Ditanyakan</label>
-            <input type="text" class="glass-field q-word" placeholder="قُلْ" maxlength="30" style="font-family: 'Amiri', serif; font-size: 1.1rem; direction: rtl;">
-
-            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Pertanyaan Soal</label>
-            <input type="text" class="glass-field q-question" placeholder="Apa kedudukan / jenis kata dari lafadz ini?" maxlength="120">
-
-            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Pilihan Jawaban (A, B, C, D)</label>
-            <input type="text" class="glass-field q-opt1" placeholder="Opsi A (Misal: Fi'il Amar)" maxlength="40" style="margin-bottom: 5px;">
-            <input type="text" class="glass-field q-opt2" placeholder="Opsi B (Misal: Isim Mufrad)" maxlength="40" style="margin-bottom: 5px;">
-            <input type="text" class="glass-field q-opt3" placeholder="Opsi C (Misal: Huruf Jar)" maxlength="40" style="margin-bottom: 5px;">
-            <input type="text" class="glass-field q-opt4" placeholder="Opsi D (Misal: Fi'il Madhi)" maxlength="40" style="margin-bottom: 5px;">
-
-            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Kunci Jawaban Benar</label>
-            <select class="glass-field q-correct" style="color: #fff; background: rgba(0,0,0,0.5);">
-                <option value="0">Opsi A</option>
-                <option value="1">Opsi B</option>
-                <option value="2">Opsi C</option>
-                <option value="3">Opsi D</option>
-            </select>
-
-            <label style="font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; display: block;">Syarah / Penjelasan Singkat (Opsional)</label>
-            <input type="text" class="glass-field q-explanation" placeholder="Misal: Termasuk Fi'il Amar mabni atas sukun." maxlength="150">
-        </div>
-    `;
-}
-
-function addStudioQuestionBlock() {
-    if (studioQuestionCount >= MAX_QUESTIONS) {
-        return alert(`Batas maksimal adalah ${MAX_QUESTIONS} soal per kuis!`);
-    }
-    studioQuestionCount++;
-    const container = document.getElementById('quiz-questions-list');
-    if (container) {
-        container.insertAdjacentHTML('beforeend', createQuestionBlockHTML(studioQuestionCount));
-    }
-    updateStudioQuestionBadge();
-}
-
-window.removeStudioQuestionBlock = function(index) {
-    const block = document.querySelector(`.q-block-item[data-q-index="${index}"]`);
-    if (block) {
-        block.remove();
-        reindexStudioQuestionBlocks();
-    }
-};
-
-function reindexStudioQuestionBlocks() {
-    const blocks = document.querySelectorAll('.q-block-item');
-    studioQuestionCount = blocks.length;
-    blocks.forEach((b, idx) => {
-        const newNum = idx + 1;
-        b.setAttribute('data-q-index', newNum);
-        const titleSpan = b.querySelector('span');
-        if (titleSpan) titleSpan.textContent = `📌 Soal #${newNum}`;
-        const delBtn = b.querySelector('.btn-remove-q');
-        if (delBtn) delBtn.setAttribute('onclick', `removeStudioQuestionBlock(${newNum})`);
-    });
-    updateStudioQuestionBadge();
-}
-
-function updateStudioQuestionBadge() {
-    const badge = document.getElementById('q-count-badge');
-    if (badge) badge.textContent = studioQuestionCount;
-
-    const btnAdd = document.getElementById('btn-add-question-block');
-    if (btnAdd) {
-        btnAdd.style.display = (studioQuestionCount >= MAX_QUESTIONS) ? 'none' : 'block';
-    }
-}
-
-function initStudioForm() {
-    const container = document.getElementById('quiz-questions-list');
-    if (container && container.children.length === 0) {
-        studioQuestionCount = 0;
-        addStudioQuestionBlock();
-    }
-}
-
-// Jalankan form studio secara otomatis
-initStudioForm();
-
-document.getElementById('btn-add-question-block')?.addEventListener('click', () => {
-    addStudioQuestionBlock();
-});
 
 document.getElementById('btn-publish-quiz')?.addEventListener('click', async () => {
     if (!auth.currentUser) {
-        return alert("Kamu wajib login Google di menu Rank terlebih dahulu untuk menerbitkan kuis!");
+        return showBanner("Kamu wajib login Google di menu Rank terlebih dahulu untuk menerbitkan kuis!");
     }
 
     const title = document.getElementById('studio-quiz-title').value.trim();
     const category = document.getElementById('studio-quiz-category').value;
 
     if (!title) {
-        return alert("Judul kuis tidak boleh kosong!");
+        return showBanner("Judul kuis tidak boleh kosong!");
     }
 
     const questionBlocks = document.querySelectorAll('.q-block-item');
@@ -2511,7 +2167,7 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
         const explanation = b.querySelector('.q-explanation')?.value.trim();
 
         if (!sentence || !question || !opt1 || !opt2) {
-            return alert(`Soal #${i + 1} belum lengkap! Lengkapi kalimat Arab, pertanyaan, dan minimal Opsi A & B.`);
+            return showBanner(`Soal #${i + 1} belum lengkap! Lengkapi kalimat Arab, pertanyaan, dan minimal Opsi A & B.`);
         }
 
         const optionsArray = [opt1, opt2, opt3, opt4].filter(o => o !== '');
@@ -2535,11 +2191,11 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
         btn.disabled = true;
         btn.innerText = "Menerbitkan...";
 
+        const idToken = await auth.currentUser.getIdToken();
         const response = await fetch('/api/quiz-create', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
             body: JSON.stringify({
-                uid: auth.currentUser.uid,
                 authorName: authorNameValue,
                 title: title,
                 category: category,
@@ -2551,7 +2207,7 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
             const errText = await response.text();
             btn.disabled = false;
             btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> Terbitkan Kuis ke Arena';
-            return alert(`Gagal terhubung (${response.status}): ${errText}`);
+            return showBanner(`Gagal terhubung (${response.status}): ${errText}`);
         }
 
         const data = await response.json();
@@ -2559,16 +2215,16 @@ document.getElementById('btn-publish-quiz')?.addEventListener('click', async () 
         btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> Terbitkan Kuis ke Arena';
 
         if (data.success) {
-            alert(data.message);
+            showBanner(data.message);
             document.getElementById('studio-quiz-title').value = '';
             document.getElementById('quiz-questions-list').innerHTML = '';
-            initStudioForm();
+            arenaApi.initStudioForm();
         } else {
-            alert("Gagal menerbitkan: " + data.message);
+            showBanner("Gagal menerbitkan: " + data.message);
         }
     } catch (err) {
         console.error(err);
-        alert("Terjadi kesalahan koneksi server!");
+        showBanner("Terjadi kesalahan koneksi server!");
     }
 });
 
@@ -2608,12 +2264,10 @@ async function updateCacheSizeDisplay() {
 
 // --- 2. FUNGSI SAPU BERSIH (NUCLEAR CLEAR ALL) ---
 async function nuclearClearAllData() {
-    const konfirmasi = confirm(
-        "⚠️ WARNING SAPU BERSIH!\n\n" +
-        "Tindakan ini akan MEMUSNAHKAN SELURUH cache, data kuis, session, cookie, dan aset tersimpan di browser ini sampai bersih total tanpa sisa.\n\n" +
-        "Yakin mau eksekusi?"
+    const konfirmasi = await vibeConfirm(
+        'Sapu bersih cache & data?',
+        'Tindakan ini akan MEMUSNAHKAN SELURUH cache, data kuis, session, cookie, dan aset tersimpan di browser ini sampai bersih total tanpa sisa.'
     );
-
     if (!konfirmasi) return;
 
     const btn = document.getElementById('btn-clear-cache');
@@ -2660,14 +2314,14 @@ async function nuclearClearAllData() {
             document.cookie = name.trim() + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
         }
 
-        alert("🔥 SELURUH DATA & CACHE BERHASIL DIMUSNAHKAN! Web akan dimuat ulang dari awal.");
+        showBanner("Seluruh data & cache berhasil dimusnahkan! Web akan dimuat ulang.");
 
         // Hard Reload bypassing cache browser
         window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
 
     } catch (err) {
         console.error("Gagal sapu bersih:", err);
-        alert("Ada kendala saat memusnahkan data: " + err.message);
+        showBanner("Ada kendala saat memusnahkan data: " + err.message);
         if (btn) {
             btn.innerText = "Sapu Bersih";
             btn.disabled = false;
