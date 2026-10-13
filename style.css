@@ -11,29 +11,47 @@
 
 
         /* CSS VARIABLES */
-        :root { 
-            --ios-blue: #007AFF; 
-            --ios-green: #34C759; 
-            --ios-red: #FF3B30; 
-            --text-primary: #000000; 
-            --text-light: #ffffff; 
-            --text-muted: rgba(255, 255, 255, 0.6); 
-            --glass-bg-card: rgba(30, 30, 30, 0.6); 
-            --glass-header: rgba(30, 30, 30, 0.95);
-            --glass-border: rgba(255, 255, 255, 0.15); 
-            --sidebar-bg: rgba(10, 10, 10, 0.95); 
-            --msg-received: rgba(255, 255, 255, 0.1); 
+        :root {
+            /* AMOGENZ VIBE — wujud web (token persis web utama amogenz.xyz) */
+            --ios-blue: #4CAF50;   /* aksen utama */
+            --ios-green: #4CAF50;
+            --ios-red: #E5484D;    /* bahaya */
+            --warn: #E8A13D;       /* peringatan */
+            --green-soft: #7CC47F; /* teks hijau di latar gelap */
+            --bg: #101210;
+            --text-primary: #F2F3F0;
+            --text-light: #F2F3F0;
+            --text-muted: #A9ADA6;
+            --text-faint: #8B8F88;
+            --glass-bg-card: #212421;
+            --glass-header: rgba(16, 18, 16, 0.88);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --sidebar-bg: rgba(16, 18, 16, 0.95);
+            --msg-received: rgba(255, 255, 255, 0.06);
+            --r-tombol: 10px; --r-kartu: 12px; --r-besar: 16px; --r-pil: 999px;
+        }
+        [data-theme="light"] {
+            --bg: #F2F2ED;
+            --text-primary: #20221F;
+            --text-light: #20221F;
+            --text-muted: #5A5E59;
+            --text-faint: #767B76;
+            --glass-bg-card: #FAFAF6;
+            --glass-header: rgba(242, 242, 237, 0.88);
+            --glass-border: rgba(0, 0, 0, 0.10);
+            --sidebar-bg: rgba(242, 242, 237, 0.95);
+            --msg-received: rgba(0, 0, 0, 0.05);
+            --green-soft: #2E7D32;
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop') no-repeat center center fixed; 
-            background-size: cover; 
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
             height: 100dvh; width: 100%; overflow: hidden;
-            display: flex; justify-content: center; align-items: center; 
-            color: var(--text-light); 
+            display: flex; justify-content: center; align-items: center;
+            color: var(--text-light);
         }
 
         /* CONTAINER UTAMA */
@@ -108,7 +126,7 @@
         .visitor-badge {
             font-size: 9px;
             background: rgba(0, 122, 255, 0.2);
-            color: #60a5fa;
+            color: #7CC47F;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: 600;
@@ -137,16 +155,15 @@
             backdrop-filter: blur(10px);
         }
         
-        .marquee-text {
+        #marquee-text {
             display: inline-block;
             padding-left: 100%;
             animation: marquee 25s linear infinite;
-            font-family: 'Amiri', serif;
-            color: #ffffff;
-            font-size: 1.1rem;
-            letter-spacing: 0.5px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            color: var(--text-muted);
+            font-size: 0.8rem;
         }
+        #marquee-text:hover { animation-play-state: paused; }
 
         @keyframes marquee {
             0% { transform: translate(0, 0); }
@@ -173,29 +190,28 @@
             display: flex; flex-direction: column; 
             scroll-behavior: smooth; 
             position: relative; 
-            padding-bottom: 150px;
+            padding-bottom: 110px;
         }
 
         /* BOTTOM NAVIGATION - FLOATING & RESPONSIVE */
         .bottom-nav {
             position: fixed;
-            bottom: 20px;
+            bottom: 0;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            background: rgba(30, 30, 30, 0.95);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border: 1px solid var(--glass-border);
-            border-radius: 25px;
-            padding: 8px 20px;
+            background: var(--glass-header);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--glass-border);
+            border-radius: 18px 18px 0 0;
+            padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
             z-index: 30;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            max-width: 90%;
-            width: auto;
-            gap: 10px;
+            width: 100%;
+            max-width: 480px;
+            gap: 4px;
         }
         
         @media (max-width: 480px) {
@@ -358,16 +374,16 @@
         
         .btn-primary { 
             background: var(--ios-blue);
-            font-family: 'BerlinSansFB', serif;
-            color: white; 
-            border: none; 
-            padding: 14px 24px; 
-            border-radius: 20px; 
-            font-weight: 600; 
-            font-size: 1rem; 
-            width: 80%; 
-            cursor: pointer; 
-            box-shadow: 0 4px 15px rgba(0,122,255,0.3); 
+            font-family: inherit;
+            color: #101210;
+            border: none;
+            padding: 13px 24px;
+            border-radius: var(--r-tombol);
+            font-weight: 700;
+            font-size: 1rem;
+            width: 80%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(76,175,80,0.25);
             transition: 0.2s;
             display: flex;
             align-items: center;
@@ -426,7 +442,7 @@
             top: 10px; 
             right: 10px; 
             background: rgba(0,122,255,0.2); 
-            color: #60a5fa; 
+            color: #7CC47F; 
             font-size: 10px; 
             padding: 4px 8px; 
             border-radius: 10px; 
@@ -971,9 +987,9 @@
             padding: 30px; 
         }
         .modal-card { 
-            background: #1C1C1E; 
-            border: 1px solid var(--glass-border); 
-            border-radius: 24px; 
+            background: var(--glass-bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--r-besar); 
             padding: 30px; 
             text-align: center; 
             width: 100%; 
@@ -1269,13 +1285,13 @@
     transition: all 0.3s ease;
 }
 .lafadz-header {
-    background: #f0f4f8;
+    background: #F2F2ED;
     padding: 10px;
     border-radius: 8px;
     margin-top: 15px;
     font-weight: bold;
-    color: #2c3e50;
-    border-left: 5px solid #3498db;
+    color: #A9ADA6;
+    border-left: 5px solid #4CAF50;
 }
 #syarah-result {
     animation: fadeIn 0.5s ease-in-out;
@@ -1360,7 +1376,7 @@
 }
 
 .group-bg {
-    background: linear-gradient(135deg, #007AFF, #00C6FF);
+    background: linear-gradient(135deg, #4CAF50, #7CC47F);
 }
 
 .social-text {
@@ -1433,7 +1449,7 @@ a.nav-btn.active {
   position: fixed;
   inset: 0;
   z-index: 99999;
-  background: #0d1117;
+  background: #101210;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1454,21 +1470,7 @@ a.nav-btn.active {
 /* ==============================
    PULAU 1 — LOGO + TITLE (kiri)
    ============================== */
-.island-logo-pill {
-    position: absolute;
-    top: 16px;
-    left: 15px;
-    z-index: 100;
-    background: rgba(10,10,10,0.745);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 50px;
-    padding: 7px 14px 7px 8px;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-}
+/* .island-logo-pill dilebur ke .pulau-bar (navigasi ditempel, tidak melayang) */
 
 .pill-avatar {
     width: 35px;
@@ -1512,7 +1514,7 @@ a.nav-btn.active {
 .visitor-badge {
     font-size: 7px;
     background: rgba(0, 122, 255, 0.25);
-    color: #60a5fa;
+    color: #7CC47F;
     padding: 1px 5px;
     border-radius: 8px;
     font-weight: 600;
@@ -1521,25 +1523,7 @@ a.nav-btn.active {
 /* ==============================
    PULAU 2 — GLOBE (kanan)
    ============================== */
-.island-globe-pill {
-    position: absolute;
-    top: 20px;
-    right: 15px;
-    z-index: 100;
-    background: rgba(10, 10, 10, 0.88);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 50px;
-    width: 46px;
-    height: 46px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: floatIsland2 3.7s ease-in-out infinite;
-    animation-delay: 0.9s;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+/* .island-globe-pill dilebur ke .pulau-bar (navigasi ditempel, tidak melayang) */
 
 .globe-icon {
     font-size: 22px;
@@ -1555,28 +1539,12 @@ a.nav-btn.active {
     33%       { transform: translateY(-7px) rotate(3deg); }
     66%       { transform: translateY(-3px) rotate(-2deg); }
 }
-.globe-icon:hover { color: #60b0ff; }
+.globe-icon:hover { color: #7CC47F; }
 
 /* ==============================
    PULAU 3 — MARQUEE
    ============================== */
-.island-marquee-pill {
-    position: absolute;
-    top: 75px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 99;
-    background: rgba(0, 60, 180, 0.22);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 50px;
-    padding: 6px 0;
-    overflow: hidden;
-    width: 82%;
-    max-width: 340px;
-    animation: floatIsland3 5s ease-in-out infinite;
-    animation-delay: 1.4s;
-}
+/* .island-marquee-pill dilebur ke .pulau-bar (navigasi ditempel, tidak melayang) */
 
 .marquee-text {
     display: inline-block;
@@ -1747,9 +1715,9 @@ a.nav-btn.active {
     letter-spacing: 0.5px;
     margin-top: 4px;
 }
-.score-box-card.correct .score-box-num { color: #34C759; }
+.score-box-card.correct .score-box-num { color: #4CAF50; }
 .score-box-card.correct .score-box-label { color: rgba(52, 199, 89, 0.8); }
-.score-box-card.wrong .score-box-num { color: #FF3B30; }
+.score-box-card.wrong .score-box-num { color: #E5484D; }
 .score-box-card.wrong .score-box-label { color: rgba(255, 59, 48, 0.8); }
 .score-box-card.total .score-box-num { color: #ffffff; }
 .score-box-card.total .score-box-label { color: rgba(255, 255, 255, 0.5); }
@@ -1789,7 +1757,7 @@ a.nav-btn.active {
 .dev-sector-title {
     font-size: 0.82rem;
     font-weight: 700;
-    color: #007AFF; /* iOS Blue */
+    color: #4CAF50; /* iOS Blue */
     margin-bottom: 10px;
     display: flex;
     align-items: center;
@@ -1863,11 +1831,11 @@ a.nav-btn.active {
     font-weight: 800;
     width: 32px;
     text-align: center;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
-.rank-number.top-1 { color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.3); } /* Emas */
-.rank-number.top-2 { color: #E0E0E0; } /* Silver */
-.rank-number.top-3 { color: #CD7F32; } /* Perunggu */
+.rank-number.top-1 { color: #E8A13D; text-shadow: 0 0 10px rgba(255,215,0,0.3); } /* Emas */
+.rank-number.top-2 { color: #A9ADA6; } /* Silver */
+.rank-number.top-3 { color: #E8A13D; } /* Perunggu */
 
 .rank-name-text {
     font-weight: 700;
@@ -1882,7 +1850,7 @@ a.nav-btn.active {
     font-weight: 800;
     font-size: 0.95rem;
     color: var(--ios-blue);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 /* ==========================================
    OPTIMASI ARENA SANTRI & 5-ITEM BOTTOM NAV (PROPORSIONAL)
@@ -1965,3 +1933,58 @@ a.nav-btn.active {
     background: rgba(52, 199, 89, 0.15);
     color: #ffffff;
 }
+
+/* ===== AMOGENZ VIBE wujud web: navigasi ditempel ===== */
+.pulau-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--glass-header);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    border-radius: 0 0 18px 18px;
+    flex-shrink: 0; z-index: 40;
+}
+.pulau-bar .pb-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--ios-blue); flex: none; }
+.pulau-bar .pb-title { font-weight: 700; font-size: 15px; line-height: 1.25; white-space: nowrap; }
+.pulau-bar .pb-sub { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.pulau-bar .pb-sub b { color: var(--green-soft); font-variant-numeric: tabular-nums; }
+.pulau-bar .pb-marquee { flex: 1; min-width: 0; font-size: 12px; color: var(--text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; padding: 0 6px; }
+.pb-icon-btn { width: 40px; height: 40px; flex: none; border-radius: 50%;
+    border: 1px solid var(--glass-border); background: transparent; color: var(--text-light);
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.pb-icon-btn i.ph { font-size: 20px; }
+.pb-icon-btn svg { width: 20px; height: 20px; }
+[data-theme="dark"] .pb-icon-btn .ic-sun { display: none; }
+[data-theme="light"] .pb-icon-btn .ic-moon { display: none; }
+@media (max-width: 420px) { .pulau-bar .pb-marquee { display: none; } }
+
+/* Banner: pengganti alert()/toast — melayang di bawah pulau-bar, hilang sendiri */
+.vibe-banner {
+    position: fixed; top: 74px; left: 50%; transform: translateX(-50%);
+    background: var(--glass-bg-card); border: 1px solid var(--glass-border);
+    border-radius: var(--r-kartu); padding: 11px 18px;
+    display: none; align-items: center; gap: 10px; font-size: 14px; z-index: 90;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.4); max-width: calc(100vw - 32px); width: max-content;
+}
+.vibe-banner.show { display: flex; animation: vibeDrop .22s ease; }
+.vibe-banner i.ph { font-size: 20px; color: var(--ios-blue); }
+.vibe-banner.err i.ph { color: var(--ios-red); }
+@keyframes vibeDrop { from { transform: translate(-50%,-8px); opacity: 0; } to { transform: translate(-50%,0); opacity: 1; } }
+
+/* Angka: digit tabular, tidak menggeser tata letak */
+.tnum { font-variant-numeric: tabular-nums; }
+.rank-score, .visitor-badge, .char-counter { font-variant-numeric: tabular-nums; }
+
+/* btn-ghost: tombol sekunder standar web */
+.btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: transparent; color: var(--text-muted);
+    border: 1px solid var(--glass-border); border-radius: var(--r-tombol);
+    padding: 12px 20px; font-weight: 600; font-size: 0.95rem; font-family: inherit;
+    cursor: pointer; min-height: 44px; transition: 0.2s;
+}
+.btn-ghost:hover { color: var(--text-light); border-color: var(--ios-blue); }
+.modal-title { font-size: 1.05rem; margin-bottom: 8px; }
+.modal-desc { font-size: 0.9rem; color: var(--text-muted); }
