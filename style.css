@@ -1940,6 +1940,62 @@ a.nav-btn.active {
 .modal-title { font-size: 1.05rem; margin-bottom: 8px; }
 .modal-desc { font-size: 0.9rem; color: var(--text-muted); }
 
+
+        /* ===== AMOGENZ VIBE: adaptasi tema terang standar web ===== */
+        [data-theme="light"] .nav-btn { color: var(--text-muted); }
+        [data-theme="light"] .section-title { color: var(--text-light); }
+        [data-theme="light"] .rank-name-text { color: var(--text-light); }
+        [data-theme="light"] .syarah-content { color: var(--text-light); }
+        [data-theme="light"] .arabic-textarea::placeholder,
+        [data-theme="light"] .glass-field::placeholder { color: var(--text-faint); }
+        [data-theme="light"] .comment-date,
+        [data-theme="light"] .suggest-date,
+        [data-theme="light"] .reply-date { color: var(--text-faint); }
+        [data-theme="light"] .comment-msg,
+        [data-theme="light"] .suggest-msg,
+        [data-theme="light"] .reply-msg { color: var(--text-light); }
+        [data-theme="light"] .btn-reply,
+        [data-theme="light"] .tab-btn,
+        [data-theme="light"] .file-upload-area,
+        [data-theme="light"] .social-item i.ph-caret-right { color: var(--text-muted); }
+        [data-theme="light"] .tab-btn.active { color: var(--text-light); background: rgba(0,0,0,0.06); }
+        [data-theme="light"] .explore-card-arabic,
+        [data-theme="light"] .score-box-num,
+        [data-theme="light"] .score-box-card.total .score-box-num { color: var(--text-light); }
+        [data-theme="light"] .score-box-card.total .score-box-label { color: var(--text-muted); }
+        [data-theme="light"] .btn-share-premium,
+        [data-theme="light"] .dev-btn-action { color: var(--text-light); background: rgba(0,0,0,0.05); border-color: var(--glass-border); }
+        [data-theme="light"] .studio-option-pill.correct-option { color: var(--green-soft); }
+        [data-theme="light"] .start-logo,
+        [data-theme="light"] .dawuh-image-wrapper,
+        [data-theme="light"] .preview-img-box,
+        [data-theme="light"] .suggest-item,
+        [data-theme="light"] .analysis-point,
+        [data-theme="light"] .community-banner,
+        [data-theme="light"] .score-box-card,
+        [data-theme="light"] .dev-sector,
+        [data-theme="light"] .studio-option-pill,
+        [data-theme="light"] .future-dashed,
+        [data-theme="light"] .file-upload-area { border-color: var(--glass-border); }
+        [data-theme="light"] .db-btn:hover:not(.active),
+        [data-theme="light"] .social-item:hover,
+        [data-theme="light"] .score-box-card:hover { border-color: rgba(0,0,0,0.2); }
+        [data-theme="light"] .admin-header { border-bottom-color: var(--glass-border); }
+        [data-theme="light"] .img-spinner,
+        [data-theme="light"] .loader { border-color: rgba(0,0,0,0.15); }
+
+        [data-theme="light"] .arabic-textarea,
+        [data-theme="light"] .glass-field { color: var(--text-light); background: rgba(0,0,0,0.04); }
+        [data-theme="light"] .glass-field { border: 1px solid var(--glass-border); }
+        [data-theme="light"] .icon-btn { color: var(--text-light); }
+        [data-theme="light"] .btn-back-home,
+        [data-theme="light"] .btn-option,
+        [data-theme="light"] .btn-close-modal { color: var(--text-light); background: rgba(0,0,0,0.05); }
+        [data-theme="light"] .file-upload-btn { color: var(--text-light); }
+        [data-theme="light"] .reply-modal-header h3 { color: var(--text-light); }
+        [data-theme="light"] .file-upload-area:hover { color: var(--text-light); }
+        [data-theme="light"] .social-item { color: var(--text-light); background: rgba(0,0,0,0.03); }
+        [data-theme="light"] .avatar { color: var(--text-light); }
         /* Responsif per perangkat: HP 480px, iPad 640px, desktop 720px */
         @media (min-width: 768px) {
             .glass-container { max-width: 640px; }
