@@ -1667,9 +1667,9 @@ a.nav-btn.active {
     margin-top: 4px;
 }
 .score-box-card.correct .score-box-num { color: #4CAF50; }
-.score-box-card.correct .score-box-label { color: rgba(52, 199, 89, 0.8); }
+.score-box-card.correct .score-box-label { color: rgba(76, 175, 80, 0.8); }
 .score-box-card.wrong .score-box-num { color: #E5484D; }
-.score-box-card.wrong .score-box-label { color: rgba(255, 59, 48, 0.8); }
+.score-box-card.wrong .score-box-label { color: rgba(229, 72, 77, 0.8); }
 .score-box-card.total .score-box-num { color: #ffffff; }
 .score-box-card.total .score-box-label { color: rgba(255, 255, 255, 0.5); }
 
@@ -1880,7 +1880,7 @@ a.nav-btn.active {
 
 .studio-option-pill.correct-option {
     border-color: var(--ios-green);
-    background: rgba(52, 199, 89, 0.15);
+    background: rgba(76, 175, 80, 0.15);
     color: #ffffff;
 }
 
