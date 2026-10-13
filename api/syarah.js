@@ -2,12 +2,32 @@ export const config = {
     runtime: 'edge',
 };
 
+// Batas wajar agar kuota API key tidak dikuras satu request raksasa.
+const MAX_PROMPT_CHARS = 2000;
+// Rate limit sederhana per-IP (best-effort, per instance edge).
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX = 20;
+const ipHits = new Map();
+
+function isRateLimited(ip) {
+    const now = Date.now();
+    const hits = (ipHits.get(ip) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    hits.push(now);
+    ipHits.set(ip, hits);
+    // Bersihkan entri basi sesekali agar memori tidak membengkak.
+    if (ipHits.size > 5000) {
+        for (const [k, v] of ipHits) {
+            if (v.length === 0 || now - v[v.length - 1] >= RATE_LIMIT_WINDOW_MS) ipHits.delete(k);
+        }
+    }
+    return hits.length > RATE_LIMIT_MAX;
+}
+
 export default async function handler(req) {
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET,OPTIONS,PATCH,DELETE,POST,PUT',
-        'Access-Control-Allow-Headers': 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Content-Type',
-        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'POST,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
     };
 
     // Respon cepat untuk OPTIONS (Preflight)
@@ -24,6 +44,25 @@ export default async function handler(req) {
 
         const body = await req.json();
         const { prompt } = body;
+
+        if (typeof prompt !== 'string' || prompt.trim().length === 0) {
+            return new Response(JSON.stringify({ error: 'Prompt tidak boleh kosong.' }), {
+                status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        if (prompt.length > MAX_PROMPT_CHARS) {
+            return new Response(JSON.stringify({ error: `Prompt terlalu panjang (maks ${MAX_PROMPT_CHARS} karakter).` }), {
+                status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+        if (isRateLimited(ip)) {
+            return new Response(JSON.stringify({ error: 'Terlalu banyak permintaan. Coba lagi sebentar.' }), {
+                status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
         
         const keys = [
             process.env.GEMINI_API_KEY_1,
@@ -60,14 +99,16 @@ export default async function handler(req) {
                         contents: [{ parts: [{ text: prompt }] }],
                         generationConfig: { 
                             temperature: 0.7, 
-                            maxOutputTokens: 8000, // Diubah! 2500 sudah sangat lega, bikin AI gak gampang limit
+                            maxOutputTokens: 4000,
                             topP: 0.95,
                         },
+                        // Safety dikembalikan ke bawaan Google (blokir konten
+                        // berbahaya). Jangan BLOCK_NONE di proxy terbuka.
                         safetySettings: [
-                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
                         ]
                     })
                 });

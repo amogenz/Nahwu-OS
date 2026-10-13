@@ -24,10 +24,30 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { uid, authorName, title, category, questions } = req.body;
+        // ==========================================================
+        // VERIFIKASI IDENTITAS — uid HANYA dari ID Token terverifikasi.
+        // Mencegah siapa pun menerbitkan kuis atas nama user lain.
+        // (Pola sama seperti api/submit-score.js)
+        // ==========================================================
+        const authHeader = req.headers.authorization || '';
+        const idToken = authHeader.startsWith('Bearer ') ? authHeader.split('Bearer ')[1] : null;
 
-        if (!uid || !authorName) {
-            return res.status(401).json({ success: false, message: 'Kamu wajib login Google terlebih dahulu!' });
+        if (!idToken) {
+            return res.status(401).json({ success: false, message: 'Token otentikasi tidak ditemukan!' });
+        }
+
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch (err) {
+            return res.status(401).json({ success: false, message: 'Token tidak valid atau sudah kedaluwarsa!' });
+        }
+
+        const uid = decodedToken.uid; // <-- uid TERPERCAYA, bukan dari req.body lagi
+        const { authorName, title, category, questions } = req.body;
+
+        if (!authorName) {
+            return res.status(401).json({ success: false, message: 'Nama penulis wajib diisi!' });
         }
 
         const safeTitle = cleanInput(title);

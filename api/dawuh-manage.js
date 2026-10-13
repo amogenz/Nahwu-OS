@@ -29,8 +29,14 @@ export default async function handler(req, res) {
                 return res.status(400).json({ success: false, message: 'Gambar/URL tidak boleh kosong!' });
             }
 
+            // Hanya izinkan URL http(s) — cegah skema javascript:/data: yang
+            // bisa disalahgunakan saat URL dirender di client.
+            if (!/^https?:\/\//i.test(url.trim())) {
+                return res.status(400).json({ success: false, message: 'URL gambar harus diawali http:// atau https://' });
+            }
+
             await db.ref('dawuh_images').push({
-                url: url,
+                url: url.trim(),
                 caption: caption || '',
                 created_at: Date.now()
             });
@@ -42,6 +48,12 @@ export default async function handler(req, res) {
         if (action === 'delete') {
             if (!key) {
                 return res.status(400).json({ success: false, message: 'ID Gambar tidak valid!' });
+            }
+
+            // Validasi format key: hanya karakter push-ID Firebase yang sah.
+            // Mencegah path traversal (mis. "../../...") ke node database lain.
+            if (!/^[A-Za-z0-9_-]+$/.test(key)) {
+                return res.status(400).json({ success: false, message: 'Format ID Gambar tidak valid!' });
             }
 
             await db.ref(`dawuh_images/${key}`).remove();
