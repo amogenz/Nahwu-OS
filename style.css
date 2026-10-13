@@ -1820,7 +1820,6 @@ a.nav-btn.active {
 .bottom-nav {
     padding: 8px 12px !important;
     gap: 4px !important;
-    max-width: 95% !important;
     width: 100% !important;
 }
 
