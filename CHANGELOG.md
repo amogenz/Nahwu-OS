@@ -1,5 +1,18 @@
 # Changelog Nahwu OS
 
+## 2026-10-16 — DB kembali + quiz/syarah pas layar
+
+### Database
+- `firebaseConfig` dikembalikan ke project `amogenz` (DB lama yang sudah
+  ada lafadz dkk), menggantikan `amogenz-inc`. API server memang tidak
+  pernah pindah, jadi client & server kini selaras lagi.
+
+### Quiz & dialog: otomatis pas layar
+- `#view-quiz` jadi flex column setinggi viewport (tanpa scroll):
+  kartu lafadz + pertanyaan fixed, opsi jawaban mengisi sisa ruang.
+- `.content-area`: padding 145px/150px sisa desain lama → 20px/120px.
+- `.modal-card` feedback quiz: compact, `max-height: calc(100dvh - 32px)`.
+
 ## 2026-10-13 — AMOGENZ VIBE (wujud web) + audit keamanan
 
 ### Desain: AMOGENZ VIBE wujud web
