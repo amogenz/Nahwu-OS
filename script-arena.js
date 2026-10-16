@@ -177,7 +177,7 @@ function startCommunityQuiz(quiz) {
     // Tampilkan View Kuis & Sembunyikan Start/Loading
     if (els.viewStart) els.viewStart.style.display = 'none';
     if (els.viewLoading) els.viewLoading.style.display = 'none';
-    if (els.viewQuiz) els.viewQuiz.style.display = 'block';
+    if (els.viewQuiz) els.viewQuiz.style.display = 'flex';
 
     // Render Soal Pertama
     renderCommunityQuestion();

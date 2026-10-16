@@ -1518,7 +1518,7 @@ a.nav-btn.active {
 .content-area {
     flex: 1;
     overflow-y: auto;
-    padding: 145px 20px 150px; /* <-- naikkan padding top */
+    padding: 20px 20px 120px; /* header 96px via container, nav via bottom */
     display: flex;
     flex-direction: column;
     scroll-behavior: smooth;
@@ -1995,6 +1995,35 @@ a.nav-btn.active {
         [data-theme="light"] .file-upload-area:hover { color: var(--text-light); }
         [data-theme="light"] .social-item { color: var(--text-light); background: rgba(0,0,0,0.03); }
         [data-theme="light"] .avatar { color: var(--text-light); }
+
+        /* QUIZ: otomatis pas layar — tanpa scroll naik-turun */
+        #view-quiz {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #view-quiz .back-to-home-wrapper { flex: none; margin-bottom: 10px; }
+        #view-quiz .quiz-card { flex: none; margin-bottom: 12px; padding: 14px 16px; }
+        #view-quiz .quiz-card .arabic-text { font-size: clamp(1.7rem, 7vw, 2.3rem); margin: 6px 0; }
+        #view-quiz .quiz-card .context-text { font-size: 0.9rem; }
+        #view-quiz .chat-bubble { flex: none; margin-bottom: 12px; padding: 12px 14px; }
+        #view-quiz .chat-bubble p { font-size: 1rem !important; line-height: 1.45; }
+        #view-quiz #options-container {
+            flex: 1; min-height: 0;
+            display: flex; flex-direction: column;
+            gap: 8px; padding-bottom: 0; overflow: hidden;
+        }
+        #view-quiz .btn-option {
+            flex: 1; min-height: 0;
+            padding: 8px 12px; font-size: 0.95rem;
+        }
+        /* Modal feedback quiz: otomatis pas, compact */
+        .modal-card {
+            max-height: calc(100dvh - 32px);
+            padding: 22px 20px;
+        }
         /* Responsif per perangkat: HP 480px, iPad 640px, desktop 720px */
         @media (min-width: 768px) {
             .glass-container { max-width: 640px; }
